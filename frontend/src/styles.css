@@ -1237,3 +1237,20 @@ body {
   border: 1px solid rgba(255, 184, 90, 0.14);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18) !important;
 }
+
+.recommendation-link {
+  border: 0;
+  width: 100%;
+  text-align: left;
+  border-radius: 18px;
+  transition: all 0.2s ease;
+}
+
+.recommendation-link:hover {
+  background: rgba(233, 114, 22, 0.08) !important;
+  transform: translateY(-1px);
+}
+
+:root[data-theme="dark"] .recommendation-link:hover {
+  background: rgba(255, 154, 61, 0.12) !important;
+}

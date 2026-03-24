@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const typeSections = [
   { id: "non-mcq", label: "Interview Bank" },
@@ -8,9 +9,29 @@ const typeSections = [
 ];
 
 const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => {
+  const location = useLocation();
   const [openAnswers, setOpenAnswers] = useState({});
   const [activeSection, setActiveSection] = useState("non-mcq");
   const [activeCategory, setActiveCategory] = useState("All");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const topic = params.get("topic") || "";
+    const category = params.get("category") || "";
+
+    if (topic || category) {
+      const nextFilters = {
+        ...filters,
+        topic,
+        category,
+        difficulty: filters.difficulty || "",
+        company: filters.company || ""
+      };
+      setFilters(nextFilters);
+      loadQuestions(nextFilters);
+      if (category) setActiveCategory(category);
+    }
+  }, [location.search]);
 
   const toggleAnswer = (id) => {
     setOpenAnswers((current) => ({ ...current, [id]: !current[id] }));

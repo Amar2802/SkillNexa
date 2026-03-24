@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { useNavigate } from "react-router-dom";
 import api from "../api/client";
 
 const companyOptions = ["General", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
 
 const DashboardPage = ({ profile, recommendations }) => {
+  const navigate = useNavigate();
   const recent = profile?.analytics?.recentResults || [];
   const [selectedCompany, setSelectedCompany] = useState("General");
   const [roadmap, setRoadmap] = useState([]);
@@ -23,6 +25,13 @@ const DashboardPage = ({ profile, recommendations }) => {
 
     loadRoadmap().catch(() => undefined);
   }, [selectedCompany]);
+
+  const openRecommendedTopic = (question) => {
+    const params = new URLSearchParams();
+    if (question?.topic) params.set("topic", question.topic);
+    if (question?.category) params.set("category", question.category);
+    navigate(`/questions?${params.toString()}`);
+  };
 
   return (
     <div className="container py-4">
@@ -57,7 +66,7 @@ const DashboardPage = ({ profile, recommendations }) => {
         <div className="col-lg-8"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5 mb-4">Performance Trend</h2><Line data={{ labels: recent.map((_, i) => `Test ${i + 1}`), datasets: [{ label: "Accuracy", data: recent.map((r) => r.accuracy), borderColor: "#35c2ff", backgroundColor: "rgba(53,194,255,0.15)" }] }} /></div></div></div>
         <div className="col-lg-4"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5 mb-4">Readiness Snapshot</h2><Doughnut data={{ labels: ["Correct", "Needs Work"], datasets: [{ data: [profile?.progress?.accuracy || 0, 100 - (profile?.progress?.accuracy || 0)], backgroundColor: ["#35c2ff", "#ff8e72"] }] }} /></div></div></div>
         <div className="col-lg-6"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5">Weak Topics</h2><Bar data={{ labels: profile?.progress?.weakTopics?.length ? profile.progress.weakTopics : ["Arrays", "DBMS", "Probability"], datasets: [{ label: "Priority", data: profile?.progress?.weakTopics?.length ? profile.progress.weakTopics.map((_, i) => 90 - i * 15) : [80, 70, 60], backgroundColor: ["#ff8e72", "#ffd166", "#35c2ff"] }] }} /></div></div></div>
-        <div className="col-lg-6"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5">Recommended Topics</h2><div className="list-group list-group-flush">{recommendations.map((q) => <div className="list-group-item bg-transparent px-0" key={q._id}><h3 className="h6 mb-1">{q.title}</h3><p className="mb-0 text-secondary">{q.topic} • {q.category} • {q.difficulty}</p></div>)}</div></div></div></div>
+        <div className="col-lg-6"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5">Recommended Topics</h2><div className="list-group list-group-flush">{recommendations.map((q) => <button type="button" className="list-group-item bg-transparent px-0 recommendation-link" key={q._id} onClick={() => openRecommendedTopic(q)}><h3 className="h6 mb-1">{q.title}</h3><p className="mb-0 text-secondary">{q.topic} • {q.category} • {q.difficulty}</p></button>)}</div></div></div></div>
       </div>
 
       <div className="row g-4 mt-1">
