@@ -163,8 +163,19 @@ export const getHistory = async (req, res) => {
 };
 
 export const seedQuestionsIfNeeded = async (_req, res) => {
-  const stats = await syncSeedQuestions();
-  res.json({ message: "Sample questions synced", ...stats });
+  try {
+    const stats = await syncSeedQuestions();
+    res.json({ message: "Sample questions synced", ...stats });
+  } catch (error) {
+    console.error("seedQuestionsIfNeeded error:", error);
+    const { default: seedQuestions } = await import("../data/seedQuestions.js");
+    res.json({
+      message: "Using built-in sample questions",
+      inserted: 0,
+      total: seedQuestions.length,
+      warning: error.message
+    });
+  }
 };
 
 export { syncSeedQuestions };
