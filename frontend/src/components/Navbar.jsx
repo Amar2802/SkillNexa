@@ -53,8 +53,7 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <ThemeToggle theme={theme} setTheme={setTheme} />
-          <button className="btn btn-info w-100 mt-3" onClick={logout}>Logout</button>
+          <button className="btn btn-info w-100" onClick={logout}>Logout</button>
         </div>
       </aside>
       <header className="app-topbar">
@@ -62,13 +61,16 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
           <p className="eyebrow mb-1">Interview Command Center</p>
           <h2 className="topbar-title mb-0">Stay consistent and track your growth.</h2>
         </div>
-        <Link className="profile-chip" to="/profile">
-          <div className="profile-chip-text">
-            <strong>{currentUser?.name || "Profile"}</strong>
-            <span>{currentUser?.email || "Update your profile photo"}</span>
-          </div>
-          <AvatarChip user={currentUser} />
-        </Link>
+        <div className="topbar-actions">
+          <ThemeToggle theme={theme} setTheme={setTheme} />
+          <Link className="profile-chip" to="/profile">
+            <div className="profile-chip-text">
+              <strong>{currentUser?.name || "Profile"}</strong>
+              <span>{currentUser?.email || "Update your profile photo"}</span>
+            </div>
+            <AvatarChip user={currentUser} />
+          </Link>
+        </div>
       </header>
     </>
   );
