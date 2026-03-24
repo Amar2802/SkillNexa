@@ -84,7 +84,7 @@ export default function App() {
       <Route path="/ai-interviewer" element={<ProtectedRoute user={user}><AIInterviewerPage /></ProtectedRoute>} />
       <Route path="/bookmarks" element={<ProtectedRoute user={user}><BookmarksPage bookmarks={bookmarks} /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute user={user}><HistoryPage history={history} /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute user={user}><ProfilePage profile={profile || user || { progress: { recommendedTopics: [] } }} refreshProfile={refreshProfile} /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute user={user}><ProfilePage profile={profile || user || { progress: { recommendedTopics: [] } }} refreshProfile={refreshProfile} logout={logout} /></ProtectedRoute>} />
     </Routes>
   );
 
@@ -95,3 +95,4 @@ export default function App() {
     </div>
   );
 }
+

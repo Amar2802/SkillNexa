@@ -31,7 +31,7 @@ const AvatarPreview = ({ profile }) => {
   );
 };
 
-const ProfilePage = ({ profile, refreshProfile }) => {
+const ProfilePage = ({ profile, refreshProfile, logout }) => {
   const galleryInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [status, setStatus] = useState("");
@@ -103,12 +103,15 @@ const ProfilePage = ({ profile, refreshProfile }) => {
                 <p className="text-secondary mb-0">{profile?.email}</p>
               </div>
             </div>
-            <div className="photo-actions-panel">
-              <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
-              <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload From Gallery</button>
-              <button className="btn btn-outline-light" onClick={() => cameraInputRef.current?.click()} disabled={saving}>Use Camera</button>
-              {status && <p className="small mb-0 text-secondary">{status}</p>}
+            <div className="d-flex flex-column align-items-end gap-2">
+              <button className="btn btn-outline-danger" onClick={logout}>Logout</button>
+              <div className="photo-actions-panel">
+                <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
+                <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload From Gallery</button>
+                <button className="btn btn-outline-light" onClick={() => cameraInputRef.current?.click()} disabled={saving}>Use Camera</button>
+                {status && <p className="small mb-0 text-secondary">{status}</p>}
+              </div>
             </div>
           </div>
 
