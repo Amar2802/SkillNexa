@@ -20,3 +20,8 @@ backend/
     models/
     routes/
     utils/
+
+## Live Demo
+
+- Frontend: https://skill-nexa-u1x3.vercel.app
+- Backend Health: https://skillnexa-backend.onrender.com/api/health
