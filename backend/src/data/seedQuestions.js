@@ -684,6 +684,109 @@ const seedQuestions = [
     explanation: "Python dictionaries are hash table based, giving average constant-time lookup.",
     tags: ["python", "hash table"]
   }
+  ,
+  {
+    title: "Longest Substring Without Repeating Characters",
+    category: "DSA",
+    topic: "Sliding Window",
+    difficulty: "Medium",
+    company: "Amazon",
+    type: "Coding",
+    description: "Find the length of the longest substring without repeating characters.",
+    correctAnswer: "Use a sliding window with a hash map or set to track the current unique substring in O(n).",
+    explanation: "A moving window lets you expand and shrink while maintaining uniqueness efficiently.",
+    starterCode: {
+      python: "def length_of_longest_substring(s):\n    pass",
+      cpp: "int lengthOfLongestSubstring(string s) {\n    return 0;\n}",
+      java: "class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        return 0;\n    }\n}"
+    },
+    tags: ["sliding window", "strings"]
+  },
+  {
+    title: "Explain Merge Sort",
+    category: "DSA",
+    topic: "Sorting",
+    difficulty: "Medium",
+    company: "Infosys",
+    type: "Subjective",
+    description: "Explain how merge sort works and mention its time complexity.",
+    correctAnswer: "Merge sort follows divide and conquer by splitting the array, recursively sorting both halves, and merging them back in sorted order with O(n log n) time.",
+    explanation: "A good answer should mention divide and conquer, recursive splitting, merging, and O(n log n) complexity.",
+    tags: ["sorting", "divide and conquer"]
+  },
+  {
+    title: "Probability of Drawing an Ace",
+    category: "Aptitude",
+    topic: "Probability",
+    difficulty: "Easy",
+    company: "Accenture",
+    type: "Subjective",
+    description: "A card is drawn from a standard deck. Explain how to find the probability that it is an ace.",
+    correctAnswer: "A standard deck has 52 cards and 4 aces, so the probability is favorable outcomes over total outcomes, which is 4 by 52 or 1 by 13.",
+    explanation: "The answer should explain total outcomes, favorable outcomes, and the simplified probability.",
+    tags: ["probability", "cards"]
+  },
+  {
+    title: "Time and Work Strategy",
+    category: "Aptitude",
+    topic: "Time and Work",
+    difficulty: "Medium",
+    company: "TCS",
+    type: "Subjective",
+    description: "Explain the general method to solve time and work problems involving two people working together.",
+    correctAnswer: "Convert each person's work into one-day work, add their rates together, and then take the reciprocal of the combined rate to get total time.",
+    explanation: "A clear answer should focus on work rates, one-day work, and combining rates logically.",
+    tags: ["time and work", "rates"]
+  },
+  {
+    title: "Tell me about a project you are proud of",
+    category: "HR",
+    topic: "Project Discussion",
+    difficulty: "Medium",
+    company: "General",
+    type: "Subjective",
+    description: "Answer this HR question in a structured way that highlights your contribution and impact.",
+    correctAnswer: "Choose one meaningful project, explain the goal, your role, the challenges, the solution you built, and the final impact or learning.",
+    explanation: "Strong answers are concrete, structured, and centered on your contribution rather than the project title alone.",
+    tags: ["projects", "communication"]
+  },
+  {
+    title: "How do you handle pressure and deadlines?",
+    category: "HR",
+    topic: "Behavioral Interviews",
+    difficulty: "Medium",
+    company: "General",
+    type: "Subjective",
+    description: "Give an interview-ready answer showing calmness, planning, and responsibility.",
+    correctAnswer: "Explain that you break work into priorities, communicate clearly, stay focused on critical tasks, and use a real example where you delivered under pressure.",
+    explanation: "Interviewers want a balanced answer showing process, maturity, and a real example.",
+    tags: ["pressure", "deadlines"]
+  },
+  {
+    title: "Difference Between Process and Thread",
+    category: "Core Subjects",
+    topic: "Operating Systems",
+    difficulty: "Medium",
+    company: "Microsoft",
+    type: "Subjective",
+    description: "Explain the difference between a process and a thread with one practical point.",
+    correctAnswer: "A process has its own memory space and resources, while threads are smaller execution units within a process that share the same memory space.",
+    explanation: "A good answer should mention memory isolation, resource sharing, and why threads are lighter than processes.",
+    tags: ["os", "processes", "threads"]
+  },
+  {
+    title: "Write SQL to Get Employees by Department",
+    category: "Core Subjects",
+    topic: "SQL",
+    difficulty: "Easy",
+    company: "Wipro",
+    type: "Subjective",
+    description: "Explain a simple SQL query to fetch all employees belonging to a given department.",
+    correctAnswer: "Use a SELECT statement with a WHERE condition on the department column, for example selecting all columns from employees where department equals a chosen department name.",
+    explanation: "This tests basic SQL filtering using SELECT and WHERE clauses.",
+    tags: ["sql", "select", "where"]
+  }
 ];
 
 export default seedQuestions;
+

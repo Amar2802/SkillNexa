@@ -2,16 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 const typeSections = [
-  { id: "non-mcq", label: "Interview Bank" },
+  { id: "all", label: "All Questions" },
   { id: "Coding", label: "Coding Questions" },
-  { id: "Subjective", label: "Descriptive Questions" },
-  { id: "MCQ", label: "MCQ Section" }
+  { id: "Subjective", label: "Descriptive Questions" }
 ];
 
 const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => {
   const location = useLocation();
   const [openAnswers, setOpenAnswers] = useState({});
-  const [activeSection, setActiveSection] = useState("non-mcq");
+  const [activeSection, setActiveSection] = useState("all");
   const [activeCategory, setActiveCategory] = useState("All");
 
   useEffect(() => {
@@ -37,24 +36,22 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
     setOpenAnswers((current) => ({ ...current, [id]: !current[id] }));
   };
 
-  const categories = useMemo(() => ["All", ...new Set(questions.map((question) => question.category))], [questions]);
+  const nonMcqQuestions = useMemo(() => questions.filter((question) => question.type !== "MCQ"), [questions]);
+  const categories = useMemo(() => ["All", ...new Set(nonMcqQuestions.map((question) => question.category))], [nonMcqQuestions]);
 
   const sectionQuestions = useMemo(() => {
-    return questions.filter((question) => {
-      const typeMatch =
-        activeSection === "non-mcq"
-          ? question.type !== "MCQ"
-          : question.type === activeSection;
-
+    return nonMcqQuestions.filter((question) => {
+      const typeMatch = activeSection === "all" ? true : question.type === activeSection;
       const categoryMatch = activeCategory === "All" ? true : question.category === activeCategory;
       return typeMatch && categoryMatch;
     });
-  }, [questions, activeSection, activeCategory]);
+  }, [nonMcqQuestions, activeSection, activeCategory]);
 
   return (
     <div className="container py-4">
       <p className="eyebrow mb-1">Question Bank</p>
-      <h1 className="h2 fw-bold mb-4">Explore questions by format and subject</h1>
+      <h1 className="h2 fw-bold mb-2">Explore questions by subject</h1>
+      <p className="text-secondary mb-4">This section focuses on coding and descriptive interview questions. Answers stay hidden until you choose to view them.</p>
       <div className="card glass-card mb-4">
         <div className="card-body">
           <div className="row g-3">
@@ -125,33 +122,10 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
 
                   {isOpen && (
                     <>
-                      {q.type === "MCQ" && q.options?.length > 0 && (
-                        <div className="mb-3">
-                          <p className="fw-semibold mb-2">Options</p>
-                          <div className="vstack gap-2">
-                            {q.options.map((option) => (
-                              <div key={option} className={`question-bank-option ${String(option) === String(q.correctAnswer) ? "correct" : ""}`}>
-                                <span>{option}</span>
-                                {String(option) === String(q.correctAnswer) && <strong>Correct</strong>}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {q.type !== "MCQ" && (
-                        <div className="mb-3">
-                          <p className="fw-semibold mb-2">Suggested Answer</p>
-                          <div className="question-bank-answer">{String(q.correctAnswer)}</div>
-                        </div>
-                      )}
-
-                      {q.type === "MCQ" && (
-                        <div className="mb-3">
-                          <p className="fw-semibold mb-2">Correct Answer</p>
-                          <div className="question-bank-answer">{String(q.correctAnswer)}</div>
-                        </div>
-                      )}
+                      <div className="mb-3">
+                        <p className="fw-semibold mb-2">Suggested Answer</p>
+                        <div className="question-bank-answer">{String(q.correctAnswer)}</div>
+                      </div>
 
                       <div>
                         <p className="fw-semibold mb-2">Explanation</p>
