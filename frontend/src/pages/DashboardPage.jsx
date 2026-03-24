@@ -136,7 +136,7 @@ const DashboardPage = ({ profile, recommendations }) => {
                 {companyQuestions.map((q) => (
                   <div className="list-group-item bg-transparent px-0" key={q._id}>
                     <h3 className="h6 mb-1">{q.title}</h3>
-                    <p className="mb-0 text-secondary">{q.company} • {q.category} • {q.topic}</p>
+                    <p className="mb-0 text-secondary">{q.company} | {q.category} | {q.topic}</p>
                   </div>
                 ))}
                 {!companyQuestions.length && <p className="text-secondary mb-0">No company-tagged questions found yet for this track.</p>}
@@ -150,4 +150,5 @@ const DashboardPage = ({ profile, recommendations }) => {
 };
 
 export default DashboardPage;
+
 
