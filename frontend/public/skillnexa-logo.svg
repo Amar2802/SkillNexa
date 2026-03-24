@@ -1,0 +1,20 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skillnexaGrad" x1="40" y1="32" x2="220" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E86C12"/>
+      <stop offset="1" stop-color="#FFB85A"/>
+    </linearGradient>
+    <linearGradient id="skillnexaSoft" x1="64" y1="56" x2="204" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF1DF"/>
+      <stop offset="1" stop-color="#FFE0B7"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#skillnexaGrad)"/>
+  <rect x="40" y="40" width="176" height="176" rx="40" fill="#21130B" fill-opacity="0.14"/>
+  <path d="M80 82C80 72.0589 88.0589 64 98 64H158C167.941 64 176 72.0589 176 82V174C176 184.493 163.997 190.412 155.7 184.084L128 162.967L100.3 184.084C92.0034 190.412 80 184.493 80 174V82Z" fill="url(#skillnexaSoft)"/>
+  <path d="M101 94L154 94" stroke="#E86C12" stroke-width="12" stroke-linecap="round"/>
+  <path d="M101 122L154 122" stroke="#E86C12" stroke-width="12" stroke-linecap="round" opacity="0.9"/>
+  <path d="M101 150L137 150" stroke="#E86C12" stroke-width="12" stroke-linecap="round" opacity="0.75"/>
+  <path d="M166 60L190 84L166 108" stroke="#FFF7EF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M66 148L90 172L66 196" stroke="#FFF7EF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 78 172)"/>
+</svg>

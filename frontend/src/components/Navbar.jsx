@@ -16,11 +16,18 @@ const AvatarChip = ({ user }) => {
   );
 };
 
+const Brand = () => (
+  <span className="brand-lockup">
+    <img src="/skillnexa-logo.svg" alt="SkillNexa logo" className="brand-logo" />
+    <span className="brand-wordmark">SkillNexa</span>
+  </span>
+);
+
 const Navbar = ({ user, profile, logout, theme, setTheme }) => {
   if (!user) {
     return (
       <header className="auth-topbar">
-        <Link className="navbar-brand fw-bold" to="/login">SkillNexa</Link>
+        <Link className="navbar-brand fw-bold" to="/login"><Brand /></Link>
         <ThemeToggle theme={theme} setTheme={setTheme} />
       </header>
     );
@@ -42,7 +49,7 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
     <>
       <aside className="app-sidebar">
         <div>
-          <Link className="sidebar-brand" to="/dashboard">SkillNexa</Link>
+          <Link className="sidebar-brand" to="/dashboard"><Brand /></Link>
           <p className="sidebar-subtitle">Prepare smarter with mock tests, coding rounds, and AI coaching.</p>
         </div>
         <nav className="sidebar-nav">
