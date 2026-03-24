@@ -1058,3 +1058,182 @@ label {
   background: rgba(168, 118, 22, 0.22);
   color: #fff2cf;
 }
+
+/* Attractive theme refinement */
+:root {
+  --bg: #fff6ee;
+  --bg-soft: #fffdfa;
+  --card: rgba(255, 255, 255, 0.97);
+  --text: #23130b;
+  --muted: #735241;
+  --accent: #e86c12;
+  --accent-2: #ffb85a;
+  --accent-3: #fff0df;
+  --border: rgba(214, 106, 22, 0.18);
+  --shadow: 0 24px 60px rgba(214, 106, 22, 0.12);
+}
+
+:root[data-theme="dark"] {
+  --bg: #140d09;
+  --bg-soft: #211611;
+  --card: rgba(35, 24, 18, 0.96);
+  --text: #fff6ef;
+  --muted: #d6b49f;
+  --accent: #ff9a3d;
+  --accent-2: #ffd48d;
+  --accent-3: #332218;
+  --border: rgba(255, 178, 92, 0.18);
+  --shadow: 0 28px 70px rgba(0, 0, 0, 0.32);
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% 8%, rgba(255, 184, 90, 0.26), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(232, 108, 18, 0.16), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(255, 208, 141, 0.14), transparent 32%),
+    linear-gradient(180deg, #fff8f1 0%, #fff0e2 100%);
+}
+
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at 10% 8%, rgba(255, 154, 61, 0.14), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(255, 212, 141, 0.08), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(255, 154, 61, 0.08), transparent 34%),
+    linear-gradient(180deg, #17100c 0%, #0d0907 100%);
+}
+
+.app-sidebar {
+  background: linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(255, 242, 228, 0.96)) !important;
+  box-shadow: 16px 0 40px rgba(214, 106, 22, 0.06);
+}
+
+:root[data-theme="dark"] .app-sidebar {
+  background: linear-gradient(180deg, rgba(25, 17, 12, 0.97), rgba(18, 12, 9, 0.97)) !important;
+}
+
+.app-topbar,
+.auth-topbar {
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.9), rgba(255, 245, 235, 0.84)) !important;
+}
+
+:root[data-theme="dark"] .app-topbar,
+:root[data-theme="dark"] .auth-topbar {
+  background: linear-gradient(180deg, rgba(23, 16, 12, 0.92), rgba(18, 12, 9, 0.88)) !important;
+}
+
+.sidebar-brand {
+  letter-spacing: -0.03em;
+}
+
+.hero-panel,
+.glass-card,
+.metric-card,
+.profile-chip {
+  box-shadow: 0 24px 52px rgba(214, 106, 22, 0.1) !important;
+}
+
+.hero-panel {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 244, 231, 0.92)) !important;
+}
+
+:root[data-theme="dark"] .hero-panel {
+  background:
+    linear-gradient(135deg, rgba(38, 27, 20, 0.96), rgba(29, 20, 15, 0.94)) !important;
+}
+
+.hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: auto auto -70px -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 184, 90, 0.22), transparent 68%);
+  pointer-events: none;
+}
+
+.auth-page .glass-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 247, 237, 0.94)) !important;
+}
+
+:root[data-theme="dark"] .auth-page .glass-card {
+  background: linear-gradient(180deg, rgba(39, 27, 20, 0.98), rgba(29, 20, 15, 0.96)) !important;
+}
+
+.sidebar-link {
+  border: 1px solid transparent;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+  border-color: rgba(214, 106, 22, 0.16);
+  background: linear-gradient(135deg, rgba(232, 108, 18, 0.14), rgba(255, 184, 90, 0.2)) !important;
+  box-shadow: 0 14px 28px rgba(214, 106, 22, 0.08);
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #e86c12, #ffb85a) !important;
+  box-shadow: 0 18px 30px rgba(232, 108, 18, 0.24) !important;
+}
+
+.btn-info:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 36px rgba(232, 108, 18, 0.28) !important;
+}
+
+.question-bookmark-btn,
+.practice-category-tab,
+.question-bank-tab,
+.interest-chip,
+.option-btn,
+.practice-question-item,
+.btn {
+  transition: all 0.2s ease;
+}
+
+.practice-category-tab.active,
+.question-bank-tab.active,
+.interest-chip.active {
+  background: linear-gradient(135deg, #e86c12, #ffb85a) !important;
+  box-shadow: 0 14px 26px rgba(232, 108, 18, 0.18) !important;
+}
+
+.practice-question-item.active {
+  background: linear-gradient(135deg, rgba(232, 108, 18, 0.16), rgba(255, 184, 90, 0.2)) !important;
+}
+
+.option-btn-selected {
+  box-shadow: 0 14px 26px rgba(232, 108, 18, 0.14);
+}
+
+.question-bookmark-btn.btn-info {
+  background: linear-gradient(135deg, #ff9a3d, #ffd089) !important;
+}
+
+.profile-chip,
+.metric-card,
+.feedback-detail-card,
+.answer-reveal-card,
+.roadmap-item,
+.question-bank-option,
+.question-bank-answer,
+.question-bank-explanation {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 248, 240, 0.94)) !important;
+}
+
+:root[data-theme="dark"] .profile-chip,
+:root[data-theme="dark"] .metric-card,
+:root[data-theme="dark"] .feedback-detail-card,
+:root[data-theme="dark"] .answer-reveal-card,
+:root[data-theme="dark"] .roadmap-item,
+:root[data-theme="dark"] .question-bank-option,
+:root[data-theme="dark"] .question-bank-answer,
+:root[data-theme="dark"] .question-bank-explanation {
+  background: linear-gradient(180deg, rgba(42, 29, 22, 0.98), rgba(28, 20, 15, 0.96)) !important;
+}
+
+.terminal-panel {
+  border: 1px solid rgba(255, 184, 90, 0.14);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18) !important;
+}
