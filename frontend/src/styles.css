@@ -1320,3 +1320,23 @@ body {
     padding: 0.75rem;
   }
 }
+
+.metric-link-card {
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.metric-link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 40px rgba(214, 106, 22, 0.16) !important;
+}
+
+.weak-topic-chip {
+  border: 0;
+  cursor: pointer;
+}
+
+.weak-topic-chip:hover {
+  transform: translateY(-1px);
+}
