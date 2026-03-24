@@ -449,6 +449,38 @@ a:hover { color: #d85c00; }
   background: rgba(255, 245, 235, 0.78);
 }
 
+.option-btn-selected {
+  background: linear-gradient(135deg, rgba(244, 122, 32, 0.22), rgba(255, 179, 71, 0.3));
+  border: 1px solid rgba(244, 122, 32, 0.34);
+  color: #5a2c10 !important;
+}
+
+.option-state-pill-selected {
+  background: rgba(244, 122, 32, 0.18);
+  color: #a14f13;
+}
+
+.answer-reveal-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.answer-reveal-card {
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: rgba(255, 247, 239, 0.8);
+  border: 1px solid rgba(244, 122, 32, 0.16);
+}
+
+:root[data-theme="dark"] .option-btn-selected {
+  background: rgba(255, 155, 66, 0.2);
+  color: #fff0e3 !important;
+}
+
+:root[data-theme="dark"] .answer-reveal-card {
+  background: rgba(255, 255, 255, 0.05);
+}
 .option-btn-correct {
   background: rgba(205, 244, 223, 0.9);
   border: 1px solid rgba(42, 155, 94, 0.28);
@@ -523,7 +555,39 @@ a:hover { color: #d85c00; }
   background: rgba(255, 255, 255, 0.04);
 }
 
-:root[data-theme="dark"] .option-btn-correct {
+:root[data-theme="dark"] .option-btn-selected {
+  background: linear-gradient(135deg, rgba(244, 122, 32, 0.22), rgba(255, 179, 71, 0.3));
+  border: 1px solid rgba(244, 122, 32, 0.34);
+  color: #5a2c10 !important;
+}
+
+.option-state-pill-selected {
+  background: rgba(244, 122, 32, 0.18);
+  color: #a14f13;
+}
+
+.answer-reveal-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.answer-reveal-card {
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: rgba(255, 247, 239, 0.8);
+  border: 1px solid rgba(244, 122, 32, 0.16);
+}
+
+:root[data-theme="dark"] .option-btn-selected {
+  background: rgba(255, 155, 66, 0.2);
+  color: #fff0e3 !important;
+}
+
+:root[data-theme="dark"] .answer-reveal-card {
+  background: rgba(255, 255, 255, 0.05);
+}
+.option-btn-correct {
   background: rgba(42, 155, 94, 0.18);
   color: #d8ffe8 !important;
 }
@@ -739,3 +803,4 @@ a:hover { color: #d85c00; }
 :root[data-theme="dark"] .roadmap-item {
   background: rgba(255, 255, 255, 0.04);
 }
+

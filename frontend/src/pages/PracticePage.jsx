@@ -95,7 +95,10 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
   };
 
   const getOptionState = (option) => {
-    if (!feedback || question?.type !== "MCQ") return "default";
+    if (question?.type !== "MCQ") return "default";
+    if (!feedback) {
+      return String(option) === String(answer) ? "selected" : "default";
+    }
     if (String(option) === String(feedback.correctAnswer)) return "correct";
     if (String(option) === String(answer) && !feedback.isCorrect) return "incorrect";
     return "default";
@@ -103,6 +106,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
 
   const getOptionLabel = (option) => {
     const state = getOptionState(option);
+    if (state === "selected") return "Selected";
     if (state === "correct") return "Correct";
     if (state === "incorrect") return "Incorrect";
     return "Option";
@@ -212,6 +216,19 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                         </div>
                         <Editor height="360px" theme="vs-dark" language={language === "cpp" ? "cpp" : language} value={answer} onChange={(value) => setAnswer(value || "")} />
                       </>
+                    )}
+
+                    {feedback && (
+                      <div className="answer-reveal-panel mt-4">
+                        <div className="answer-reveal-card">
+                          <span className="feedback-label">Your Answer</span>
+                          <p className="mb-0">{answer ? String(answer) : "No answer submitted"}</p>
+                        </div>
+                        <div className="answer-reveal-card">
+                          <span className="feedback-label">Correct Answer</span>
+                          <p className="mb-0">{String(feedback.correctAnswer)}</p>
+                        </div>
+                      </div>
                     )}
 
                     <div className="d-flex gap-2 mt-4 flex-wrap">
