@@ -3,7 +3,7 @@ import api from "../api/client";
 
 const companyOptions = ["", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
 
-const MockTestsPage = ({ tests, setTests, refreshProfile }) => {
+const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
   const [activeTest, setActiveTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -40,7 +40,7 @@ const MockTestsPage = ({ tests, setTests, refreshProfile }) => {
     setResult(data);
     setActiveTest(null);
     setTimeLeft(0);
-    refreshProfile();
+    await Promise.allSettled([refreshProfile?.(), refreshHistory?.()]);
   };
 
   return (
