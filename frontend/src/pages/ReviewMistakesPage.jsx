@@ -41,10 +41,14 @@ const ReviewMistakesPage = ({ history = [] }) => {
                 <div className="d-flex justify-content-between flex-wrap gap-2 mb-3">
                   <div>
                     <p className="eyebrow mb-2">{mistake.testTitle}</p>
-                    <h2 className="h5 mb-1">{mistake.question.title}</h2>
+                    <h2 className="h5 mb-2">{mistake.question.title}</h2>
                     <p className="mb-0 text-secondary">{mistake.question.category} | {mistake.question.topic} | {mistake.question.difficulty}</p>
                   </div>
                   <span className="badge text-bg-info align-self-start">{new Date(mistake.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div className="feedback-detail-card mb-3">
+                  <span className="feedback-label">Question</span>
+                  <p className="mb-0">{mistake.question.description || "Review this question carefully."}</p>
                 </div>
                 <div className="mistake-grid">
                   <div className="feedback-detail-card">

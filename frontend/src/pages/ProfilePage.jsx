@@ -37,9 +37,12 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [interests, setInterests] = useState(profile?.interests || []);
+  const [savedInterests, setSavedInterests] = useState(profile?.interests || []);
 
   useEffect(() => {
-    setInterests(profile?.interests || []);
+    const nextInterests = profile?.interests || [];
+    setInterests(nextInterests);
+    setSavedInterests(nextInterests);
   }, [profile?.interests]);
 
   const uploadAvatar = async (file) => {
@@ -69,6 +72,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
   };
 
   const toggleInterest = (interest) => {
+    setStatus("");
     setInterests((current) =>
       current.includes(interest)
         ? current.filter((item) => item !== interest)
@@ -82,6 +86,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
       setStatus("");
       await api.put("/users/profile/interests", { interests });
       await refreshProfile();
+      setSavedInterests(interests);
       setStatus("Preparation interests updated successfully.");
     } catch (error) {
       setStatus(error.response?.data?.message || "Unable to update interests.");
@@ -90,8 +95,14 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
     }
   };
 
+  const resetInterests = () => {
+    setInterests(savedInterests);
+    setStatus("Changes reset to your last saved interests.");
+  };
+
   const weakTopics = profile?.progress?.weakTopics || [];
   const recommendedTopics = profile?.progress?.recommendedTopics || [];
+  const hasInterestChanges = JSON.stringify([...interests].sort()) !== JSON.stringify([...savedInterests].sort());
 
   return (
     <div className="container py-4">
@@ -134,7 +145,11 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
                     <h2 className="h5 mb-1">Preparation Interests</h2>
                     <p className="text-secondary mb-0">Choose the areas you want SkillNexa to prioritize for your preparation.</p>
                   </div>
-                  <button className="btn btn-info" onClick={saveInterests} disabled={saving}>Save Interests</button>
+                  <div className="d-flex gap-2 flex-wrap align-items-center">
+                    <span className="small text-secondary">Selected: {interests.length}</span>
+                    <button className="btn btn-outline-light" onClick={resetInterests} disabled={saving || !hasInterestChanges}>Reset</button>
+                    <button className="btn btn-info" onClick={saveInterests} disabled={saving || !hasInterestChanges}>Save Interests</button>
+                  </div>
                 </div>
                 <div className="interest-grid mb-3">
                   {interestOptions.map((interest) => (
@@ -147,6 +162,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
                     </button>
                   ))}
                 </div>
+                {hasInterestChanges && <p className="small text-secondary mb-0">You have unsaved interest changes.</p>}
               </div>
             </div>
 
