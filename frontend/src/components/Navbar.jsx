@@ -74,7 +74,7 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
           <Link className="profile-chip" to="/profile">
             <div className="profile-chip-text">
               <strong>{currentUser?.name || "Profile"}</strong>
-              <span>{currentUser?.email || "Update your profile photo"}</span>
+              <span>Open profile dashboard</span>
             </div>
             <AvatarChip user={currentUser} />
           </Link>

@@ -90,6 +90,9 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
     }
   };
 
+  const weakTopics = profile?.progress?.weakTopics || [];
+  const recommendedTopics = profile?.progress?.recommendedTopics || [];
+
   return (
     <div className="container py-4">
       <div className="card glass-card profile-hero-card">
@@ -98,14 +101,15 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
             <div className="profile-identity-block">
               <AvatarPreview profile={profile} />
               <div>
-                <p className="eyebrow mb-2">Personal Profile</p>
+                <p className="eyebrow mb-2">Personal Dashboard</p>
                 <h1 className="h2 fw-bold mb-1">{profile?.name}</h1>
-                <p className="text-secondary mb-0">{profile?.email}</p>
+                <p className="text-secondary mb-0 profile-subtitle">Track your growth, update your preferences, and keep your interview prep focused.</p>
               </div>
             </div>
-            <div className="d-flex flex-column align-items-end gap-2">
+            <div className="profile-action-stack">
               <button className="btn btn-outline-danger" onClick={logout}>Logout</button>
-              <div className="photo-actions-panel">
+              <div className="photo-actions-panel profile-panel-box">
+                <p className="small text-secondary mb-1">Profile Photo</p>
                 <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
                 <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
                 <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload From Gallery</button>
@@ -116,38 +120,56 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
           </div>
 
           <div className="row g-3 mt-4">
-            <div className="col-md-4"><div className="metric-card"><span>Accuracy</span><h3>{profile?.progress?.accuracy || 0}%</h3></div></div>
-            <div className="col-md-4"><div className="metric-card"><span>Tests Taken</span><h3>{profile?.progress?.testsTaken || 0}</h3></div></div>
-            <div className="col-md-4"><div className="metric-card"><span>Recommended</span><h3>{profile?.progress?.recommendedTopics?.length || 0}</h3></div></div>
+            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Accuracy</span><h3>{profile?.progress?.accuracy || 0}%</h3><small>Overall performance</small></div></div>
+            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Tests Taken</span><h3>{profile?.progress?.testsTaken || 0}</h3><small>Completed assessments</small></div></div>
+            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Weak Topics</span><h3>{weakTopics.length}</h3><small>Focus areas to revise</small></div></div>
+            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Recommended</span><h3>{recommendedTopics.length}</h3><small>Topics suggested for you</small></div></div>
           </div>
 
-          <div className="mt-4">
-            <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
-              <div>
-                <h2 className="h5 mb-1">Preparation Interests</h2>
-                <p className="text-secondary mb-0">Choose the areas you want SkillNexa to help you focus on.</p>
+          <div className="row g-4 mt-1">
+            <div className="col-lg-7">
+              <div className="profile-panel-box h-100">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                  <div>
+                    <h2 className="h5 mb-1">Preparation Interests</h2>
+                    <p className="text-secondary mb-0">Choose the areas you want SkillNexa to prioritize for your preparation.</p>
+                  </div>
+                  <button className="btn btn-info" onClick={saveInterests} disabled={saving}>Save Interests</button>
+                </div>
+                <div className="interest-grid mb-3">
+                  {interestOptions.map((interest) => (
+                    <button
+                      key={interest}
+                      className={`interest-chip ${interests.includes(interest) ? "active" : ""}`}
+                      onClick={() => toggleInterest(interest)}
+                    >
+                      {interest}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button className="btn btn-info" onClick={saveInterests} disabled={saving}>Save Interests</button>
             </div>
-            <div className="interest-grid mb-3">
-              {interestOptions.map((interest) => (
-                <button
-                  key={interest}
-                  className={`interest-chip ${interests.includes(interest) ? "active" : ""}`}
-                  onClick={() => toggleInterest(interest)}
-                >
-                  {interest}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          <div className="mt-4">
-            <h2 className="h5">Recommended Topics</h2>
-            <div className="d-flex gap-2 flex-wrap">
-              {(profile?.progress?.recommendedTopics || []).map((topic) => (
-                <span key={topic} className="badge text-bg-info">{topic}</span>
-              ))}
+            <div className="col-lg-5">
+              <div className="profile-panel-box h-100">
+                <h2 className="h5 mb-3">Focus Summary</h2>
+                <div className="mb-4">
+                  <p className="fw-semibold mb-2">Weak Topics</p>
+                  <div className="d-flex gap-2 flex-wrap">
+                    {weakTopics.length ? weakTopics.map((topic) => (
+                      <span key={topic} className="badge text-bg-secondary">{topic}</span>
+                    )) : <span className="text-secondary">No weak topics recorded yet.</span>}
+                  </div>
+                </div>
+                <div>
+                  <p className="fw-semibold mb-2">Recommended Topics</p>
+                  <div className="d-flex gap-2 flex-wrap">
+                    {recommendedTopics.length ? recommendedTopics.map((topic) => (
+                      <span key={topic} className="badge text-bg-info">{topic}</span>
+                    )) : <span className="text-secondary">Recommendations will appear as you practice more.</span>}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
