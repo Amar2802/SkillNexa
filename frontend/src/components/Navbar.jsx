@@ -39,6 +39,7 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
     ["Question Bank", "/questions"],
     ["Practice", "/practice"],
     ["Mock Tests", "/mock-tests"],
+    ["Review Mistakes", "/review-mistakes"],
     ["AI Interviewer", "/ai-interviewer"],
     ["Bookmarks", "/bookmarks"],
     ["History", "/history"],

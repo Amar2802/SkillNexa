@@ -1380,3 +1380,26 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 20px 40px rgba(214, 106, 22, 0.16) !important;
 }
+
+.mistake-card {
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.mistake-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 42px rgba(214, 106, 22, 0.16) !important;
+}
+
+.mistake-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .mistake-grid {
+    grid-template-columns: 1fr;
+  }
+}
