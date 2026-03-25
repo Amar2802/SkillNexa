@@ -1369,3 +1369,14 @@ body {
 .sidebar-brand .brand-wordmark {
   font-size: 1.45rem;
 }
+
+.history-link-card {
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.history-link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(214, 106, 22, 0.16) !important;
+}
