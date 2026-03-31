@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LineElement, LinearScale, PointElement, Tooltip } from "chart.js";
 import api from "./api/client";
@@ -28,6 +28,8 @@ export default function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
 
+  const activeField = useMemo(() => profile?.targetField || user?.targetField || "Software", [profile?.targetField, user?.targetField]);
+
   const refreshProfile = async () => {
     if (!localStorage.getItem("token")) return null;
     const { data } = await api.get("/users/profile");
@@ -37,10 +39,14 @@ export default function App() {
     return data;
   };
 
-  const loadQuestions = async (params = {}) => setQuestions((await api.get("/questions", { params })).data);
+  const loadQuestions = async (params = {}) => {
+    const { data } = await api.get("/questions", { params: { field: activeField, ...params } });
+    setQuestions(data);
+    return data;
+  };
   const refreshBookmarks = async () => setBookmarks((await api.get("/users/bookmarks")).data);
   const refreshHistory = async () => setHistory((await api.get("/users/history")).data);
-  const refreshTests = async () => setTests((await api.get("/tests")).data);
+  const refreshTests = async () => setTests((await api.get("/tests", { params: { field: activeField } })).data);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -59,16 +65,24 @@ export default function App() {
 
   useEffect(() => {
     api.post("/setup/seed").catch(() => undefined);
-    loadQuestions();
+  }, []);
 
+  useEffect(() => {
+    loadQuestions(filters).catch(() => undefined);
+  }, [activeField]);
+
+  useEffect(() => {
     if (user) {
       refreshProfile().then(async (currentProfile) => {
+        loadQuestions(filters).catch(() => undefined);
         const recs = await api.post("/ai/recommendations", { weakTopics: currentProfile?.progress?.weakTopics || [] });
         setRecommendations(recs.data);
       }).catch(() => undefined);
       refreshBookmarks().catch(() => undefined);
       refreshHistory().catch(() => undefined);
       refreshTests().catch(() => undefined);
+    } else {
+      loadQuestions(filters).catch(() => undefined);
     }
   }, [user?.email]);
 
@@ -79,9 +93,9 @@ export default function App() {
       <Route path="/signup" element={<AuthPage mode="signup" onAuth={applyAuth} />} />
       <Route path="/oauth-success" element={<div className="container py-5">Signing you in...</div>} />
       <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user || {}} recommendations={recommendations} questions={questions} /></ProtectedRoute>} />
-      <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} /></ProtectedRoute>} />
+      <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} defaultField={activeField} /></ProtectedRoute>} />
       <Route path="/practice" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} /></ProtectedRoute>} />
-      <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} setTests={setTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} /></ProtectedRoute>} />
+      <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} setTests={setTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} targetField={activeField} /></ProtectedRoute>} />
       <Route path="/review-mistakes" element={<ProtectedRoute user={user}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
       <Route path="/ai-interviewer" element={<ProtectedRoute user={user}><AIInterviewerPage /></ProtectedRoute>} />
       <Route path="/bookmarks" element={<ProtectedRoute user={user}><BookmarksPage bookmarks={bookmarks} /></ProtectedRoute>} />
@@ -97,3 +111,4 @@ export default function App() {
     </div>
   );
 }
+

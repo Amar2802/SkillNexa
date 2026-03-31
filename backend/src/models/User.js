@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { FIELD_OPTIONS } from "../utils/prepFields.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -8,6 +9,7 @@ const userSchema = new mongoose.Schema(
     password: String,
     googleId: String,
     avatar: String,
+    targetField: { type: String, enum: FIELD_OPTIONS, default: "Software" },
     interests: [String],
     bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
     progress: {

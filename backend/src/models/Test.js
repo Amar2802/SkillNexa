@@ -4,7 +4,7 @@ const testSchema = new mongoose.Schema(
   {
     title: String,
     description: String,
-    duration: Number,
+    duration: Number,`r`n    targetField: { type: String, default: "Software" },
     sections: [
       {
         name: String,
@@ -18,3 +18,4 @@ const testSchema = new mongoose.Schema(
 );
 
 export default mongoose.model("Test", testSchema);
+

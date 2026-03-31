@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../api/client";
+import { FIELD_OPTIONS } from "../utils/fieldOptions";
 
 const interestOptions = [
   "DSA",
@@ -39,12 +40,17 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
   const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
   const [interests, setInterests] = useState(profile?.interests || []);
   const [savedInterests, setSavedInterests] = useState(profile?.interests || []);
+  const [targetField, setTargetField] = useState(profile?.targetField || "Software");
+  const [savedTargetField, setSavedTargetField] = useState(profile?.targetField || "Software");
 
   useEffect(() => {
     const nextInterests = profile?.interests || [];
     setInterests(nextInterests);
     setSavedInterests(nextInterests);
-  }, [profile?.interests]);
+    const nextField = profile?.targetField || "Software";
+    setTargetField(nextField);
+    setSavedTargetField(nextField);
+  }, [profile?.interests, profile?.targetField]);
 
   const uploadAvatar = async (file) => {
     if (!file) return;
@@ -97,6 +103,21 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
     }
   };
 
+  const saveTargetField = async () => {
+    try {
+      setSaving(true);
+      setStatus("");
+      await api.put("/users/profile/field", { targetField });
+      await refreshProfile();
+      setSavedTargetField(targetField);
+      setStatus("Interview field updated successfully.");
+    } catch (error) {
+      setStatus(error.response?.data?.message || "Unable to update interview field.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const resetInterests = () => {
     setInterests(savedInterests);
     setStatus("Changes reset to your last saved interests.");
@@ -107,6 +128,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
   const accuracy = profile?.progress?.accuracy || 0;
   const testsTaken = profile?.progress?.testsTaken || 0;
   const hasInterestChanges = JSON.stringify([...interests].sort()) !== JSON.stringify([...savedInterests].sort());
+  const hasFieldChanges = targetField !== savedTargetField;
   const profileStrengthLabel = accuracy >= 70 ? "Consistent performer" : accuracy >= 40 ? "Building momentum" : "Early progress";
   const priorityTopic = weakTopics[0] || recommendedTopics[0] || interests[0] || "Core interview topics";
   const profileEmail = profile?.email || "Email hidden";
@@ -131,6 +153,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
               <div className="profile-hero-pills">
                 <span className="hero-pill">{profileStrengthLabel}</span>
                 <span className="hero-pill">Priority: {priorityTopic}</span>
+                <span className="hero-pill">Field: {targetField}</span>
                 <span className="hero-pill">{interests.length} interests selected</span>
               </div>
             </div>
@@ -142,6 +165,10 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
               <h2 className="h5 mb-1">{profile?.name}</h2>
               <p className="text-secondary mb-3">{profileEmail}</p>
               <div className="profile-account-meta">
+                <div>
+                  <span>Interview Field</span>
+                  <strong>{targetField}</strong>
+                </div>
                 <div>
                   <span>Focus Topic</span>
                   <strong>{priorityTopic}</strong>
@@ -208,6 +235,21 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
               </div>
             </div>
 
+            <div className="profile-field-panel mb-4">
+              <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                <div>
+                  <p className="fw-semibold mb-1">Interview Field</p>
+                  <p className="text-secondary mb-0">Choose the broader interview track you want the platform to personalize for.</p>
+                </div>
+                <button className="btn btn-info" onClick={saveTargetField} disabled={saving || !hasFieldChanges}>Save Field</button>
+              </div>
+              <select className="form-select" value={targetField} onChange={(e) => setTargetField(e.target.value)}>
+                {FIELD_OPTIONS.map((field) => (
+                  <option key={field} value={field}>{field}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="interest-grid mb-3">
               {interestOptions.map((interest) => (
                 <button
@@ -222,11 +264,13 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
 
             <div className="profile-status-strip">
               <div>
-                <span className="feedback-label">Interest Status</span>
+                <span className="feedback-label">Preference Status</span>
                 <p className="mb-0 text-secondary">
-                  {hasInterestChanges
+                  {hasFieldChanges
+                    ? "Your interview field has unsaved changes. Save it to switch the website to that track."
+                    : hasInterestChanges
                     ? "You have unsaved interest changes ready to publish."
-                    : "Your current interests are saved and actively shaping recommendations."}
+                    : "Your current field and interests are saved and actively shaping recommendations."}
                 </p>
               </div>
             </div>

@@ -2,9 +2,12 @@ import bcrypt from "bcryptjs";
 import passport from "passport";
 import User from "../models/User.js";
 import { tokenFor } from "../utils/auth.js";
+import { FIELD_DEFAULT_TOPICS, FIELD_OPTIONS } from "../utils/prepFields.js";
+
+const normalizeTargetField = (value) => (FIELD_OPTIONS.includes(value) ? value : "Software");
 
 export const signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, targetField } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
@@ -13,15 +16,18 @@ export const signup = async (req, res) => {
     return res.status(400).json({ message: "User already exists" });
   }
 
+  const safeField = normalizeTargetField(targetField);
+
   const user = await User.create({
     name,
     email,
     password,
+    targetField: safeField,
     progress: {
       testsTaken: 0,
       accuracy: 0,
       weakTopics: [],
-      recommendedTopics: ["Arrays", "DBMS", "Probability"]
+      recommendedTopics: FIELD_DEFAULT_TOPICS[safeField] || FIELD_DEFAULT_TOPICS.Software
     }
   });
 

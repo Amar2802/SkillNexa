@@ -1,8 +1,8 @@
 import Test from "../models/Test.js";
 import Result from "../models/Result.js";
 import Question from "../models/Question.js";
+import { FIELD_CATEGORY_MAP } from "../utils/prepFields.js";
 
-const DEFAULT_CATEGORIES = ["DSA", "Aptitude", "HR", "Core Subjects"];
 const DEFAULT_TOTAL_QUESTIONS = 30;
 const DEFAULT_DURATION = 30;
 
@@ -27,8 +27,10 @@ export const getTests = async (req, res) => {
 };
 
 export const createTest = async (req, res) => {
+  const targetField = req.body.targetField || req.user.targetField || "Software";
+  const defaultCategories = FIELD_CATEGORY_MAP[targetField] || FIELD_CATEGORY_MAP.Software;
   const {
-    categories = DEFAULT_CATEGORIES,
+    categories = defaultCategories,
     duration = DEFAULT_DURATION,
     totalQuestions = DEFAULT_TOTAL_QUESTIONS,
     questionsPerCategory,
@@ -39,7 +41,7 @@ export const createTest = async (req, res) => {
   const sections = [];
 
   for (const { category, count } of distribution) {
-    const match = { category };
+    const match = { category, field: targetField };
     if (company) {
       match.company = { $in: [company, "General"] };
     }
@@ -51,7 +53,7 @@ export const createTest = async (req, res) => {
 
     if (!questions.length) {
       questions = await Question.aggregate([
-        { $match: { category } },
+        { $match: { category, field: targetField } },
         { $sample: { size: Number(count) } }
       ]);
     }
@@ -63,15 +65,15 @@ export const createTest = async (req, res) => {
     });
   }
 
-  const title = company ? `${company} Preparation Mock Test` : "Adaptive Mock Test";
+  const title = company ? `${company} ${targetField} Mock Test` : `${targetField} Adaptive Mock Test`;
   const description = company
-    ? `Auto-generated interview practice test focused on ${company} style questions.`
-    : "Auto-generated test for interview practice.";
+    ? `Auto-generated interview practice test focused on ${company} style ${targetField} questions.`
+    : `Auto-generated mock test for ${targetField} interview practice.`;
 
   const test = await Test.create({
     title,
     description,
-    duration: Number(duration) || DEFAULT_DURATION,
+    duration: Number(duration) || DEFAULT_DURATION,`r`n    targetField,
     sections,
     createdBy: req.user._id
   });
@@ -146,3 +148,4 @@ export const submitTest = async (req, res) => {
 
   res.status(201).json(await Result.findById(result._id).populate("answers.question", "title topic difficulty"));
 };
+

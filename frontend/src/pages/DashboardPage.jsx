@@ -23,6 +23,7 @@ const calculateStreak = (records) => {
 };
 
 const DashboardPage = ({ profile, recommendations, questions = [] }) => {
+  const activeField = profile?.targetField || "Software";
   const navigate = useNavigate();
   const recent = profile?.analytics?.recentResults || [];
   const weakTopics = profile?.progress?.weakTopics || [];
@@ -36,17 +37,17 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
 
   useEffect(() => {
     const loadRoadmap = async () => {
-      const roadmapResponse = await api.post("/users/roadmap", { company: selectedCompany });
+      const roadmapResponse = await api.post("/users/roadmap", { company: selectedCompany, targetField: activeField });
       setRoadmap(roadmapResponse.data.roadmap || []);
 
       const questionResponse = await api.get("/questions", {
-        params: selectedCompany === "General" ? {} : { company: selectedCompany }
+        params: selectedCompany === "General" ? { field: activeField } : { company: selectedCompany, field: activeField }
       });
       setCompanyQuestions(questionResponse.data.slice(0, 6));
     };
 
     loadRoadmap().catch(() => undefined);
-  }, [selectedCompany]);
+  }, [selectedCompany, activeField]);
 
   useEffect(() => {
     const syncAttempts = () => setAttemptRecords(readDailyAttemptRecords());
@@ -142,6 +143,7 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
             <div className="hero-pill-row">
               <span className="hero-pill">Daily goal: {dailyGoalProgress}% complete</span>
               <span className="hero-pill">Current streak: {streak} day{streak === 1 ? "" : "s"}</span>
+              <span className="hero-pill">Field: {activeField}</span>
               <span className="hero-pill">Primary focus: {focusTopic}</span>
             </div>
           </div>
@@ -290,3 +292,5 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
 };
 
 export default DashboardPage;
+
+

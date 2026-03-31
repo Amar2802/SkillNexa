@@ -1062,8 +1062,233 @@ const baseSeedQuestions = [
   }
 ];
 
+const upscFieldQuestions = [
+  {
+    title: "Indian Constitution Preamble",
+    field: "UPSC",
+    category: "General Studies",
+    topic: "Polity",
+    difficulty: "Easy",
+    company: "UPSC",
+    type: "Subjective",
+    description: "Explain the importance of the Preamble in the Indian Constitution.",
+    correctAnswer: "The Preamble reflects the core values and goals of the Constitution such as justice, liberty, equality, and fraternity and acts as a guiding spirit for interpretation.",
+    explanation: "A strong answer connects the Preamble with constitutional ideals and interpretive value.",
+    tags: ["upsc", "polity", "constitution"]
+  },
+  {
+    title: "Current Affairs Preparation Strategy",
+    field: "UPSC",
+    category: "Current Affairs",
+    topic: "Current Affairs",
+    difficulty: "Easy",
+    company: "UPSC",
+    type: "Subjective",
+    description: "How should a UPSC aspirant prepare current affairs effectively?",
+    correctAnswer: "Preparation should combine regular newspaper reading, issue-based notes, monthly revision, and linking events with syllabus topics.",
+    explanation: "Judges often want process clarity rather than resource listing only.",
+    tags: ["upsc", "current affairs", "strategy"]
+  },
+  {
+    title: "Ethics in Public Service",
+    field: "UPSC",
+    category: "Essay & Ethics",
+    topic: "Ethics",
+    difficulty: "Medium",
+    company: "UPSC",
+    type: "Subjective",
+    description: "Why is integrity important in public service?",
+    correctAnswer: "Integrity builds public trust, improves fair decision-making, reduces corruption, and helps civil servants act in public interest.",
+    explanation: "Tie ethics to governance quality and public trust.",
+    tags: ["upsc", "ethics", "integrity"]
+  },
+  {
+    title: "Why do you want to join civil services?",
+    field: "UPSC",
+    category: "Interview Personality",
+    topic: "Personality Test",
+    difficulty: "Easy",
+    company: "UPSC",
+    type: "Subjective",
+    description: "Frame an honest and mature answer for the UPSC personality test.",
+    correctAnswer: "The answer should focus on public service motivation, administrative responsibility, and long-term commitment rather than status or power.",
+    explanation: "Panelists look for maturity, self-awareness, and service orientation.",
+    tags: ["upsc", "interview", "motivation"]
+  }
+];
+
+const ndaFieldQuestions = [
+  {
+    title: "Quadratic Equation Roots",
+    field: "NDA",
+    category: "Mathematics",
+    topic: "Algebra",
+    difficulty: "Easy",
+    company: "NDA",
+    type: "Subjective",
+    description: "Explain how to find the roots of a quadratic equation.",
+    correctAnswer: "Roots of ax^2 + bx + c = 0 can be found using factorization or the quadratic formula.",
+    explanation: "Mention both the formula and the role of the discriminant.",
+    tags: ["nda", "maths", "algebra"]
+  },
+  {
+    title: "General Knowledge Strategy",
+    field: "NDA",
+    category: "General Ability",
+    topic: "General Knowledge",
+    difficulty: "Easy",
+    company: "NDA",
+    type: "Subjective",
+    description: "How should a candidate prepare general knowledge for NDA?",
+    correctAnswer: "Preparation should include daily current affairs, basic science, history, geography, polity, and defence-related awareness.",
+    explanation: "A broad yet disciplined preparation approach matters here.",
+    tags: ["nda", "general ability", "gk"]
+  },
+  {
+    title: "Current Affairs for Defence Aspirants",
+    field: "NDA",
+    category: "Current Affairs",
+    topic: "Current Affairs",
+    difficulty: "Easy",
+    company: "NDA",
+    type: "Subjective",
+    description: "What kind of current affairs should NDA aspirants prioritize?",
+    correctAnswer: "They should prioritize national events, defence exercises, international relations, awards, science developments, and major initiatives.",
+    explanation: "Focus on broad awareness with defence relevance.",
+    tags: ["nda", "current affairs", "defence"]
+  },
+  {
+    title: "Leadership in SSB Interview",
+    field: "NDA",
+    category: "SSB Interview",
+    topic: "Leadership",
+    difficulty: "Medium",
+    company: "NDA",
+    type: "Subjective",
+    description: "What kind of leadership qualities does the SSB look for?",
+    correctAnswer: "The SSB looks for initiative, responsibility, teamwork, confidence, communication, emotional balance, and sound decision making.",
+    explanation: "Officer-like qualities must be practical and behavior-based.",
+    tags: ["nda", "ssb", "leadership"]
+  }
+];
+
+const bankingFieldQuestions = [
+  {
+    title: "Simplification in Banking Exams",
+    field: "Banking",
+    category: "Quantitative Aptitude",
+    topic: "Arithmetic",
+    difficulty: "Easy",
+    company: "Banking",
+    type: "Subjective",
+    description: "Why is simplification important in banking aptitude sections?",
+    correctAnswer: "Simplification questions improve speed, accuracy, and number handling for arithmetic and DI sections.",
+    explanation: "Aptitude preparation is heavily speed-driven.",
+    tags: ["banking", "quant", "arithmetic"]
+  },
+  {
+    title: "Seating Arrangement Approach",
+    field: "Banking",
+    category: "Reasoning",
+    topic: "Seating Arrangement",
+    difficulty: "Medium",
+    company: "Banking",
+    type: "Subjective",
+    description: "How should you solve seating arrangement problems in reasoning sections?",
+    correctAnswer: "Identify the arrangement type, place fixed clues, track positive and negative conditions, and solve with a clean diagram.",
+    explanation: "This checks structured reasoning rather than final answer only.",
+    tags: ["banking", "reasoning", "arrangement"]
+  },
+  {
+    title: "Reading Comprehension Strategy",
+    field: "Banking",
+    category: "English",
+    topic: "Reading Comprehension",
+    difficulty: "Medium",
+    company: "Banking",
+    type: "Subjective",
+    description: "How can candidates improve reading comprehension performance in banking exams?",
+    correctAnswer: "Practice identifying tone, central idea, inference, vocabulary, and fact-based details while managing time carefully.",
+    explanation: "RC performance improves through structured reading habits.",
+    tags: ["banking", "english", "rc"]
+  },
+  {
+    title: "Functions of RBI",
+    field: "Banking",
+    category: "Banking Awareness",
+    topic: "RBI",
+    difficulty: "Easy",
+    company: "Banking",
+    type: "Subjective",
+    description: "Explain the main functions of the Reserve Bank of India.",
+    correctAnswer: "The RBI manages monetary policy, issues currency, regulates banks, maintains financial stability, and oversees payment systems.",
+    explanation: "A concise list with regulatory context works well.",
+    tags: ["banking", "rbi", "awareness"]
+  }
+];
+
+const sscFieldQuestions = [
+  {
+    title: "Average Formula Usage",
+    field: "SSC",
+    category: "Quantitative Aptitude",
+    topic: "Average",
+    difficulty: "Easy",
+    company: "SSC",
+    type: "Subjective",
+    description: "Explain the standard way to solve average problems quickly in SSC exams.",
+    correctAnswer: "Use average = total / number of terms, convert statements into totals, and compare changes systematically.",
+    explanation: "Speed and method clarity matter most here.",
+    tags: ["ssc", "quant", "average"]
+  },
+  {
+    title: "Coding-Decoding Logic",
+    field: "SSC",
+    category: "General Intelligence",
+    topic: "Coding-Decoding",
+    difficulty: "Easy",
+    company: "SSC",
+    type: "Subjective",
+    description: "What mindset is useful for solving coding-decoding questions?",
+    correctAnswer: "Look for consistent letter or number shifts, position patterns, reverse ordering, and hidden sequence rules.",
+    explanation: "Pattern recognition is central here.",
+    tags: ["ssc", "reasoning", "coding-decoding"]
+  },
+  {
+    title: "Active and Passive Voice",
+    field: "SSC",
+    category: "English",
+    topic: "Grammar",
+    difficulty: "Medium",
+    company: "SSC",
+    type: "Subjective",
+    description: "What should a student remember while converting active to passive voice?",
+    correctAnswer: "Identify tense, move the object into subject position, use the appropriate form of be, and change the main verb to past participle.",
+    explanation: "A process-based answer is ideal.",
+    tags: ["ssc", "english", "voice"]
+  },
+  {
+    title: "Static GK Preparation",
+    field: "SSC",
+    category: "General Awareness",
+    topic: "Static GK",
+    difficulty: "Easy",
+    company: "SSC",
+    type: "Subjective",
+    description: "What should be included in static GK preparation for SSC?",
+    correctAnswer: "Static GK should include geography basics, history, polity, institutions, national symbols, sports, awards, and books.",
+    explanation: "A wide but revision-friendly strategy works best.",
+    tags: ["ssc", "gk", "static"]
+  }
+];
 const TARGET_VISIBLE_PER_CATEGORY = 1000;
-const CATEGORY_ORDER = ["DSA", "Aptitude", "HR", "Core Subjects"];
+const FIELD_CATEGORY_ORDER = {
+  Software: ["DSA", "Aptitude", "HR", "Core Subjects"],
+  UPSC: ["General Studies", "Current Affairs", "Essay & Ethics", "Interview Personality"],
+  NDA: ["Mathematics", "General Ability", "Current Affairs", "SSB Interview"],
+  Banking: ["Quantitative Aptitude", "Reasoning", "English", "Banking Awareness"],
+  SSC: ["Quantitative Aptitude", "General Intelligence", "English", "General Awareness"]
+};
 const bulkCompanies = [
   "Amazon",
   "Microsoft",
@@ -1078,6 +1303,13 @@ const bulkCompanies = [
   "Oracle",
   "IBM"
 ];
+const fieldCompanyMap = {
+  Software: bulkCompanies,
+  UPSC: ["UPSC", "Civil Services", "Public Administration", "Policy Round"],
+  NDA: ["NDA", "SSB Board", "Defence Service", "Officer Selection"],
+  Banking: ["Banking", "IBPS", "SBI", "RBI"],
+  SSC: ["SSC", "Government Exam", "Central Recruitment", "Competitive Round"]
+};
 const practiceAngles = [
   "Focus on the interview-ready explanation and mention one practical use case.",
   "Frame your answer the way you would explain it in a technical round.",
@@ -1098,7 +1330,8 @@ const normalizeDifficulty = (question, variantIndex) => {
 
 const createPracticeVariant = (question, variantIndex, categoryIndex) => {
   const angle = practiceAngles[(variantIndex + categoryIndex) % practiceAngles.length];
-  const company = bulkCompanies[(variantIndex + categoryIndex) % bulkCompanies.length];
+  const companyPool = fieldCompanyMap[question.field || "Software"] || bulkCompanies;
+  const company = companyPool[(variantIndex + categoryIndex) % companyPool.length];
   const variantLabel = variantIndex + 1;
 
   return {
@@ -1115,28 +1348,53 @@ const createPracticeVariant = (question, variantIndex, categoryIndex) => {
 const buildLargeQuestionBank = (questions) => {
   const expanded = [...questions];
 
-  CATEGORY_ORDER.forEach((category, categoryIndex) => {
-    const visibleBase = questions.filter((question) => question.category === category && question.type !== "MCQ");
-    const sourcePool = visibleBase.length ? visibleBase : questions.filter((question) => question.category === category);
+  Object.entries(FIELD_CATEGORY_ORDER).forEach(([field, categories]) => {
+    categories.forEach((category, categoryIndex) => {
+      const visibleBase = questions.filter(
+        (question) => question.field === field && question.category === category && question.type !== "MCQ"
+      );
+      const sourcePool = visibleBase.length
+        ? visibleBase
+        : questions.filter((question) => question.field === field && question.category === category);
 
-    if (!sourcePool.length) return;
+      if (!sourcePool.length) return;
 
-    let visibleCount = questions.filter((question) => question.category === category && question.type !== "MCQ").length;
-    let variantIndex = 0;
+      let visibleCount = questions.filter(
+        (question) => question.field === field && question.category === category && question.type !== "MCQ"
+      ).length;
+      let variantIndex = 0;
 
-    while (visibleCount < TARGET_VISIBLE_PER_CATEGORY) {
-      const source = sourcePool[variantIndex % sourcePool.length];
-      const clone = createPracticeVariant(source, variantIndex, categoryIndex);
-      expanded.push(clone);
-      if (clone.type !== "MCQ") visibleCount += 1;
-      variantIndex += 1;
-    }
+      while (visibleCount < TARGET_VISIBLE_PER_CATEGORY) {
+        const source = sourcePool[variantIndex % sourcePool.length];
+        const clone = createPracticeVariant(source, variantIndex, categoryIndex);
+        expanded.push(clone);
+        if (clone.type !== "MCQ") visibleCount += 1;
+        variantIndex += 1;
+      }
+    });
   });
 
   return expanded;
 };
 
-const seedQuestions = buildLargeQuestionBank(baseSeedQuestions);
+const softwareFieldQuestions = baseSeedQuestions.map((question) => ({
+  ...question,
+  field: "Software"
+}));
+
+const allBaseQuestions = [
+  ...softwareFieldQuestions,
+  ...upscFieldQuestions,
+  ...ndaFieldQuestions,
+  ...bankingFieldQuestions,
+  ...sscFieldQuestions
+];
+
+const seedQuestions = buildLargeQuestionBank(allBaseQuestions);
 
 export default seedQuestions;
+
+
+
+
 

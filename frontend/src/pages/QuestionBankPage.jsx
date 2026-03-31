@@ -42,7 +42,7 @@ const parseQuestionDisplay = (question) => {
   };
 };
 
-const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => {
+const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defaultField = "Software" }) => {
   const location = useLocation();
   const [openAnswers, setOpenAnswers] = useState({});
   const [activeSection, setActiveSection] = useState("all");
@@ -71,7 +71,10 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
     setOpenAnswers((current) => ({ ...current, [id]: !current[id] }));
   };
 
-  const nonMcqQuestions = useMemo(() => questions.filter((question) => question.type !== "MCQ"), [questions]);
+  const nonMcqQuestions = useMemo(
+    () => questions.filter((question) => question.type !== "MCQ" && (question.field || defaultField) === defaultField),
+    [questions, defaultField]
+  );
   const categories = useMemo(() => [...new Set(nonMcqQuestions.map((question) => question.category).filter(Boolean))], [nonMcqQuestions]);
 
   const filterOptions = useMemo(() => ({
@@ -93,7 +96,8 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
     <div className="container py-4">
       <p className="eyebrow mb-1">Question Bank</p>
       <h1 className="h2 fw-bold mb-2">Explore questions by subject</h1>
-      <p className="text-secondary mb-4">This section focuses on coding and descriptive interview questions. Answers stay hidden until you choose to view them.</p>
+      <p className="text-secondary mb-2">This section focuses on coding and descriptive interview questions. Answers stay hidden until you choose to view them.</p>
+      <p className="text-secondary mb-4">Active field: <span className="fw-semibold text-light">{defaultField}</span></p>
 
       <div className="card glass-card mb-4">
         <div className="card-body">
@@ -167,6 +171,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
                   </div>
 
                   <div className="d-flex gap-2 flex-wrap mb-3">
+                    <span className="badge text-bg-dark">{q.field || defaultField}</span>
                     <span className="badge text-bg-dark">{q.category}</span>
                     <span className="badge text-bg-dark">{q.topic}</span>
                     <span className="badge text-bg-dark">{q.company}</span>

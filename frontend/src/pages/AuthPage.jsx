@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
+import { FIELD_OPTIONS } from "../utils/fieldOptions";
 
 const AuthPage = ({ mode, onAuth }) => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", targetField: "Software" });
   const [error, setError] = useState("");
   const isLogin = mode === "login";
 
@@ -36,10 +37,21 @@ const AuthPage = ({ mode, onAuth }) => {
                 </p>
                 <form onSubmit={submit} className="mt-4">
                   {!isLogin && (
-                    <div className="mb-3">
-                      <label className="form-label">Name</label>
-                      <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-                    </div>
+                    <>
+                      <div className="mb-3">
+                        <label className="form-label">Name</label>
+                        <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Interview Field</label>
+                        <select className="form-select" value={form.targetField} onChange={(e) => setForm({ ...form, targetField: e.target.value })}>
+                          {FIELD_OPTIONS.map((field) => (
+                            <option key={field} value={field}>{field}</option>
+                          ))}
+                        </select>
+                        <div className="form-text">Choose the track you want the platform to personalize for you.</div>
+                      </div>
+                    </>
                   )}
                   <div className="mb-3">
                     <label className="form-label">Email</label>

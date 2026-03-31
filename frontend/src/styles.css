@@ -2223,3 +2223,14 @@ body {
     align-items: stretch;
   }
 }
+
+.profile-field-panel {
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+}
+:root[data-theme='light'] .profile-field-panel {
+  background: rgba(255, 255, 255, 0.74);
+}
+

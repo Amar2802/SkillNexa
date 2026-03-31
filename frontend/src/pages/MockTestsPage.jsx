@@ -13,7 +13,7 @@ const formatTimeLeft = (seconds) => {
   return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 };
 
-const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
+const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, targetField = "Software" }) => {
   const [activeTest, setActiveTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -35,7 +35,8 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
     const { data } = await api.post("/tests", {
       company: selectedCompany,
       totalQuestions: DEFAULT_TOTAL_QUESTIONS,
-      duration: DEFAULT_DURATION
+      duration: DEFAULT_DURATION,
+      targetField
     });
     setTests((current) => [data, ...current]);
   };
@@ -88,7 +89,7 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
         <div>
           <p className="eyebrow mb-2">Mock Test System</p>
           <h1 className="h2 fw-bold mb-2">Simulate a real interview assessment</h1>
-          <p className="text-secondary mb-0">Generate a timed 30-question test, track how much you have attempted, and review your latest result in one place.</p>
+          <p className="text-secondary mb-0">Generate a timed 30-question test for the {targetField} track, track how much you have attempted, and review your latest result in one place.</p>
         </div>
         <div className="mock-tests-hero-actions">
           <select className="form-select question-select" value={selectedCompany} onChange={(e) => setSelectedCompany(e.target.value)}>
@@ -163,6 +164,10 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
                     <div>
                       <span>Company</span>
                       <strong>{selectedCompany || "General"}</strong>
+                    </div>
+                    <div>
+                      <span>Field</span>
+                      <strong>{targetField}</strong>
                     </div>
                     <div>
                       <span>Result</span>
@@ -294,3 +299,5 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
 };
 
 export default MockTestsPage;
+
+

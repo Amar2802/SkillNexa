@@ -2,9 +2,10 @@ import Question from "../models/Question.js";
 
 export const getQuestions = async (req, res) => {
   try {
-    const { category, difficulty, topic, company, type, search } = req.query;
+    const { field, category, difficulty, topic, company, type, search } = req.query;
     const query = {};
 
+    if (field) query.field = field;
     if (category) query.category = category;
     if (difficulty) query.difficulty = difficulty;
     if (topic) query.topic = new RegExp(topic, "i");
@@ -16,9 +17,10 @@ export const getQuestions = async (req, res) => {
   } catch (error) {
     console.error("getQuestions error:", error);
     const { default: seedQuestions } = await import("../data/seedQuestions.js");
-    const { category, difficulty, topic, company, type, search } = req.query;
+    const { field, category, difficulty, topic, company, type, search } = req.query;
 
     const fallbackQuestions = seedQuestions.filter((question) => {
+      if (field && question.field !== field) return false;
       if (category && question.category !== category) return false;
       if (difficulty && question.difficulty !== difficulty) return false;
       if (topic && !new RegExp(topic, "i").test(question.topic || "")) return false;
