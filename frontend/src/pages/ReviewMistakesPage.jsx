@@ -162,6 +162,7 @@ const ReviewMistakesPage = ({ history = [] }) => {
                       </div>
                       <div className="feedback-detail-card feedback-detail-card-wide">
                         <span className="feedback-label">Explanation</span>
+                        <p className="mb-2"><strong>Right Answer:</strong> {String(mistake.correctAnswer)}</p>
                         <p className="mb-0">{mistake.explanation}</p>
                       </div>
                     </div>
