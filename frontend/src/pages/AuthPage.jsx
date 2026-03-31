@@ -1,26 +1,12 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
-import { FIELD_INTEREST_OPTIONS, FIELD_OPTIONS } from "../utils/fieldOptions";
 
 const AuthPage = ({ mode, onAuth }) => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "", targetField: "Software", interests: [] });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const isLogin = mode === "login";
-  const interestOptions = useMemo(
-    () => FIELD_INTEREST_OPTIONS[form.targetField] || FIELD_INTEREST_OPTIONS.Software,
-    [form.targetField]
-  );
-
-  const toggleInterest = (interest) => {
-    setForm((current) => ({
-      ...current,
-      interests: current.interests.includes(interest)
-        ? current.interests.filter((item) => item !== interest)
-        : [...current.interests, interest].slice(0, 6)
-    }));
-  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -32,18 +18,17 @@ const AuthPage = ({ mode, onAuth }) => {
           : {
               name: form.name,
               email: form.email,
-              password: form.password,
-              targetField: form.targetField,
-              interests: form.interests
+              password: form.password
             }
       );
       onAuth(data);
-      navigate("/dashboard");
+      const hasSavedField = Boolean(data?.user?.targetField);
+      const hasSavedInterests = Array.isArray(data?.user?.interests) && data.user.interests.length > 0;
+      navigate(hasSavedField && hasSavedInterests ? "/dashboard" : "/setup-preferences");
     } catch (err) {
       setError(err.response?.data?.message || "Authentication failed");
     }
   };
-
 
   return (
     <div className="auth-page">
@@ -55,41 +40,14 @@ const AuthPage = ({ mode, onAuth }) => {
                 <span className="eyebrow">Career Ready Stack</span>
                 <h1 className="h2 fw-bold mt-3">{isLogin ? "Welcome back" : "Create your account"}</h1>
                 <p className="text-secondary">
-                  Practice interviews, solve coding rounds, and track your progress with AI feedback.
+                  Sign in first, then choose your preparation field and interested topics before entering the full platform.
                 </p>
                 <form onSubmit={submit} className="mt-4">
                   {!isLogin && (
-                    <>
-                      <div className="mb-3">
-                        <label className="form-label">Name</label>
-                        <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Preparation Field</label>
-                        <select className="form-select" value={form.targetField} onChange={(e) => setForm({ ...form, targetField: e.target.value, interests: [] })}>
-                          {FIELD_OPTIONS.map((field) => (
-                            <option key={field} value={field}>{field}</option>
-                          ))}
-                        </select>
-                        <div className="form-text">Choose the interview track you want the platform to personalize for you.</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Interested Topics</label>
-                        <div className="interest-grid mb-2">
-                          {interestOptions.map((interest) => (
-                            <button
-                              key={interest}
-                              type="button"
-                              className={`interest-chip ${form.interests.includes(interest) ? "active" : ""}`}
-                              onClick={() => toggleInterest(interest)}
-                            >
-                              {interest}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="form-text">Select a few priority topics to shape your first recommendations.</div>
-                      </div>
-                    </>
+                    <div className="mb-3">
+                      <label className="form-label">Name</label>
+                      <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                    </div>
                   )}
                   <div className="mb-3">
                     <label className="form-label">Email</label>

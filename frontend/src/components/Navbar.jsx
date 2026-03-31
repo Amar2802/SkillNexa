@@ -1,4 +1,4 @@
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 
 const AvatarChip = ({ user }) => {
@@ -24,10 +24,13 @@ const Brand = () => (
 );
 
 const Navbar = ({ user, profile, logout, theme, setTheme }) => {
-  if (!user) {
+  const location = useLocation();
+  const isSetupRoute = location.pathname === "/setup-preferences";
+
+  if (!user || isSetupRoute) {
     return (
       <header className="auth-topbar">
-        <Link className="navbar-brand fw-bold" to="/login"><Brand /></Link>
+        <Link className="navbar-brand fw-bold" to={user ? "/setup-preferences" : "/login"}><Brand /></Link>
         <ThemeToggle theme={theme} setTheme={setTheme} />
       </header>
     );
