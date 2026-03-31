@@ -131,19 +131,16 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
       <div className="profile-hero-surface mb-4">
         <div className="profile-hero-main">
           <div className="profile-identity-block profile-identity-block-pro">
-            <div className="profile-photo-stack">
+            <div className="profile-photo-stack profile-photo-stack-minimal">
               <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
               <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
-              <button type="button" className="profile-photo-trigger" onClick={() => setPhotoMenuOpen((current) => !current)}>
+              <button type="button" className="profile-photo-trigger profile-photo-trigger-minimal" onClick={() => setPhotoMenuOpen((current) => !current)} aria-label="Update profile photo">
                 <AvatarPreview profile={profile} />
-                <span>
-                  <strong>Click photo to update</strong>
-                  <small>{photoMenuOpen ? "Choose gallery or camera below" : "Open photo options"}</small>
-                </span>
               </button>
+              <p className="profile-photo-caption mb-0">Click the profile photo to update it.</p>
               {photoMenuOpen && (
                 <div className="profile-photo-actions mt-3">
-                  <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload From Gallery</button>
+                  <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload Image</button>
                   <button className="btn btn-outline-light" onClick={() => cameraInputRef.current?.click()} disabled={saving}>Use Camera</button>
                 </div>
               )}
@@ -158,7 +155,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
                 <span className="hero-pill">Field: {targetField}</span>
                 <span className="hero-pill">{interests.length} interests selected</span>
               </div>
-              {status && <p className="small mb-0 text-secondary mt-3">{status}</p>}
+              {status && <p className="small mb-0 text-secondary mt-2 profile-photo-status">{status}</p>}
             </div>
           </div>
 
@@ -301,4 +298,5 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
 };
 
 export default ProfilePage;
+
 
