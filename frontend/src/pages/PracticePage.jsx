@@ -15,6 +15,41 @@ const practiceTips = {
   Coding: "State the approach first, then write clean code and validate edge cases before submission."
 };
 
+const FIELD_PRACTICE_COPY = {
+  Software: {
+    title: "Sharpen one concept at a time",
+    subtitle: "Move through software-interview questions with instant feedback, bookmarks, and coding support without losing your context."
+  },
+  UPSC: {
+    title: "Build answer quality one concept at a time",
+    subtitle: "Practice structured civil-services responses for current affairs, ethics, and personality-test style prompts."
+  },
+  NDA: {
+    title: "Build defence-round confidence one question at a time",
+    subtitle: "Practice mathematics, general ability, and SSB-style questions with clear thinking and confident delivery."
+  },
+  Banking: {
+    title: "Build exam confidence one question at a time",
+    subtitle: "Practice banking-focused quant, reasoning, English, and awareness questions with fast feedback."
+  },
+  SSC: {
+    title: "Strengthen competitive-exam performance one question at a time",
+    subtitle: "Practice SSC-style reasoning, aptitude, English, and awareness questions in a focused flow."
+  },
+  Railways: {
+    title: "Strengthen railway-prep performance one question at a time",
+    subtitle: "Practice technical, operational, and awareness questions relevant to railway recruitment and interviews."
+  },
+  Teaching: {
+    title: "Strengthen classroom-ready responses one question at a time",
+    subtitle: "Practice pedagogy, teaching aptitude, and communication questions with clear, student-focused structure."
+  },
+  "State PSC": {
+    title: "Strengthen state-services preparation one question at a time",
+    subtitle: "Practice governance, current affairs, and interview-personality questions with public-service focus."
+  }
+};
+
 const stripPracticeVariant = (value = "") => value.replace(/\s*Practice Variant\s*\d+/gi, "").trim();
 
 const getPracticeDisplayText = (question) => {
@@ -39,7 +74,8 @@ const getPracticeDisplayText = (question) => {
   };
 };
 
-const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
+const PracticePage = ({ questions, bookmarks = [], refreshBookmarks, targetField = "Software" }) => {
+  const pageCopy = FIELD_PRACTICE_COPY[targetField] || FIELD_PRACTICE_COPY.Software;
   const categories = useMemo(() => [...new Set(questions.map((question) => question.category))], [questions]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedId, setSelectedId] = useState("");
@@ -104,13 +140,13 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
 
     if (question) {
       recordDailyAttempt({
-        bucket: mapCategoryToBucket(question.category, "", question.field || "Software"),
+        bucket: mapCategoryToBucket(question.category, "", question.field || targetField),
         questionId: question._id,
         title: question.title,
         topic: question.topic,
         category: question.category,
         source: "practice",
-        field: question.field || "Software"
+        field: question.field || targetField
       });
     }
   };
@@ -187,10 +223,14 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
       <div className="practice-hero-strip mb-4">
         <div>
           <p className="eyebrow mb-2">Practice Mode</p>
-          <h1 className="h2 fw-bold mb-2">Sharpen one concept at a time</h1>
-          <p className="text-secondary mb-0">Move through questions with instant feedback, bookmarks, and coding support without losing your context.</p>
+          <h1 className="h2 fw-bold mb-2">{pageCopy.title}</h1>
+          <p className="text-secondary mb-0">{pageCopy.subtitle}</p>
         </div>
         <div className="practice-hero-metrics">
+          <div className="practice-hero-chip">
+            <span>Field</span>
+            <strong>{targetField}</strong>
+          </div>
           <div className="practice-hero-chip">
             <span>Category</span>
             <strong>{selectedCategory || "Not selected"}</strong>
@@ -217,7 +257,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                 </div>
                 <span className="badge text-bg-info">{filteredQuestions.length} questions</span>
               </div>
-              <p className="text-secondary mb-4">Choose a subject, jump between questions, and keep your preparation targeted.</p>
+              <p className="text-secondary mb-4">Choose a subject, jump between questions, and keep your {targetField} preparation targeted.</p>
 
               <div className="practice-panel-summary mb-4">
                 <div className="practice-progress-ring">
@@ -295,6 +335,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                       </div>
                       <p className="text-secondary mb-3">{displayQuestion.cleanDescription}</p>
                       <div className="d-flex gap-2 flex-wrap">
+                        <span className="badge text-bg-dark">{question.field || targetField}</span>
                         <span className="badge text-bg-dark">{question.category}</span>
                         <span className="badge text-bg-dark">{question.topic}</span>
                         <span className="badge text-bg-info">{question.type}</span>
@@ -332,7 +373,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                     )}
 
                     {question.type === "Subjective" && (
-                      <textarea className="form-control mb-4" rows="9" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Write your answer here..." />
+                      <textarea className="form-control mb-4" rows="9" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={`Write your ${targetField} answer here...`} />
                     )}
 
                     {question.type === "Coding" && (
@@ -419,4 +460,3 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
 };
 
 export default PracticePage;
-

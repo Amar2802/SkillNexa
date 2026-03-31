@@ -20,6 +20,41 @@ const codeLanguageLabels = {
   java: "Java"
 };
 
+const FIELD_BANK_COPY = {
+  Software: {
+    title: "Explore software interview questions by subject",
+    subtitle: "Browse coding and descriptive questions for technical rounds, aptitude, HR, and core-CS prep."
+  },
+  UPSC: {
+    title: "Explore civil-services questions by subject",
+    subtitle: "Browse descriptive questions for general studies, ethics, current affairs, and personality-test practice."
+  },
+  NDA: {
+    title: "Explore defence-prep questions by subject",
+    subtitle: "Browse practice questions for mathematics, current affairs, general ability, and SSB-style preparation."
+  },
+  Banking: {
+    title: "Explore banking-prep questions by subject",
+    subtitle: "Browse quant, reasoning, English, and banking-awareness questions in one structured bank."
+  },
+  SSC: {
+    title: "Explore SSC-prep questions by subject",
+    subtitle: "Browse reasoning, quantitative aptitude, English, and awareness questions for competitive exam prep."
+  },
+  Railways: {
+    title: "Explore railway-prep questions by subject",
+    subtitle: "Browse technical, operational, awareness, and mathematics questions relevant to railway interviews and exams."
+  },
+  Teaching: {
+    title: "Explore teaching-interview questions by subject",
+    subtitle: "Browse pedagogy, teaching aptitude, classroom communication, and subject-mastery questions."
+  },
+  "State PSC": {
+    title: "Explore state-services questions by subject",
+    subtitle: "Browse questions for state governance, general studies, current affairs, and personality-test preparation."
+  }
+};
+
 const splitPracticeNote = (value = "", marker) => {
   const parts = String(value).split(marker);
   return {
@@ -47,6 +82,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
   const [openAnswers, setOpenAnswers] = useState({});
   const [activeSection, setActiveSection] = useState("all");
   const [activeCategory, setActiveCategory] = useState("");
+  const bankCopy = FIELD_BANK_COPY[defaultField] || FIELD_BANK_COPY.Software;
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -95,8 +131,8 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
   return (
     <div className="container py-4">
       <p className="eyebrow mb-1">Question Bank</p>
-      <h1 className="h2 fw-bold mb-2">Explore questions by subject</h1>
-      <p className="text-secondary mb-2">This section focuses on coding and descriptive interview questions. Answers stay hidden until you choose to view them.</p>
+      <h1 className="h2 fw-bold mb-2">{bankCopy.title}</h1>
+      <p className="text-secondary mb-2">{bankCopy.subtitle}</p>
       <p className="text-secondary mb-4">Active field: <span className="fw-semibold text-light">{defaultField}</span></p>
 
       <div className="card glass-card mb-4">

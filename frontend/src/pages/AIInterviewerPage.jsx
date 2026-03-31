@@ -1,15 +1,75 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../api/client";
 import { mapCategoryToBucket, recordDailyAttempt } from "../utils/prepTracking";
+import { FIELD_COMPANY_TRACKS } from "../utils/fieldOptions";
 
-const roundOptions = ["Mixed", "Technical", "HR", "Managerial", "Project Discussion"];
+const FIELD_AI_CONFIG = {
+  Software: {
+    title: "Run a guided software interview simulation",
+    subtitle: "Generate technical, HR, and project questions tailored for software roles.",
+    role: "Software Engineer",
+    focus: "DSA, system fundamentals, HR, and project discussion",
+    rounds: ["Mixed", "Technical", "HR", "Managerial", "Project Discussion"]
+  },
+  UPSC: {
+    title: "Run a guided civil-services interview simulation",
+    subtitle: "Practice personality-test style questions with structure, balance, and public-service orientation.",
+    role: "UPSC Aspirant",
+    focus: "polity, current affairs, ethics, governance, and personality test discussion",
+    rounds: ["Mixed", "Personality Test", "Current Affairs", "Ethics", "Governance"]
+  },
+  NDA: {
+    title: "Run a guided defence interview simulation",
+    subtitle: "Practice SSB-style communication, leadership, and defence-awareness responses.",
+    role: "NDA Candidate",
+    focus: "leadership, SSB communication, current affairs, mathematics confidence, and defence awareness",
+    rounds: ["Mixed", "SSB Interview", "Leadership", "Current Affairs", "Personality"]
+  },
+  Banking: {
+    title: "Run a guided banking interview simulation",
+    subtitle: "Practice aptitude-facing, awareness, and personal interview questions for banking roles.",
+    role: "Banking Aspirant",
+    focus: "quantitative aptitude, reasoning, banking awareness, current affairs, and HR responses",
+    rounds: ["Mixed", "Banking Awareness", "HR", "Reasoning", "Current Affairs"]
+  },
+  SSC: {
+    title: "Run a guided competitive-exam interview simulation",
+    subtitle: "Practice awareness, reasoning, and personality questions in a structured flow.",
+    role: "SSC Candidate",
+    focus: "general awareness, reasoning, English confidence, and interview personality",
+    rounds: ["Mixed", "General Awareness", "Reasoning", "English", "Personality"]
+  },
+  Railways: {
+    title: "Run a guided railway interview simulation",
+    subtitle: "Practice operational awareness, technical aptitude, and safety-focused interview answers.",
+    role: "Railway Candidate",
+    focus: "technical aptitude, railway awareness, safety thinking, mathematics, and public-service communication",
+    rounds: ["Mixed", "Technical Aptitude", "Railway Operations", "General Awareness", "Safety Discussion"]
+  },
+  Teaching: {
+    title: "Run a guided teaching interview simulation",
+    subtitle: "Practice pedagogy, classroom communication, and learner-focused interview responses.",
+    role: "Teaching Candidate",
+    focus: "pedagogy, child development, communication, classroom management, and subject delivery",
+    rounds: ["Mixed", "Teaching Aptitude", "Pedagogy", "Classroom Communication", "Subject Knowledge"]
+  },
+  "State PSC": {
+    title: "Run a guided state-services interview simulation",
+    subtitle: "Practice governance, current affairs, and public-administration questions with state context.",
+    role: "State PSC Aspirant",
+    focus: "state governance, current affairs, polity, administration, and interview personality",
+    rounds: ["Mixed", "Interview Personality", "Current Affairs", "Governance", "Administration"]
+  }
+};
+
 const experienceOptions = ["Student", "Fresher", "Experienced"];
-const companyOptions = ["", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
 
-const AIInterviewerPage = () => {
-  const [role, setRole] = useState("Software Engineer");
-  const [focus, setFocus] = useState("DSA, system fundamentals, HR, and project discussion");
-  const [roundType, setRoundType] = useState("Mixed");
+const AIInterviewerPage = ({ targetField = "Software" }) => {
+  const fieldConfig = FIELD_AI_CONFIG[targetField] || FIELD_AI_CONFIG.Software;
+  const companyOptions = FIELD_COMPANY_TRACKS[targetField] || FIELD_COMPANY_TRACKS.Software;
+  const [role, setRole] = useState(fieldConfig.role);
+  const [focus, setFocus] = useState(fieldConfig.focus);
+  const [roundType, setRoundType] = useState(fieldConfig.rounds[0]);
   const [experienceLevel, setExperienceLevel] = useState("Fresher");
   const [company, setCompany] = useState("");
   const [questions, setQuestions] = useState([]);
@@ -18,6 +78,17 @@ const AIInterviewerPage = () => {
   const [evaluation, setEvaluation] = useState(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
+
+  useEffect(() => {
+    setRole(fieldConfig.role);
+    setFocus(fieldConfig.focus);
+    setRoundType(fieldConfig.rounds[0]);
+    setCompany("");
+    setQuestions([]);
+    setSelectedQuestionId("");
+    setAnswer("");
+    setEvaluation(null);
+  }, [targetField]);
 
   const selectedQuestionIndex = useMemo(
     () => questions.findIndex((item) => item.id === selectedQuestionId),
@@ -42,6 +113,7 @@ const AIInterviewerPage = () => {
         roundType,
         experienceLevel,
         company,
+        targetField,
         count: 6
       });
       const generatedQuestions = data.questions || [];
@@ -61,16 +133,18 @@ const AIInterviewerPage = () => {
         question: selectedQuestion.question,
         answer,
         role,
-        roundType
+        roundType,
+        targetField
       });
       setEvaluation(data);
       recordDailyAttempt({
-        bucket: mapCategoryToBucket(selectedQuestion.category, roundType),
+        bucket: mapCategoryToBucket(selectedQuestion.category, roundType, targetField),
         questionId: selectedQuestion.id,
         title: selectedQuestion.question,
         topic: selectedQuestion.intent || selectedQuestion.category,
         category: selectedQuestion.category || roundType,
-        source: "ai"
+        source: "ai",
+        field: targetField
       });
     } finally {
       setEvaluating(false);
@@ -85,12 +159,14 @@ const AIInterviewerPage = () => {
     setEvaluation(null);
   };
 
-  const scoreCards = evaluation ? [
-    { label: "Confidence", value: evaluation.confidenceScore },
-    { label: "Communication", value: evaluation.communicationScore },
-    { label: "Structure", value: evaluation.structureScore },
-    { label: "Technical Depth", value: evaluation.technicalScore }
-  ] : [];
+  const scoreCards = evaluation
+    ? [
+        { label: "Confidence", value: evaluation.confidenceScore },
+        { label: "Communication", value: evaluation.communicationScore },
+        { label: targetField === "Software" ? "Structure" : "Clarity", value: evaluation.structureScore },
+        { label: targetField === "Software" ? "Technical Depth" : "Content Depth", value: evaluation.technicalScore }
+      ]
+    : [];
 
   return (
     <div className="container py-4">
@@ -99,8 +175,9 @@ const AIInterviewerPage = () => {
           <div className="card glass-card h-100">
             <div className="card-body">
               <p className="eyebrow">AI Interviewer</p>
-              <h1 className="h3 fw-bold">Run a guided interview simulation</h1>
-              <p className="text-secondary mb-4">Configure the round, generate a question set, and answer one question at a time like a real interview.</p>
+              <h1 className="h3 fw-bold">{fieldConfig.title}</h1>
+              <p className="text-secondary mb-2">{fieldConfig.subtitle}</p>
+              <p className="text-secondary mb-4">Active field: <strong>{targetField}</strong></p>
 
               <div className="row g-3">
                 <div className="col-12">
@@ -110,7 +187,7 @@ const AIInterviewerPage = () => {
                 <div className="col-md-6">
                   <label className="form-label">Interview Round</label>
                   <select className="form-select" value={roundType} onChange={(e) => setRoundType(e.target.value)}>
-                    {roundOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                    {fieldConfig.rounds.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 </div>
                 <div className="col-md-6">
@@ -120,7 +197,7 @@ const AIInterviewerPage = () => {
                   </select>
                 </div>
                 <div className="col-12">
-                  <label className="form-label">Target Company</label>
+                  <label className="form-label">Target Track</label>
                   <select className="form-select" value={company} onChange={(e) => setCompany(e.target.value)}>
                     {companyOptions.map((option) => <option key={option || "general"} value={option}>{option || "General"}</option>)}
                   </select>
@@ -143,7 +220,7 @@ const AIInterviewerPage = () => {
                     <p className="mb-0 text-secondary">Current round: {selectedQuestion?.category || roundType}</p>
                   </>
                 ) : (
-                  <p className="mb-0 text-secondary">Generate a question set to begin your interview round.</p>
+                  <p className="mb-0 text-secondary">Generate a question set to begin your {targetField} interview round.</p>
                 )}
               </div>
             </div>
@@ -157,16 +234,16 @@ const AIInterviewerPage = () => {
                 <div>
                   <p className="eyebrow mb-2">Current Interview Question</p>
                   <h2 className="h4 mb-2">
-                    {selectedQuestion ? `Question ${selectedQuestionIndex + 1}` : "Generate a question set"}
+                    {selectedQuestion ? `Question ${selectedQuestionIndex + 1}` : `Generate a ${targetField} question set`}
                   </h2>
-                  <p className="text-secondary mb-0">Answer as if you are in a live interview. Keep your response structured, specific, and outcome-focused.</p>
+                  <p className="text-secondary mb-0">Answer as if you are in a live {targetField} interview. Keep your response structured, specific, and outcome-focused.</p>
                 </div>
                 {selectedQuestion && <span className="badge text-bg-info align-self-start">{selectedQuestion.category} | {selectedQuestion.difficulty}</span>}
               </div>
 
               <div className="feedback-detail-card mb-3">
                 <span className="feedback-label">Question Prompt</span>
-                <p className="mb-2">{selectedQuestion?.question || "Generate a question set to begin."}</p>
+                <p className="mb-2">{selectedQuestion?.question || `Generate a ${targetField} question set to begin.`}</p>
                 {selectedQuestion?.followUpHint ? <p className="mb-0 text-secondary"><strong>Hint:</strong> {selectedQuestion.followUpHint}</p> : null}
               </div>
 
@@ -175,7 +252,7 @@ const AIInterviewerPage = () => {
                 rows="10"
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Write your interview answer here..."
+                placeholder={`Write your ${targetField} interview answer here...`}
               />
 
               <div className="d-flex gap-2 flex-wrap mt-3">
