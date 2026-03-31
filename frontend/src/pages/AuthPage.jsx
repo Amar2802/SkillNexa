@@ -44,7 +44,6 @@ const AuthPage = ({ mode, onAuth }) => {
     }
   };
 
-  const googleAuthUrl = `${import.meta.env.VITE_SERVER_URL || "http://localhost:5000"}/api/auth/google?targetField=${encodeURIComponent(form.targetField)}`;
 
   return (
     <div className="auth-page">
@@ -103,9 +102,6 @@ const AuthPage = ({ mode, onAuth }) => {
                   {error && <div className="alert alert-danger py-2">{error}</div>}
                   <button className="btn btn-info w-100">{isLogin ? "Login" : "Sign Up"}</button>
                 </form>
-                <a className="btn btn-outline-light w-100 mt-3" href={googleAuthUrl}>
-                  Continue with Google
-                </a>
                 <p className="mt-4 mb-0 text-secondary">
                   {isLogin ? "New here?" : "Already registered?"} <Link to={isLogin ? "/signup" : "/login"}>{isLogin ? "Create an account" : "Login"}</Link>
                 </p>
@@ -119,3 +115,4 @@ const AuthPage = ({ mode, onAuth }) => {
 };
 
 export default AuthPage;
+
