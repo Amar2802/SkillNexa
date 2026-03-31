@@ -7,6 +7,13 @@ const typeSections = [
   { id: "Subjective", label: "Descriptive Questions" }
 ];
 
+const filterLabels = {
+  category: "Category",
+  difficulty: "Difficulty",
+  topic: "Topic",
+  company: "Company"
+};
+
 const parseQuestionDisplay = (question) => {
   const rawTitle = question.title || "Untitled Question";
   const title = rawTitle.replace(/\s+Practice Variant\s+\d+$/i, "").trim();
@@ -54,6 +61,13 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
   const nonMcqQuestions = useMemo(() => questions.filter((question) => question.type !== "MCQ"), [questions]);
   const categories = useMemo(() => ["All", ...new Set(nonMcqQuestions.map((question) => question.category))], [nonMcqQuestions]);
 
+  const filterOptions = useMemo(() => ({
+    category: [...new Set(nonMcqQuestions.map((question) => question.category).filter(Boolean))].sort(),
+    difficulty: [...new Set(nonMcqQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
+    topic: [...new Set(nonMcqQuestions.map((question) => question.topic).filter(Boolean))].sort(),
+    company: [...new Set(nonMcqQuestions.map((question) => question.company).filter(Boolean))].sort()
+  }), [nonMcqQuestions]);
+
   const sectionQuestions = useMemo(() => {
     return nonMcqQuestions.filter((question) => {
       const typeMatch = activeSection === "all" ? true : question.type === activeSection;
@@ -73,8 +87,17 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
           <div className="row g-3">
             {Object.keys(filters).map((key) => (
               <div className="col-md-3" key={key}>
-                <label className="form-label text-capitalize">{key}</label>
-                <input className="form-control" value={filters[key]} onChange={(e) => setFilters({ ...filters, [key]: e.target.value })} />
+                <label className="form-label">{filterLabels[key] || key}</label>
+                <select
+                  className="form-select"
+                  value={filters[key]}
+                  onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
+                >
+                  <option value="">All {filterLabels[key] || key}</option>
+                  {(filterOptions[key] || []).map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
             ))}
           </div>
