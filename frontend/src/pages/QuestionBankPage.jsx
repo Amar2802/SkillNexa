@@ -7,6 +7,21 @@ const typeSections = [
   { id: "Subjective", label: "Descriptive Questions" }
 ];
 
+const parseQuestionDisplay = (question) => {
+  const rawTitle = question.title || "Untitled Question";
+  const title = rawTitle.replace(/\s+Practice Variant\s+\d+$/i, "").trim();
+  const rawDescription = question.description || "";
+  const parts = rawDescription.split(/Practice focus\s+\d+:\s*/i);
+  const description = (parts[0] || rawDescription).trim();
+  const advice = parts[1]?.trim() || "";
+
+  return {
+    title,
+    description,
+    advice
+  };
+};
+
 const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => {
   const location = useLocation();
   const [openAnswers, setOpenAnswers] = useState({});
@@ -97,6 +112,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
       <div className="question-bank-stack">
         {sectionQuestions.map((q) => {
           const isOpen = !!openAnswers[q._id];
+          const display = parseQuestionDisplay(q);
 
           return (
             <div className="question-bank-stack-item" key={q._id}>
@@ -104,8 +120,11 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
                 <div className="card-body">
                   <div className="d-flex justify-content-between gap-3 mb-3 flex-wrap">
                     <div>
-                      <h2 className="h5">{q.title}</h2>
-                      <p className="text-secondary mb-0">{q.description}</p>
+                      <h2 className="h5">{display.title}</h2>
+                      <p className="text-secondary mb-0">
+                        {display.description}
+                        {display.advice ? <span className="question-bank-advice"> ({display.advice})</span> : null}
+                      </p>
                     </div>
                     <span className="badge text-bg-secondary align-self-start">{q.difficulty}</span>
                   </div>
