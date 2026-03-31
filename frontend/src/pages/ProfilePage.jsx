@@ -131,49 +131,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
       <div className="profile-hero-surface mb-4">
         <div className="profile-hero-main">
           <div className="profile-identity-block profile-identity-block-pro">
-            <AvatarPreview profile={profile} />
-            <div className="profile-identity-copy">
-              <p className="eyebrow mb-2">Profile Dashboard</p>
-              <h1 className="display-6 fw-bold mb-2">{profile?.name}</h1>
-              <p className="text-secondary mb-3 profile-subtitle">A polished control center for your interview preparation, progress signals, and personalization settings.</p>
-              <div className="profile-hero-pills">
-                <span className="hero-pill">{profileStrengthLabel}</span>
-                <span className="hero-pill">Priority: {priorityTopic}</span>
-                <span className="hero-pill">Field: {targetField}</span>
-                <span className="hero-pill">{interests.length} interests selected</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="profile-hero-aside">
-            <div className="profile-aside-card profile-identity-card">
-              <span className="feedback-label">Account Overview</span>
-              <h2 className="h5 mb-1">{profile?.name}</h2>
-              <p className="text-secondary mb-3">{profileEmail}</p>
-              <div className="profile-account-meta">
-                <div>
-                  <span>Interview Field</span>
-                  <strong>{targetField}</strong>
-                </div>
-                <div>
-                  <span>Focus Topic</span>
-                  <strong>{priorityTopic}</strong>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <strong>{profileStrengthLabel}</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="profile-aside-card profile-photo-card">
-              <div className="d-flex justify-content-between align-items-start gap-3 mb-3">
-                <div>
-                  <span className="feedback-label">Profile Photo</span>
-                  <h2 className="h6 mb-1">Update your visual identity</h2>
-                </div>
-                <button className="btn btn-outline-danger btn-sm" onClick={logout}>Logout</button>
-              </div>
+            <div className="profile-photo-stack">
               <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
               <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
               <button type="button" className="profile-photo-trigger" onClick={() => setPhotoMenuOpen((current) => !current)}>
@@ -189,7 +147,45 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
                   <button className="btn btn-outline-light" onClick={() => cameraInputRef.current?.click()} disabled={saving}>Use Camera</button>
                 </div>
               )}
+            </div>
+            <div className="profile-identity-copy">
+              <p className="eyebrow mb-2">Profile Dashboard</p>
+              <h1 className="display-6 fw-bold mb-2">{profile?.name}</h1>
+              <p className="text-secondary mb-3 profile-subtitle">A polished control center for your interview preparation, progress signals, and personalization settings.</p>
+              <div className="profile-hero-pills">
+                <span className="hero-pill">{profileStrengthLabel}</span>
+                <span className="hero-pill">Priority: {priorityTopic}</span>
+                <span className="hero-pill">Field: {targetField}</span>
+                <span className="hero-pill">{interests.length} interests selected</span>
+              </div>
               {status && <p className="small mb-0 text-secondary mt-3">{status}</p>}
+            </div>
+          </div>
+
+          <div className="profile-hero-aside">
+            <div className="profile-aside-card profile-identity-card">
+              <div className="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                  <span className="feedback-label">Account Overview</span>
+                  <h2 className="h5 mb-1">{profile?.name}</h2>
+                  <p className="text-secondary mb-0">{profileEmail}</p>
+                </div>
+                <button className="btn btn-outline-danger btn-sm" onClick={logout}>Logout</button>
+              </div>
+              <div className="profile-account-meta">
+                <div>
+                  <span>Interview Field</span>
+                  <strong>{targetField}</strong>
+                </div>
+                <div>
+                  <span>Focus Topic</span>
+                  <strong>{priorityTopic}</strong>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <strong>{profileStrengthLabel}</strong>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -305,4 +301,3 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
 };
 
 export default ProfilePage;
-

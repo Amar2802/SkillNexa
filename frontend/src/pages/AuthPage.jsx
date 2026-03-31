@@ -1,20 +1,41 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
-import { FIELD_OPTIONS } from "../utils/fieldOptions";
+import { FIELD_INTEREST_OPTIONS, FIELD_OPTIONS } from "../utils/fieldOptions";
 
 const AuthPage = ({ mode, onAuth }) => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "", targetField: "Software" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", targetField: "Software", interests: [] });
   const [error, setError] = useState("");
   const isLogin = mode === "login";
+  const interestOptions = useMemo(
+    () => FIELD_INTEREST_OPTIONS[form.targetField] || FIELD_INTEREST_OPTIONS.Software,
+    [form.targetField]
+  );
+
+  const toggleInterest = (interest) => {
+    setForm((current) => ({
+      ...current,
+      interests: current.interests.includes(interest)
+        ? current.interests.filter((item) => item !== interest)
+        : [...current.interests, interest].slice(0, 6)
+    }));
+  };
 
   const submit = async (event) => {
     event.preventDefault();
     try {
       const { data } = await api.post(
         isLogin ? "/auth/login" : "/auth/signup",
-        isLogin ? { email: form.email, password: form.password } : form
+        isLogin
+          ? { email: form.email, password: form.password }
+          : {
+              name: form.name,
+              email: form.email,
+              password: form.password,
+              targetField: form.targetField,
+              interests: form.interests
+            }
       );
       onAuth(data);
       navigate("/dashboard");
@@ -22,6 +43,8 @@ const AuthPage = ({ mode, onAuth }) => {
       setError(err.response?.data?.message || "Authentication failed");
     }
   };
+
+  const googleAuthUrl = `${import.meta.env.VITE_SERVER_URL || "http://localhost:5000"}/api/auth/google?targetField=${encodeURIComponent(form.targetField)}`;
 
   return (
     <div className="auth-page">
@@ -43,13 +66,29 @@ const AuthPage = ({ mode, onAuth }) => {
                         <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
                       </div>
                       <div className="mb-3">
-                        <label className="form-label">Interview Field</label>
-                        <select className="form-select" value={form.targetField} onChange={(e) => setForm({ ...form, targetField: e.target.value })}>
+                        <label className="form-label">Preparation Field</label>
+                        <select className="form-select" value={form.targetField} onChange={(e) => setForm({ ...form, targetField: e.target.value, interests: [] })}>
                           {FIELD_OPTIONS.map((field) => (
                             <option key={field} value={field}>{field}</option>
                           ))}
                         </select>
-                        <div className="form-text">Choose the track you want the platform to personalize for you.</div>
+                        <div className="form-text">Choose the interview track you want the platform to personalize for you.</div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Interested Topics</label>
+                        <div className="interest-grid mb-2">
+                          {interestOptions.map((interest) => (
+                            <button
+                              key={interest}
+                              type="button"
+                              className={`interest-chip ${form.interests.includes(interest) ? "active" : ""}`}
+                              onClick={() => toggleInterest(interest)}
+                            >
+                              {interest}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="form-text">Select a few priority topics to shape your first recommendations.</div>
                       </div>
                     </>
                   )}
@@ -64,7 +103,7 @@ const AuthPage = ({ mode, onAuth }) => {
                   {error && <div className="alert alert-danger py-2">{error}</div>}
                   <button className="btn btn-info w-100">{isLogin ? "Login" : "Sign Up"}</button>
                 </form>
-                <a className="btn btn-outline-light w-100 mt-3" href={`${import.meta.env.VITE_SERVER_URL || "http://localhost:5000"}/api/auth/google`}>
+                <a className="btn btn-outline-light w-100 mt-3" href={googleAuthUrl}>
                   Continue with Google
                 </a>
                 <p className="mt-4 mb-0 text-secondary">

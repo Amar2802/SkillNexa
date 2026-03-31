@@ -6,8 +6,13 @@ import { FIELD_DEFAULT_TOPICS, FIELD_OPTIONS } from "../utils/prepFields.js";
 
 const normalizeTargetField = (value) => (FIELD_OPTIONS.includes(value) ? value : "Software");
 
+const sanitizeInterests = (interests) => {
+  if (!Array.isArray(interests)) return [];
+  return interests.map((item) => String(item).trim()).filter(Boolean).slice(0, 12);
+};
+
 export const signup = async (req, res) => {
-  const { name, email, password, targetField } = req.body;
+  const { name, email, password, targetField, interests } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
@@ -17,12 +22,14 @@ export const signup = async (req, res) => {
   }
 
   const safeField = normalizeTargetField(targetField);
+  const safeInterests = sanitizeInterests(interests);
 
   const user = await User.create({
     name,
     email,
     password,
     targetField: safeField,
+    interests: safeInterests,
     progress: {
       testsTaken: 0,
       accuracy: 0,
@@ -45,10 +52,14 @@ export const login = async (req, res) => {
   res.json({ token: tokenFor(user._id), user });
 };
 
-export const googleAuth = passport.authenticate("google", {
-  scope: ["profile", "email"],
-  session: false
-});
+export const googleAuth = (req, res, next) => {
+  const safeField = normalizeTargetField(req.query.targetField);
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+    state: safeField
+  })(req, res, next);
+};
 
 export const googleCallback = [
   passport.authenticate("google", { session: false, failureRedirect: "/" }),
