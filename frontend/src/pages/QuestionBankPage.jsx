@@ -20,18 +20,26 @@ const codeLanguageLabels = {
   java: "Java"
 };
 
+const splitPracticeNote = (value = "", marker) => {
+  const parts = String(value).split(marker);
+  return {
+    main: (parts[0] || value).trim(),
+    note: parts[1]?.trim() || ""
+  };
+};
+
 const parseQuestionDisplay = (question) => {
   const rawTitle = question.title || "Untitled Question";
   const title = rawTitle.replace(/\s+Practice Variant\s+\d+$/i, "").trim();
-  const rawDescription = question.description || "";
-  const parts = rawDescription.split(/Practice focus\s+\d+:\s*/i);
-  const description = (parts[0] || rawDescription).trim();
-  const advice = parts[1]?.trim() || "";
+  const descriptionParts = splitPracticeNote(question.description || "", /Practice focus\s+\d+:\s*/i);
+  const explanationParts = splitPracticeNote(question.explanation || "", /Practice note:\s*/i);
 
   return {
     title,
-    description,
-    advice
+    description: descriptionParts.main,
+    advice: descriptionParts.note,
+    explanation: explanationParts.main,
+    explanationNote: explanationParts.note
   };
 };
 
@@ -193,7 +201,10 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
 
                       <div>
                         <p className="fw-semibold mb-2">Explanation</p>
-                        <div className="question-bank-explanation">{q.explanation}</div>
+                        <div className="question-bank-explanation">
+                          {display.explanation}
+                          {display.explanationNote ? <span className="question-bank-advice"> ({display.explanationNote})</span> : null}
+                        </div>
                       </div>
                     </>
                   )}
