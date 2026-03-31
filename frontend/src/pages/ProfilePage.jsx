@@ -301,3 +301,4 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
 };
 
 export default ProfilePage;
+
