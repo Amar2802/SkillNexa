@@ -2161,3 +2161,65 @@ body {
     padding: 1rem;
   }
 }
+
+.profile-photo-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(232, 108, 18, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 248, 240, 0.88);
+  text-align: left;
+  color: var(--text);
+}
+
+.profile-photo-trigger span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.profile-photo-trigger small {
+  color: var(--muted);
+}
+
+.profile-photo-trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(214, 106, 22, 0.1);
+}
+
+:root[data-theme="dark"] .profile-photo-trigger {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --sidebar-width: 244px;
+    --topbar-height: 88px;
+  }
+
+  .app-topbar {
+    padding: 1rem 1.25rem;
+  }
+
+  .profile-chip {
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .profile-hero-main {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-identity-block-pro {
+    flex-direction: column;
+  }
+
+  .profile-section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

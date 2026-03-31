@@ -36,6 +36,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
   const cameraInputRef = useRef(null);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
   const [interests, setInterests] = useState(profile?.interests || []);
   const [savedInterests, setSavedInterests] = useState(profile?.interests || []);
 
@@ -55,6 +56,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
         setStatus("");
         await api.put("/users/profile/avatar", { avatar: reader.result });
         await refreshProfile();
+        setPhotoMenuOpen(false);
         setStatus("Profile photo updated successfully.");
       } catch (error) {
         setStatus(error.response?.data?.message || "Unable to update profile photo.");
@@ -159,12 +161,21 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
                 </div>
                 <button className="btn btn-outline-danger btn-sm" onClick={logout}>Logout</button>
               </div>
-              <div className="profile-photo-actions">
-                <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
-                <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload From Gallery</button>
-                <button className="btn btn-outline-light" onClick={() => cameraInputRef.current?.click()} disabled={saving}>Use Camera</button>
-              </div>
+              <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
+              <button type="button" className="profile-photo-trigger" onClick={() => setPhotoMenuOpen((current) => !current)}>
+                <AvatarPreview profile={profile} />
+                <span>
+                  <strong>Click photo to update</strong>
+                  <small>{photoMenuOpen ? "Choose gallery or camera below" : "Open photo options"}</small>
+                </span>
+              </button>
+              {photoMenuOpen && (
+                <div className="profile-photo-actions mt-3">
+                  <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload From Gallery</button>
+                  <button className="btn btn-outline-light" onClick={() => cameraInputRef.current?.click()} disabled={saving}>Use Camera</button>
+                </div>
+              )}
               {status && <p className="small mb-0 text-secondary mt-3">{status}</p>}
             </div>
           </div>
