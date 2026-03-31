@@ -15,6 +15,30 @@ const practiceTips = {
   Coding: "State the approach first, then write clean code and validate edge cases before submission."
 };
 
+const stripPracticeVariant = (value = "") => value.replace(/\s*Practice Variant\s*\d+/gi, "").trim();
+
+const getPracticeDisplayText = (question) => {
+  if (!question) {
+    return {
+      cleanTitle: "",
+      cleanDescription: "",
+      bracketedAdvice: ""
+    };
+  }
+
+  const cleanTitle = stripPracticeVariant(question.title || "");
+  const rawDescription = (question.description || "").trim();
+  const practiceFocusMatch = rawDescription.match(/Practice focus\s*\d*\s*:\s*(.+)$/i);
+  const focusAdvice = practiceFocusMatch?.[1]?.trim() || "";
+  const cleanDescription = rawDescription.replace(/\s*Practice focus\s*\d*\s*:\s*.+$/i, "").trim();
+
+  return {
+    cleanTitle,
+    cleanDescription: focusAdvice ? (cleanDescription + " (" + focusAdvice + ")").trim() : cleanDescription,
+    bracketedAdvice: focusAdvice ? "(" + focusAdvice + ")" : ""
+  };
+};
+
 const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
   const categories = useMemo(() => [...new Set(questions.map((question) => question.category))], [questions]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -149,6 +173,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
     ];
   }, [filteredQuestions]);
 
+  const displayQuestion = useMemo(() => getPracticeDisplayText(question), [question]);
   const practiceAdvice = question ? practiceTips[question.type] : "Choose a question to get focused preparation advice.";
   const nextMove = feedback
     ? feedback.isCorrect
@@ -234,7 +259,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                   >
                     <span className="practice-question-index">{String(index + 1).padStart(2, "0")}</span>
                     <span>
-                      <strong>{currentQuestion.title}</strong>
+                      <strong>{stripPracticeVariant(currentQuestion.title)}</strong>
                       <small>{currentQuestion.topic} | {currentQuestion.type} | {currentQuestion.difficulty}</small>
                     </span>
                   </button>
@@ -263,11 +288,11 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                       <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
                         <div>
                           <p className="eyebrow mb-2">Current Question</p>
-                          <h2 className="h3 fw-bold mb-2">{question.title}</h2>
+                          <h2 className="h3 fw-bold mb-2">{displayQuestion.cleanTitle}</h2>
                         </div>
                         <span className="badge text-bg-info">Question {currentQuestionNumber} of {filteredQuestions.length}</span>
                       </div>
-                      <p className="text-secondary mb-3">{question.description}</p>
+                      <p className="text-secondary mb-3">{displayQuestion.cleanDescription}</p>
                       <div className="d-flex gap-2 flex-wrap">
                         <span className="badge text-bg-dark">{question.category}</span>
                         <span className="badge text-bg-dark">{question.topic}</span>
@@ -279,7 +304,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                     <div className="practice-focus-strip mb-4">
                       <div>
                         <span className="feedback-label">Practice Focus</span>
-                        <p className="mb-0">{practiceAdvice}</p>
+                        <p className="mb-0">{practiceAdvice} {displayQuestion.bracketedAdvice}</p>
                       </div>
                       <div className="practice-focus-side">
                         <span className="feedback-label">Recommended Move</span>
