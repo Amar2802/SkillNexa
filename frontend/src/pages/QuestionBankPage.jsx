@@ -14,6 +14,12 @@ const filterLabels = {
   company: "Company"
 };
 
+const codeLanguageLabels = {
+  python: "Python",
+  cpp: "C++",
+  java: "Java"
+};
+
 const parseQuestionDisplay = (question) => {
   const rawTitle = question.title || "Untitled Question";
   const title = rawTitle.replace(/\s+Practice Variant\s+\d+$/i, "").trim();
@@ -33,7 +39,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
   const location = useLocation();
   const [openAnswers, setOpenAnswers] = useState({});
   const [activeSection, setActiveSection] = useState("all");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -59,7 +65,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
   };
 
   const nonMcqQuestions = useMemo(() => questions.filter((question) => question.type !== "MCQ"), [questions]);
-  const categories = useMemo(() => ["All", ...new Set(nonMcqQuestions.map((question) => question.category))], [nonMcqQuestions]);
+  const categories = useMemo(() => [...new Set(nonMcqQuestions.map((question) => question.category).filter(Boolean))], [nonMcqQuestions]);
 
   const filterOptions = useMemo(() => ({
     category: [...new Set(nonMcqQuestions.map((question) => question.category).filter(Boolean))].sort(),
@@ -71,7 +77,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
   const sectionQuestions = useMemo(() => {
     return nonMcqQuestions.filter((question) => {
       const typeMatch = activeSection === "all" ? true : question.type === activeSection;
-      const categoryMatch = activeCategory === "All" ? true : question.category === activeCategory;
+      const categoryMatch = !activeCategory ? true : question.category === activeCategory;
       return typeMatch && categoryMatch;
     });
   }, [nonMcqQuestions, activeSection, activeCategory]);
@@ -136,6 +142,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
         {sectionQuestions.map((q) => {
           const isOpen = !!openAnswers[q._id];
           const display = parseQuestionDisplay(q);
+          const starterCode = q.type === "Coding" ? Object.entries(q.starterCode || {}).filter(([, value]) => value) : [];
 
           return (
             <div className="question-bank-stack-item" key={q._id}>
@@ -169,6 +176,20 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
                         <p className="fw-semibold mb-2">Suggested Answer</p>
                         <div className="question-bank-answer">{String(q.correctAnswer)}</div>
                       </div>
+
+                      {starterCode.length ? (
+                        <div className="mb-3">
+                          <p className="fw-semibold mb-2">Starter Code</p>
+                          <div className="vstack gap-3">
+                            {starterCode.map(([language, code]) => (
+                              <div className="question-bank-code-block" key={`${q._id}-${language}`}>
+                                <span className="question-bank-code-label">{codeLanguageLabels[language] || language}</span>
+                                <pre className="question-bank-code-pre"><code>{code}</code></pre>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
 
                       <div>
                         <p className="fw-semibold mb-2">Explanation</p>

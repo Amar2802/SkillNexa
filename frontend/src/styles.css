@@ -1490,3 +1490,37 @@ body {
 :root[data-theme="dark"] .question-bank-advice {
   color: #ffbe74;
 }
+.question-bank-code-block {
+  border: 1px solid rgba(244, 122, 32, 0.16);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 248, 240, 0.94);
+}
+
+.question-bank-code-label {
+  display: inline-block;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #8d470b;
+  background: rgba(244, 122, 32, 0.12);
+}
+
+.question-bank-code-pre {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  background: rgba(42, 27, 20, 0.98);
+  color: #fff1e6;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+:root[data-theme="dark"] .question-bank-code-block {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="dark"] .question-bank-code-label {
+  color: #ffcf9f;
+  background: rgba(255, 184, 90, 0.14);
+}
