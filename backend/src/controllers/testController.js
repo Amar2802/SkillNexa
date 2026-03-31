@@ -2,6 +2,25 @@ import Test from "../models/Test.js";
 import Result from "../models/Result.js";
 import Question from "../models/Question.js";
 
+const DEFAULT_CATEGORIES = ["DSA", "Aptitude", "HR", "Core Subjects"];
+const DEFAULT_TOTAL_QUESTIONS = 30;
+const DEFAULT_DURATION = 30;
+
+const buildDistribution = (categories, totalQuestions, questionsPerCategory) => {
+  if (questionsPerCategory) {
+    return categories.map((category) => ({ category, count: Number(questionsPerCategory) || 1 }));
+  }
+
+  const safeTotal = Math.max(Number(totalQuestions) || DEFAULT_TOTAL_QUESTIONS, categories.length);
+  const baseCount = Math.floor(safeTotal / categories.length);
+  const remainder = safeTotal % categories.length;
+
+  return categories.map((category, index) => ({
+    category,
+    count: baseCount + (index < remainder ? 1 : 0)
+  }));
+};
+
 export const getTests = async (req, res) => {
   const query = req.query.company ? { "sections.category": { $exists: true } } : {};
   res.json(await Test.find(query).populate("sections.questions").sort({ createdAt: -1 }));
@@ -9,14 +28,17 @@ export const getTests = async (req, res) => {
 
 export const createTest = async (req, res) => {
   const {
-    categories = ["DSA", "Aptitude", "HR", "Core Subjects"],
-    duration = 30,
-    questionsPerCategory = 2,
+    categories = DEFAULT_CATEGORIES,
+    duration = DEFAULT_DURATION,
+    totalQuestions = DEFAULT_TOTAL_QUESTIONS,
+    questionsPerCategory,
     company = ""
   } = req.body;
 
+  const distribution = buildDistribution(categories, totalQuestions, questionsPerCategory);
   const sections = [];
-  for (const category of categories) {
+
+  for (const { category, count } of distribution) {
     const match = { category };
     if (company) {
       match.company = { $in: [company, "General"] };
@@ -24,13 +46,13 @@ export const createTest = async (req, res) => {
 
     let questions = await Question.aggregate([
       { $match: match },
-      { $sample: { size: Number(questionsPerCategory) } }
+      { $sample: { size: Number(count) } }
     ]);
 
     if (!questions.length) {
       questions = await Question.aggregate([
         { $match: { category } },
-        { $sample: { size: Number(questionsPerCategory) } }
+        { $sample: { size: Number(count) } }
       ]);
     }
 
@@ -49,7 +71,7 @@ export const createTest = async (req, res) => {
   const test = await Test.create({
     title,
     description,
-    duration,
+    duration: Number(duration) || DEFAULT_DURATION,
     sections,
     createdBy: req.user._id
   });

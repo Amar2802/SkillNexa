@@ -1,4 +1,4 @@
-const seedQuestions = [
+const baseSeedQuestions = [
   {
     title: "Two Sum",
     category: "DSA",
@@ -1061,6 +1061,82 @@ const seedQuestions = [
     tags: ["rest", "api", "http"]
   }
 ];
+
+const TARGET_VISIBLE_PER_CATEGORY = 1000;
+const CATEGORY_ORDER = ["DSA", "Aptitude", "HR", "Core Subjects"];
+const bulkCompanies = [
+  "Amazon",
+  "Microsoft",
+  "Google",
+  "Infosys",
+  "TCS",
+  "Accenture",
+  "Wipro",
+  "Cognizant",
+  "Capgemini",
+  "Deloitte",
+  "Oracle",
+  "IBM"
+];
+const practiceAngles = [
+  "Focus on the interview-ready explanation and mention one practical use case.",
+  "Frame your answer the way you would explain it in a technical round.",
+  "Add one edge case or limitation while answering this version.",
+  "Practice giving a concise answer first and then expand if asked for more detail.",
+  "Use this variation to revise the core formula, pattern, or decision-making steps.",
+  "Answer this as if a judge asks for both concept clarity and one example."
+];
+
+const normalizeDifficulty = (question, variantIndex) => {
+  const difficultyCycle = ["Easy", "Medium", "Medium", "Hard"];
+  if (question.type === "Coding") {
+    return difficultyCycle[variantIndex % difficultyCycle.length];
+  }
+  if (question.difficulty === "Hard") return "Hard";
+  return difficultyCycle[(variantIndex + 1) % difficultyCycle.length];
+};
+
+const createPracticeVariant = (question, variantIndex, categoryIndex) => {
+  const angle = practiceAngles[(variantIndex + categoryIndex) % practiceAngles.length];
+  const company = bulkCompanies[(variantIndex + categoryIndex) % bulkCompanies.length];
+  const variantLabel = variantIndex + 1;
+
+  return {
+    ...question,
+    title: `${question.title} Practice Variant ${variantLabel}`,
+    company,
+    difficulty: normalizeDifficulty(question, variantIndex),
+    description: `${question.description} Practice focus ${variantLabel}: ${angle}`,
+    explanation: `${question.explanation} Practice note: ${angle}`,
+    tags: [...new Set([...(question.tags || []), "practice-variant", `set-${variantLabel}`])]
+  };
+};
+
+const buildLargeQuestionBank = (questions) => {
+  const expanded = [...questions];
+
+  CATEGORY_ORDER.forEach((category, categoryIndex) => {
+    const visibleBase = questions.filter((question) => question.category === category && question.type !== "MCQ");
+    const sourcePool = visibleBase.length ? visibleBase : questions.filter((question) => question.category === category);
+
+    if (!sourcePool.length) return;
+
+    let visibleCount = questions.filter((question) => question.category === category && question.type !== "MCQ").length;
+    let variantIndex = 0;
+
+    while (visibleCount < TARGET_VISIBLE_PER_CATEGORY) {
+      const source = sourcePool[variantIndex % sourcePool.length];
+      const clone = createPracticeVariant(source, variantIndex, categoryIndex);
+      expanded.push(clone);
+      if (clone.type !== "MCQ") visibleCount += 1;
+      variantIndex += 1;
+    }
+  });
+
+  return expanded;
+};
+
+const seedQuestions = buildLargeQuestionBank(baseSeedQuestions);
 
 export default seedQuestions;
 

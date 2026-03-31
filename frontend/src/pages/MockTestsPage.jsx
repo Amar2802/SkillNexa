@@ -1,7 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../api/client";
 
 const companyOptions = ["", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
+const DEFAULT_DURATION = 30;
+const DEFAULT_TOTAL_QUESTIONS = 30;
+
+const formatTimeLeft = (seconds) => {
+  const safeSeconds = Math.max(seconds, 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const secs = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+};
 
 const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
   const [activeTest, setActiveTest] = useState(null);
@@ -9,7 +18,7 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [result, setResult] = useState(null);
   const [selectedCompany, setSelectedCompany] = useState("");
-  const flat = activeTest?.sections?.flatMap((section) => section.questions) || [];
+  const flat = useMemo(() => activeTest?.sections?.flatMap((section) => section.questions) || [], [activeTest]);
 
   useEffect(() => {
     if (!activeTest || timeLeft <= 0) return;
@@ -22,7 +31,11 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
   }, [timeLeft]);
 
   const generate = async () => {
-    const { data } = await api.post("/tests", { company: selectedCompany });
+    const { data } = await api.post("/tests", {
+      company: selectedCompany,
+      totalQuestions: DEFAULT_TOTAL_QUESTIONS,
+      duration: DEFAULT_DURATION
+    });
     setTests((current) => [data, ...current]);
   };
 
@@ -36,7 +49,10 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
   const submit = async () => {
     if (!activeTest) return;
     const payload = flat.map((q) => ({ questionId: q._id, submittedAnswer: answers[q._id] || "", timeSpent: 60 }));
-    const { data } = await api.post(`/tests/${activeTest._id}/submit`, { answers: payload, totalTimeSpent: activeTest.duration * 60 - timeLeft });
+    const { data } = await api.post(`/tests/${activeTest._id}/submit`, {
+      answers: payload,
+      totalTimeSpent: activeTest.duration * 60 - timeLeft
+    });
     setResult(data);
     setActiveTest(null);
     setTimeLeft(0);
@@ -57,7 +73,78 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
           <button className="btn btn-info" onClick={generate}>Generate Mock Test</button>
         </div>
       </div>
-      {!activeTest ? <div className="row g-3">{tests.map((test) => <div className="col-lg-6" key={test._id}><div className="card glass-card h-100"><div className="card-body"><h2 className="h5">{test.title}</h2><p className="text-secondary">{test.description}</p><p>Duration: {test.duration} minutes</p><button className="btn btn-outline-light" onClick={() => start(test)}>Start Test</button></div></div></div>)}{result && <div className="col-12"><div className="card glass-card"><div className="card-body"><h2 className="h4">Latest Result</h2><p>Score: {result.score} | Accuracy: {result.accuracy}%</p><p><strong>Weak topics:</strong> {result.weakTopics.join(", ") || "None"}</p><p className="mb-0"><strong>Strong topics:</strong> {result.strengths.join(", ") || "Keep practicing"}</p></div></div></div>}</div> : <div className="card glass-card"><div className="card-body"><div className="d-flex justify-content-between align-items-center mb-4"><h2 className="h4 mb-0">{activeTest.title}</h2><span className="badge text-bg-danger">Time Left: {timeLeft}s</span></div>{flat.map((q, i) => <div key={q._id} className="mb-4 pb-3 border-bottom border-secondary-subtle"><p className="fw-semibold">{i + 1}. {q.title}</p><p className="text-secondary">{q.description}</p>{q.type === "MCQ" ? <div className="vstack gap-2">{q.options.map((option) => <button key={option} className={`btn ${answers[q._id] === option ? "btn-info" : "btn-outline-light"} text-start`} onClick={() => setAnswers({ ...answers, [q._id]: option })}>{option}</button>)}</div> : <textarea className="form-control" rows="4" value={answers[q._id] || ""} onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })} />}</div>)}<button className="btn btn-success" onClick={submit}>Submit Test</button></div></div>}
+      {!activeTest ? (
+        <div className="row g-3">
+          {tests.map((test) => {
+            const questionCount = test.sections?.reduce((sum, section) => sum + (section.questions?.length || 0), 0) || 0;
+
+            return (
+              <div className="col-lg-6" key={test._id}>
+                <div className="card glass-card h-100">
+                  <div className="card-body">
+                    <h2 className="h5">{test.title}</h2>
+                    <p className="text-secondary">{test.description}</p>
+                    <p className="mb-2">Duration: {test.duration} minutes</p>
+                    <p className="text-secondary">Questions: {questionCount}</p>
+                    <button className="btn btn-outline-light" onClick={() => start(test)}>Start Test</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {result && (
+            <div className="col-12">
+              <div className="card glass-card">
+                <div className="card-body">
+                  <h2 className="h4">Latest Result</h2>
+                  <p>Score: {result.score} | Accuracy: {result.accuracy}%</p>
+                  <p><strong>Weak topics:</strong> {result.weakTopics.join(", ") || "None"}</p>
+                  <p className="mb-0"><strong>Strong topics:</strong> {result.strengths.join(", ") || "Keep practicing"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="card glass-card">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+              <div>
+                <h2 className="h4 mb-1">{activeTest.title}</h2>
+                <p className="text-secondary mb-0">{flat.length} questions | {activeTest.duration} minutes</p>
+              </div>
+              <span className="badge text-bg-danger">Time Left: {formatTimeLeft(timeLeft)}</span>
+            </div>
+            {flat.map((q, i) => (
+              <div key={q._id} className="mb-4 pb-3 border-bottom border-secondary-subtle">
+                <p className="fw-semibold">{i + 1}. {q.title}</p>
+                <p className="text-secondary">{q.description}</p>
+                {q.type === "MCQ" ? (
+                  <div className="vstack gap-2">
+                    {q.options.map((option) => (
+                      <button
+                        key={option}
+                        className={`btn ${answers[q._id] === option ? "btn-info" : "btn-outline-light"} text-start`}
+                        onClick={() => setAnswers({ ...answers, [q._id]: option })}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <textarea
+                    className="form-control"
+                    rows="4"
+                    value={answers[q._id] || ""}
+                    onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })}
+                  />
+                )}
+              </div>
+            ))}
+            <button className="btn btn-success" onClick={submit}>Submit Test</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
