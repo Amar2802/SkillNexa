@@ -273,7 +273,7 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
               </div>
               <div className="company-prep-track-row">
                 {companyQuestions.map((q) => (
-                  <button type="button" className="company-prep-track-card recommendation-link text-start border-0" key={q._id} onClick={() => openRecommendedTopic(q)}>
+                  <button type="button" className="company-prep-track-item recommendation-link text-start border-0" key={q._id} onClick={() => openRecommendedTopic(q)}>
                     <span className="company-prep-track-badge">{q.company || selectedCompany}</span>
                     <h3 className="h6 mb-2">{q.title}</h3>
                     <p className="mb-0 text-secondary">{q.category} | {q.topic}</p>

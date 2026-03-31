@@ -1944,38 +1944,43 @@ body {
 
 .company-prep-track-row {
   display: flex;
-  gap: 1rem;
+  gap: 0.9rem;
   overflow-x: auto;
-  padding-bottom: 0.35rem;
+  padding: 0.15rem 0 0.4rem;
   scroll-snap-type: x proximity;
 }
 
-.company-prep-track-card {
-  min-width: 240px;
-  max-width: 260px;
+.company-prep-track-item {
+  min-width: 260px;
+  max-width: 300px;
   flex: 0 0 auto;
-  padding: 1rem 1.05rem;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 247, 239, 0.94));
-  border: 1px solid rgba(244, 122, 32, 0.14);
-  box-shadow: 0 16px 30px rgba(214, 106, 22, 0.08);
+  padding: 0.25rem 1rem 0.25rem 0;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid rgba(244, 122, 32, 0.14);
+  border-radius: 0;
+  box-shadow: none;
   scroll-snap-align: start;
 }
 
-.company-prep-track-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 22px 38px rgba(214, 106, 22, 0.14);
+.company-prep-track-item:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.company-prep-track-item:hover {
+  transform: translateY(-1px);
 }
 
 .company-prep-track-badge {
   display: inline-flex;
   align-items: center;
-  margin-bottom: 0.7rem;
-  padding: 0.4rem 0.7rem;
+  margin-bottom: 0.55rem;
+  padding: 0.35rem 0.65rem;
   border-radius: 999px;
   background: rgba(244, 122, 32, 0.12);
   color: #9a4d11;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1990,8 +1995,8 @@ body {
   border-radius: 999px;
 }
 
-:root[data-theme="dark"] .company-prep-track-card {
-  background: linear-gradient(180deg, rgba(42, 29, 22, 0.98), rgba(28, 20, 15, 0.96));
+:root[data-theme="dark"] .company-prep-track-item {
+  border-right-color: rgba(255, 184, 90, 0.16);
 }
 
 :root[data-theme="dark"] .company-prep-track-badge {
