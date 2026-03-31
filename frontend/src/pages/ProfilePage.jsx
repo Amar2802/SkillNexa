@@ -102,10 +102,14 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
 
   const weakTopics = profile?.progress?.weakTopics || [];
   const recommendedTopics = profile?.progress?.recommendedTopics || [];
+  const accuracy = profile?.progress?.accuracy || 0;
+  const testsTaken = profile?.progress?.testsTaken || 0;
   const hasInterestChanges = JSON.stringify([...interests].sort()) !== JSON.stringify([...savedInterests].sort());
+  const profileStrengthLabel = accuracy >= 70 ? "Consistent performer" : accuracy >= 40 ? "Building momentum" : "Early progress";
+  const priorityTopic = weakTopics[0] || recommendedTopics[0] || interests[0] || "Core interview topics";
 
   return (
-    <div className="container py-4">
+    <div className="container py-4 profile-page-pro">
       <div className="card glass-card profile-hero-card">
         <div className="card-body p-4 p-lg-5">
           <div className="profile-header-row">
@@ -114,7 +118,12 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
               <div>
                 <p className="eyebrow mb-2">Personal Dashboard</p>
                 <h1 className="h2 fw-bold mb-1">{profile?.name}</h1>
-                <p className="text-secondary mb-0 profile-subtitle">Track your growth, update your preferences, and keep your interview prep focused.</p>
+                <p className="text-secondary mb-3 profile-subtitle">Track your growth, update your preferences, and keep your interview prep focused.</p>
+                <div className="profile-hero-pills">
+                  <span className="hero-pill">{profileStrengthLabel}</span>
+                  <span className="hero-pill">Priority: {priorityTopic}</span>
+                  <span className="hero-pill">Interests Selected: {interests.length}</span>
+                </div>
               </div>
             </div>
             <div className="profile-action-stack">
@@ -131,8 +140,8 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
           </div>
 
           <div className="row g-3 mt-4">
-            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Accuracy</span><h3>{profile?.progress?.accuracy || 0}%</h3><small>Overall performance</small></div></div>
-            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Tests Taken</span><h3>{profile?.progress?.testsTaken || 0}</h3><small>Completed assessments</small></div></div>
+            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Accuracy</span><h3>{accuracy}%</h3><small>Overall performance</small></div></div>
+            <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Tests Taken</span><h3>{testsTaken}</h3><small>Completed assessments</small></div></div>
             <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Weak Topics</span><h3>{weakTopics.length}</h3><small>Focus areas to revise</small></div></div>
             <div className="col-md-3"><div className="metric-card profile-metric-card"><span>Recommended</span><h3>{recommendedTopics.length}</h3><small>Topics suggested for you</small></div></div>
           </div>
@@ -162,16 +171,25 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
                     </button>
                   ))}
                 </div>
-                {hasInterestChanges && <p className="small text-secondary mb-0">You have unsaved interest changes.</p>}
+                {hasInterestChanges ? (
+                  <p className="small text-secondary mb-0">You have unsaved interest changes.</p>
+                ) : (
+                  <p className="small text-secondary mb-0">Your current interests are saved and actively shaping recommendations.</p>
+                )}
               </div>
             </div>
 
             <div className="col-lg-5">
-              <div className="profile-panel-box h-100">
-                <h2 className="h5 mb-3">Focus Summary</h2>
-                <div className="mb-4">
+              <div className="profile-panel-box h-100 profile-next-step-box">
+                <h2 className="h5 mb-3">Next Best Step</h2>
+                <div className="profile-next-step-card mb-4">
+                  <span className="feedback-label">Focus Topic</span>
+                  <h3 className="h5 mb-2">{priorityTopic}</h3>
+                  <p className="text-secondary mb-0">Use this topic as your next high-value revision area before starting another mock test.</p>
+                </div>
+                <div>
                   <p className="fw-semibold mb-2">Weak Topics</p>
-                  <div className="d-flex gap-2 flex-wrap">
+                  <div className="d-flex gap-2 flex-wrap mb-4">
                     {weakTopics.length ? weakTopics.map((topic) => (
                       <span key={topic} className="badge text-bg-secondary">{topic}</span>
                     )) : <span className="text-secondary">No weak topics recorded yet.</span>}

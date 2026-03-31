@@ -8,6 +8,12 @@ const BookmarkIcon = ({ active }) => (
   </svg>
 );
 
+const practiceTips = {
+  MCQ: "Read every option once before locking your choice, then eliminate weak distractors.",
+  Subjective: "Structure your response with a short definition, a clear explanation, and one example.",
+  Coding: "State the approach first, then write clean code and validate edge cases before submission."
+};
+
 const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
   const categories = useMemo(() => [...new Set(questions.map((question) => question.category))], [questions]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -112,15 +118,88 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
     return "Option";
   };
 
+  const currentQuestionNumber = currentIndex >= 0 ? currentIndex + 1 : 0;
+  const completionLabel = filteredQuestions.length ? `${currentQuestionNumber}/${filteredQuestions.length}` : "0/0";
+  const completionPercent = filteredQuestions.length ? Math.round((currentQuestionNumber / filteredQuestions.length) * 100) : 0;
+  const categoryQuestionTypes = useMemo(() => {
+    const counts = filteredQuestions.reduce(
+      (acc, currentQuestion) => {
+        acc[currentQuestion.type] = (acc[currentQuestion.type] || 0) + 1;
+        return acc;
+      },
+      {}
+    );
+
+    return [
+      { label: "Coding", value: counts.Coding || 0 },
+      { label: "Subjective", value: counts.Subjective || 0 },
+      { label: "MCQ", value: counts.MCQ || 0 }
+    ];
+  }, [filteredQuestions]);
+
+  const practiceAdvice = question ? practiceTips[question.type] : "Choose a question to get focused preparation advice.";
+  const nextMove = feedback
+    ? feedback.isCorrect
+      ? "Move to the next question or bookmark this one if you want to revise it later."
+      : "Read the explanation once, improve your wording or logic, and submit again."
+    : "Pick your answer carefully, then submit to reveal detailed feedback and the correct answer.";
+
   return (
-    <div className="container py-4">
+    <div className="container py-4 practice-pro-page">
+      <div className="practice-hero-strip mb-4">
+        <div>
+          <p className="eyebrow mb-2">Practice Mode</p>
+          <h1 className="h2 fw-bold mb-2">Sharpen one concept at a time</h1>
+          <p className="text-secondary mb-0">Move through questions with instant feedback, bookmarks, and coding support without losing your context.</p>
+        </div>
+        <div className="practice-hero-metrics">
+          <div className="practice-hero-chip">
+            <span>Category</span>
+            <strong>{selectedCategory || "Not selected"}</strong>
+          </div>
+          <div className="practice-hero-chip">
+            <span>Question</span>
+            <strong>{completionLabel}</strong>
+          </div>
+          <div className="practice-hero-chip">
+            <span>Bookmarks</span>
+            <strong>{bookmarks.length}</strong>
+          </div>
+        </div>
+      </div>
+
       <div className="row g-4 align-items-start">
         <div className="col-xl-4">
-          <div className="card glass-card practice-control-card">
+          <div className="card glass-card practice-control-card practice-panel-card">
             <div className="card-body">
-              <p className="eyebrow mb-2">Practice Mode</p>
-              <h1 className="h3 fw-bold mb-3">Question Library</h1>
-              <p className="text-secondary mb-4">Switch between focused sections and practice only the related questions.</p>
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                  <p className="eyebrow mb-2">Question Navigator</p>
+                  <h2 className="h4 mb-0">Focused question list</h2>
+                </div>
+                <span className="badge text-bg-info">{filteredQuestions.length} questions</span>
+              </div>
+              <p className="text-secondary mb-4">Choose a subject, jump between questions, and keep your preparation targeted.</p>
+
+              <div className="practice-panel-summary mb-4">
+                <div className="practice-progress-ring">
+                  <strong>{completionPercent}%</strong>
+                  <span>Progress</span>
+                </div>
+                <div className="practice-summary-copy">
+                  <strong>{question?.topic || "Pick a topic"}</strong>
+                  <span>{practiceAdvice}</span>
+                </div>
+              </div>
+
+              <div className="practice-mini-stats mb-4">
+                {categoryQuestionTypes.map((item) => (
+                  <div key={item.label} className="practice-mini-stat">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
 
               <div className="practice-category-tabs mb-4">
                 {categories.map((category) => (
@@ -155,7 +234,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
 
         <div className="col-xl-8">
           <div className="vstack gap-4">
-            <div className="card glass-card question-card">
+            <div className="card glass-card question-card practice-main-card">
               <div className="card-body question-card-body">
                 {question ? (
                   <>
@@ -169,14 +248,30 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                     </button>
 
                     <div className="question-header mb-3">
-                      <p className="eyebrow mb-2">Current Question</p>
-                      <h2 className="h3 fw-bold mb-2">{question.title}</h2>
+                      <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                        <div>
+                          <p className="eyebrow mb-2">Current Question</p>
+                          <h2 className="h3 fw-bold mb-2">{question.title}</h2>
+                        </div>
+                        <span className="badge text-bg-info">Question {currentQuestionNumber} of {filteredQuestions.length}</span>
+                      </div>
                       <p className="text-secondary mb-3">{question.description}</p>
                       <div className="d-flex gap-2 flex-wrap">
                         <span className="badge text-bg-dark">{question.category}</span>
                         <span className="badge text-bg-dark">{question.topic}</span>
                         <span className="badge text-bg-info">{question.type}</span>
                         <span className="badge text-bg-secondary">{question.difficulty}</span>
+                      </div>
+                    </div>
+
+                    <div className="practice-focus-strip mb-4">
+                      <div>
+                        <span className="feedback-label">Practice Focus</span>
+                        <p className="mb-0">{practiceAdvice}</p>
+                      </div>
+                      <div className="practice-focus-side">
+                        <span className="feedback-label">Recommended Move</span>
+                        <p className="mb-0">{nextMove}</p>
                       </div>
                     </div>
 
@@ -244,9 +339,12 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
               </div>
             </div>
 
-            <div className="card glass-card">
+            <div className="card glass-card practice-feedback-card">
               <div className="card-body">
-                <h2 className="h4 mb-3">Instant Feedback</h2>
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                  <h2 className="h4 mb-0">Instant Feedback</h2>
+                  {feedback && <span className={`badge ${feedback.isCorrect ? "text-bg-info" : "text-bg-secondary"}`}>{feedback.isCorrect ? "Correct" : "Needs work"}</span>}
+                </div>
                 {feedback ? (
                   <>
                     <div className={`alert ${feedback.isCorrect ? "alert-success" : "alert-warning"}`}>
@@ -264,7 +362,7 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
                     </div>
                   </>
                 ) : (
-                  <p className="text-secondary mb-0">Submit an answer to get correctness and detailed explanation.</p>
+                  <p className="text-secondary mb-0">Submit an answer to get correctness feedback, explanation, and answer comparison here.</p>
                 )}
 
                 {runResult && (
