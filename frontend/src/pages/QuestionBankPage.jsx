@@ -38,8 +38,7 @@ const parseQuestionDisplay = (question) => {
     title,
     description: descriptionParts.main,
     advice: descriptionParts.note,
-    explanation: explanationParts.main,
-    explanationNote: explanationParts.note
+    explanation: explanationParts.main
   };
 };
 
@@ -203,7 +202,6 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
                         <p className="fw-semibold mb-2">Explanation</p>
                         <div className="question-bank-explanation">
                           {display.explanation}
-                          {display.explanationNote ? <span className="question-bank-advice"> ({display.explanationNote})</span> : null}
                         </div>
                       </div>
                     </>
