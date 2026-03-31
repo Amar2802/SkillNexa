@@ -104,12 +104,13 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
 
     if (question) {
       recordDailyAttempt({
-        bucket: mapCategoryToBucket(question.category),
+        bucket: mapCategoryToBucket(question.category, "", question.field || "Software"),
         questionId: question._id,
         title: question.title,
         topic: question.topic,
         category: question.category,
-        source: "practice"
+        source: "practice",
+        field: question.field || "Software"
       });
     }
   };
@@ -418,3 +419,4 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
 };
 
 export default PracticePage;
+

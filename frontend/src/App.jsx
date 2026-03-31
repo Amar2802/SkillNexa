@@ -68,7 +68,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadQuestions(filters).catch(() => undefined);
+    const clearedFilters = { category: "", difficulty: "", topic: "", company: "" };
+    setFilters(clearedFilters);
+    loadQuestions(clearedFilters).catch(() => undefined);
+    refreshTests().catch(() => undefined);
   }, [activeField]);
 
   useEffect(() => {
@@ -111,4 +114,5 @@ export default function App() {
     </div>
   );
 }
+
 

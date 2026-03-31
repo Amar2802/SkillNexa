@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/client";
 import { mapCategoryToBucket, recordDailyAttempt } from "../utils/prepTracking";
+import { FIELD_COMPANY_TRACKS } from "../utils/fieldOptions";
 
-const companyOptions = ["", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
 const DEFAULT_DURATION = 30;
 const DEFAULT_TOTAL_QUESTIONS = 30;
 
@@ -18,14 +18,20 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [result, setResult] = useState(null);
+  const companyOptions = useMemo(() => ["", ...(FIELD_COMPANY_TRACKS[targetField] || FIELD_COMPANY_TRACKS.Software).filter((company) => company !== "General")], [targetField]);
   const [selectedCompany, setSelectedCompany] = useState("");
   const flat = useMemo(() => activeTest?.sections?.flatMap((section) => section.questions) || [], [activeTest]);
+
+  useEffect(() => {
+    setSelectedCompany("");
+  }, [targetField]);
 
   useEffect(() => {
     if (!activeTest || timeLeft <= 0) return;
     const timer = setInterval(() => setTimeLeft((value) => value - 1), 1000);
     return () => clearInterval(timer);
   }, [activeTest, timeLeft]);
+
 
   useEffect(() => {
     if (activeTest && timeLeft === 0) submit();
@@ -61,7 +67,7 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
       const hasAnswer = typeof submittedAnswer === "string" ? submittedAnswer.trim().length > 0 : Boolean(submittedAnswer);
       if (!hasAnswer) return;
       recordDailyAttempt({
-        bucket: mapCategoryToBucket(question.category),
+        bucket: mapCategoryToBucket(question.category, "", targetField),
         questionId: question._id,
         title: question.title,
         topic: question.topic,
@@ -299,5 +305,11 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
 };
 
 export default MockTestsPage;
+
+
+
+
+
+
 
 

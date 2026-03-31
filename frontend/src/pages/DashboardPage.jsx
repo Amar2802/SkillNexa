@@ -2,18 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 import api from "../api/client";
-import { DAILY_INTERVIEW_TRACKS, getDailyPrepKey, readDailyAttemptRecords } from "../utils/prepTracking";
+import { getDailyInterviewTracks, getDailyPrepKey, readDailyAttemptRecords } from "../utils/prepTracking";
+import { FIELD_COMPANY_TRACKS } from "../utils/fieldOptions";
 
-const companyOptions = ["General", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
-
-const calculateStreak = (records) => {
+const calculateStreak = (records, tracks) => {
   let streak = 0;
   let cursor = new Date();
 
   while (true) {
     const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
     const entry = records[key] || {};
-    const completed = DAILY_INTERVIEW_TRACKS.every((task) => entry?.[task.bucket]?.completed);
+    const completed = tracks.every((task) => entry?.[task.bucket]?.completed);
     if (!completed) break;
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
@@ -24,6 +23,7 @@ const calculateStreak = (records) => {
 
 const DashboardPage = ({ profile, recommendations, questions = [] }) => {
   const activeField = profile?.targetField || "Software";
+  const companyOptions = FIELD_COMPANY_TRACKS[activeField] || FIELD_COMPANY_TRACKS.Software;
   const navigate = useNavigate();
   const recent = profile?.analytics?.recentResults || [];
   const weakTopics = profile?.progress?.weakTopics || [];
@@ -34,6 +34,10 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
 
   const todayKey = useMemo(() => getDailyPrepKey(), []);
   const todayAttempts = attemptRecords[todayKey] || {};
+
+  useEffect(() => {
+    setSelectedCompany("General");
+  }, [activeField]);
 
   useEffect(() => {
     const loadRoadmap = async () => {
@@ -73,12 +77,13 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
   };
 
   const focusTopic = weakTopics[0] || recommendations?.[0]?.topic || "Interview fundamentals";
-  const streak = useMemo(() => calculateStreak(attemptRecords), [attemptRecords]);
+  const dailyTracks = useMemo(() => getDailyInterviewTracks(activeField), [activeField]);
+  const streak = useMemo(() => calculateStreak(attemptRecords, dailyTracks), [attemptRecords, dailyTracks]);
 
   const dailyPrepTasks = useMemo(() => {
     const daySeed = Number(todayKey.replace(/-/g, "")) || 0;
 
-    return DAILY_INTERVIEW_TRACKS.map((track, index) => {
+    return dailyTracks.map((track, index) => {
       const pool = questions.filter((question) => question.category === track.category);
       const question = pool.length ? pool[(daySeed + index) % pool.length] : null;
       const attempt = todayAttempts[track.bucket];
@@ -93,7 +98,7 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
           : "Not attempted yet today"
       };
     });
-  }, [questions, todayAttempts, todayKey]);
+  }, [dailyTracks, questions, todayAttempts, todayKey]);
 
   const completedTasks = dailyPrepTasks.filter((task) => task.completed).length;
   const dailyGoalProgress = Math.round((completedTasks / dailyPrepTasks.length) * 100);
@@ -292,5 +297,9 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
 };
 
 export default DashboardPage;
+
+
+
+
 
 

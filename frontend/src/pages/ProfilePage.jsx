@@ -1,21 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../api/client";
-import { FIELD_OPTIONS } from "../utils/fieldOptions";
-
-const interestOptions = [
-  "DSA",
-  "Aptitude",
-  "Probability",
-  "HR Interviews",
-  "Operating Systems",
-  "DBMS",
-  "Computer Networks",
-  "OOP",
-  "SQL",
-  "Java",
-  "Python",
-  "Web Development"
-];
+import { FIELD_INTEREST_OPTIONS, FIELD_OPTIONS } from "../utils/fieldOptions";
 
 const AvatarPreview = ({ profile }) => {
   const initials = (profile?.name || "U")
@@ -124,6 +109,7 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
   };
 
   const weakTopics = profile?.progress?.weakTopics || [];
+  const interestOptions = FIELD_INTEREST_OPTIONS[targetField] || FIELD_INTEREST_OPTIONS.Software;
   const recommendedTopics = profile?.progress?.recommendedTopics || [];
   const accuracy = profile?.progress?.accuracy || 0;
   const testsTaken = profile?.progress?.testsTaken || 0;
@@ -319,3 +305,4 @@ const ProfilePage = ({ profile, refreshProfile, logout }) => {
 };
 
 export default ProfilePage;
+

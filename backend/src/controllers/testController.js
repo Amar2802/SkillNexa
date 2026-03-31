@@ -22,7 +22,11 @@ const buildDistribution = (categories, totalQuestions, questionsPerCategory) => 
 };
 
 export const getTests = async (req, res) => {
-  const query = req.query.company ? { "sections.category": { $exists: true } } : {};
+  const query = {};
+  if (req.query.field) {
+    query.targetField = req.query.field;
+  }
+
   res.json(await Test.find(query).populate("sections.questions").sort({ createdAt: -1 }));
 };
 
@@ -73,7 +77,8 @@ export const createTest = async (req, res) => {
   const test = await Test.create({
     title,
     description,
-    duration: Number(duration) || DEFAULT_DURATION,`r`n    targetField,
+    duration: Number(duration) || DEFAULT_DURATION,
+    targetField,
     sections,
     createdBy: req.user._id
   });
@@ -148,4 +153,3 @@ export const submitTest = async (req, res) => {
 
   res.status(201).json(await Result.findById(result._id).populate("answers.question", "title topic difficulty"));
 };
-

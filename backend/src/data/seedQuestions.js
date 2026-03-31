@@ -1281,15 +1281,182 @@ const sscFieldQuestions = [
     tags: ["ssc", "gk", "static"]
   }
 ];
+
+const railwaysFieldQuestions = [
+  {
+    title: "Railway Signal Safety",
+    field: "Railways",
+    category: "Railway Operations",
+    topic: "Railway Safety",
+    difficulty: "Easy",
+    company: "Railways",
+    type: "Subjective",
+    description: "Why is signal discipline critical in railway operations?",
+    correctAnswer: "Signal discipline prevents unsafe movement, reduces collision risk, and ensures train coordination across the network.",
+    explanation: "A strong answer should connect signalling with safety, timing, and operational control.",
+    tags: ["railways", "operations", "safety"]
+  },
+  {
+    title: "Basic Speed-Time-Distance for Rail Exams",
+    field: "Railways",
+    category: "Mathematics",
+    topic: "Speed and Distance",
+    difficulty: "Easy",
+    company: "RRB",
+    type: "Subjective",
+    description: "Explain the core formula used to solve train speed and distance questions.",
+    correctAnswer: "Use distance equals speed into time, convert units carefully, and apply train-length logic where needed.",
+    explanation: "Most rail aptitude questions test formula use, unit conversion, and train-length handling.",
+    tags: ["railways", "maths", "speed-distance"]
+  },
+  {
+    title: "Technical Aptitude in Mechanical Systems",
+    field: "Railways",
+    category: "Technical Aptitude",
+    topic: "Mechanical Basics",
+    difficulty: "Medium",
+    company: "Technical Rail",
+    type: "Subjective",
+    description: "How should a candidate explain basic mechanical troubleshooting in a railway context?",
+    correctAnswer: "The answer should focus on observing symptoms, checking components systematically, prioritizing safety, and reporting or fixing issues using standard procedure.",
+    explanation: "Interviewers look for practical thinking and safety-first reasoning.",
+    tags: ["railways", "technical", "mechanical"]
+  },
+  {
+    title: "Public Transport Awareness",
+    field: "Railways",
+    category: "General Awareness",
+    topic: "Transport Systems",
+    difficulty: "Easy",
+    company: "Railways",
+    type: "Subjective",
+    description: "Why is general awareness important for railway recruitment interviews?",
+    correctAnswer: "It helps candidates understand public service context, current transport issues, infrastructure priorities, and the social role of railways.",
+    explanation: "A complete answer links awareness with responsibility and decision-making in public systems.",
+    tags: ["railways", "awareness", "transport"]
+  }
+];
+
+const teachingFieldQuestions = [
+  {
+    title: "Child-Centered Learning",
+    field: "Teaching",
+    category: "Pedagogy",
+    topic: "Learning Methods",
+    difficulty: "Easy",
+    company: "Teaching",
+    type: "Subjective",
+    description: "What is meant by child-centered learning?",
+    correctAnswer: "Child-centered learning focuses on learner needs, participation, pace, and engagement instead of one-way instruction only.",
+    explanation: "A strong answer should mention active learning, learner diversity, and participation.",
+    tags: ["teaching", "pedagogy", "learning"]
+  },
+  {
+    title: "Handling a Weak Student",
+    field: "Teaching",
+    category: "Teaching Aptitude",
+    topic: "Student Support",
+    difficulty: "Medium",
+    company: "Teaching",
+    type: "Subjective",
+    description: "How should a teacher support a student who is consistently underperforming?",
+    correctAnswer: "The teacher should identify the difficulty, provide targeted support, adapt methods, encourage the learner, and involve parents when useful.",
+    explanation: "Interviewers want empathy, diagnosis, and realistic intervention steps.",
+    tags: ["teaching", "aptitude", "student support"]
+  },
+  {
+    title: "Explaining a Subject Clearly",
+    field: "Teaching",
+    category: "Subject Mastery",
+    topic: "Concept Delivery",
+    difficulty: "Medium",
+    company: "Subject Pedagogy",
+    type: "Subjective",
+    description: "What makes a subject explanation effective in the classroom?",
+    correctAnswer: "An effective explanation is accurate, age-appropriate, logically structured, example-driven, and responsive to student doubts.",
+    explanation: "Good teaching combines subject knowledge with accessible delivery.",
+    tags: ["teaching", "subject knowledge", "classroom"]
+  },
+  {
+    title: "Classroom Communication",
+    field: "Teaching",
+    category: "Classroom Communication",
+    topic: "Communication Skills",
+    difficulty: "Easy",
+    company: "Teaching",
+    type: "Subjective",
+    description: "Why are communication skills essential for teachers?",
+    correctAnswer: "Teachers need clear communication to explain ideas, build rapport, manage the classroom, and encourage student confidence.",
+    explanation: "Communication is both instructional and relational in teaching roles.",
+    tags: ["teaching", "communication", "classroom management"]
+  }
+];
+
+const statePscFieldQuestions = [
+  {
+    title: "Role of State Administration",
+    field: "State PSC",
+    category: "State Administration",
+    topic: "Governance",
+    difficulty: "Medium",
+    company: "State PSC",
+    type: "Subjective",
+    description: "What is the role of state administration in public service delivery?",
+    correctAnswer: "State administration implements policies, delivers welfare and essential services, manages local governance, and ensures region-specific development.",
+    explanation: "A good answer balances policy execution, administrative structure, and citizen impact.",
+    tags: ["state psc", "administration", "governance"]
+  },
+  {
+    title: "State Current Affairs Preparation",
+    field: "State PSC",
+    category: "Current Affairs",
+    topic: "Current Affairs",
+    difficulty: "Easy",
+    company: "State Governance",
+    type: "Subjective",
+    description: "How should a candidate prepare current affairs for a State PSC interview?",
+    correctAnswer: "Preparation should combine national issues with state-specific schemes, governance updates, economy, geography, and local administrative priorities.",
+    explanation: "The state angle is what distinguishes this from generic current affairs preparation.",
+    tags: ["state psc", "current affairs", "strategy"]
+  },
+  {
+    title: "General Studies for State PSC",
+    field: "State PSC",
+    category: "General Studies",
+    topic: "Polity",
+    difficulty: "Easy",
+    company: "State PSC",
+    type: "Subjective",
+    description: "Why is polity an important subject for State PSC aspirants?",
+    correctAnswer: "Polity helps aspirants understand constitutional structure, administrative roles, governance processes, rights, and the relationship between state and central institutions.",
+    explanation: "An interview-ready answer should connect polity with governance in practice.",
+    tags: ["state psc", "polity", "general studies"]
+  },
+  {
+    title: "Why do you want to join state services?",
+    field: "State PSC",
+    category: "Interview Personality",
+    topic: "Personality Test",
+    difficulty: "Easy",
+    company: "Administrative Services",
+    type: "Subjective",
+    description: "Frame a mature answer for a State PSC personality interview.",
+    correctAnswer: "The answer should reflect motivation for public service, local governance impact, administrative responsibility, and commitment to serving people at the state level.",
+    explanation: "Interviewers value sincerity, administrative clarity, and service orientation.",
+    tags: ["state psc", "interview", "motivation"]
+  }
+];
 const TARGET_VISIBLE_PER_CATEGORY = 1000;
 const FIELD_CATEGORY_ORDER = {
   Software: ["DSA", "Aptitude", "HR", "Core Subjects"],
   UPSC: ["General Studies", "Current Affairs", "Essay & Ethics", "Interview Personality"],
   NDA: ["Mathematics", "General Ability", "Current Affairs", "SSB Interview"],
   Banking: ["Quantitative Aptitude", "Reasoning", "English", "Banking Awareness"],
-  SSC: ["Quantitative Aptitude", "General Intelligence", "English", "General Awareness"]
-};
-const bulkCompanies = [
+  SSC: ["Quantitative Aptitude", "General Intelligence", "English", "General Awareness"],
+  Railways: ["Technical Aptitude", "General Awareness", "Mathematics", "Railway Operations"],
+  Teaching: ["Teaching Aptitude", "Pedagogy", "Subject Mastery", "Classroom Communication"],
+  "State PSC": ["General Studies", "Current Affairs", "State Administration", "Interview Personality"]
+};`r`nconst bulkCompanies = [
   "Amazon",
   "Microsoft",
   "Google",
@@ -1308,9 +1475,11 @@ const fieldCompanyMap = {
   UPSC: ["UPSC", "Civil Services", "Public Administration", "Policy Round"],
   NDA: ["NDA", "SSB Board", "Defence Service", "Officer Selection"],
   Banking: ["Banking", "IBPS", "SBI", "RBI"],
-  SSC: ["SSC", "Government Exam", "Central Recruitment", "Competitive Round"]
-};
-const practiceAngles = [
+  SSC: ["SSC", "Government Exam", "Central Recruitment", "Competitive Round"],
+  Railways: ["Railways", "RRB", "Technical Rail", "Operations Round"],
+  Teaching: ["Teaching", "CTET", "Classroom Interview", "Subject Pedagogy"],
+  "State PSC": ["State PSC", "Administrative Services", "State Governance", "Public Policy"]
+};`r`nconst practiceAngles = [
   "Focus on the interview-ready explanation and mention one practical use case.",
   "Frame your answer the way you would explain it in a technical round.",
   "Add one edge case or limitation while answering this version.",
@@ -1387,12 +1556,21 @@ const allBaseQuestions = [
   ...upscFieldQuestions,
   ...ndaFieldQuestions,
   ...bankingFieldQuestions,
-  ...sscFieldQuestions
+  ...sscFieldQuestions,
+  ...railwaysFieldQuestions,
+  ...teachingFieldQuestions,
+  ...statePscFieldQuestions
 ];
 
 const seedQuestions = buildLargeQuestionBank(allBaseQuestions);
 
 export default seedQuestions;
+
+
+
+
+
+
 
 
 
