@@ -52,6 +52,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
       <p className="eyebrow mb-1">Question Bank</p>
       <h1 className="h2 fw-bold mb-2">Explore questions by subject</h1>
       <p className="text-secondary mb-4">This section focuses on coding and descriptive interview questions. Answers stay hidden until you choose to view them.</p>
+
       <div className="card glass-card mb-4">
         <div className="card-body">
           <div className="row g-3">
@@ -93,15 +94,15 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions }) => 
         </div>
       </div>
 
-      <div className="row g-3">
+      <div className="question-bank-stack">
         {sectionQuestions.map((q) => {
           const isOpen = !!openAnswers[q._id];
 
           return (
-            <div className="col-lg-6" key={q._id}>
+            <div className="question-bank-stack-item" key={q._id}>
               <div className="card glass-card h-100">
                 <div className="card-body">
-                  <div className="d-flex justify-content-between gap-3 mb-3">
+                  <div className="d-flex justify-content-between gap-3 mb-3 flex-wrap">
                     <div>
                       <h2 className="h5">{q.title}</h2>
                       <p className="text-secondary mb-0">{q.description}</p>

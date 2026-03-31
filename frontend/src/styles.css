@@ -1468,3 +1468,17 @@ body {
 :root[data-theme="dark"] .mistake-card .feedback-detail-card p {
   color: rgba(255, 244, 236, 0.92);
 }
+
+.question-bank-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.question-bank-stack-item {
+  width: 100%;
+}
+
+.question-bank-stack-item .glass-card {
+  max-width: 980px;
+}
