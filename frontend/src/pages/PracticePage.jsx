@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
 import api from "../api/client";
+import { mapCategoryToBucket, recordDailyAttempt } from "../utils/prepTracking";
 
 const BookmarkIcon = ({ active }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -76,6 +77,17 @@ const PracticePage = ({ questions, bookmarks = [], refreshBookmarks }) => {
       timeSpent: Math.round((Date.now() - startedAt) / 1000)
     });
     setFeedback(data);
+
+    if (question) {
+      recordDailyAttempt({
+        bucket: mapCategoryToBucket(question.category),
+        questionId: question._id,
+        title: question.title,
+        topic: question.topic,
+        category: question.category,
+        source: "practice"
+      });
+    }
   };
 
   const runCode = async () => {

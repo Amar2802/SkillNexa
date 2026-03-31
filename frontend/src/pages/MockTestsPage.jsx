@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/client";
+import { mapCategoryToBucket, recordDailyAttempt } from "../utils/prepTracking";
 
 const companyOptions = ["", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
 const DEFAULT_DURATION = 30;
@@ -53,6 +54,21 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory }) => {
       answers: payload,
       totalTimeSpent: activeTest.duration * 60 - timeLeft
     });
+
+    flat.forEach((question) => {
+      const submittedAnswer = answers[question._id];
+      const hasAnswer = typeof submittedAnswer === "string" ? submittedAnswer.trim().length > 0 : Boolean(submittedAnswer);
+      if (!hasAnswer) return;
+      recordDailyAttempt({
+        bucket: mapCategoryToBucket(question.category),
+        questionId: question._id,
+        title: question.title,
+        topic: question.topic,
+        category: question.category,
+        source: "mock-test"
+      });
+    });
+
     setResult(data);
     setActiveTest(null);
     setTimeLeft(0);

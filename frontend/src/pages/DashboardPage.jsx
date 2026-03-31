@@ -2,34 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 import api from "../api/client";
+import { DAILY_INTERVIEW_TRACKS, getDailyPrepKey, readDailyAttemptRecords } from "../utils/prepTracking";
 
 const companyOptions = ["General", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
-const prepTaskTemplates = [
-  { id: "practice", label: "Practice one focused question set", route: "/practice" },
-  { id: "review", label: "Review one mistake and note the lesson", route: "/review-mistakes" },
-  { id: "ai", label: "Answer one AI interviewer question", route: "/ai-interviewer" },
-  { id: "mock", label: "Attempt one timed mock test block", route: "/mock-tests" }
-];
-
-const getTodayKey = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const readPrepRecords = () => {
-  try {
-    return JSON.parse(localStorage.getItem("skillnexa-prep-records") || "{}");
-  } catch {
-    return {};
-  }
-};
-
-const writePrepRecords = (records) => {
-  localStorage.setItem("skillnexa-prep-records", JSON.stringify(records));
-};
 
 const calculateStreak = (records) => {
   let streak = 0;
@@ -37,8 +12,8 @@ const calculateStreak = (records) => {
 
   while (true) {
     const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
-    const entry = records[key];
-    const completed = prepTaskTemplates.every((task) => entry?.[task.id]);
+    const entry = records[key] || {};
+    const completed = DAILY_INTERVIEW_TRACKS.every((task) => entry?.[task.bucket]?.completed);
     if (!completed) break;
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
@@ -47,18 +22,17 @@ const calculateStreak = (records) => {
   return streak;
 };
 
-const DashboardPage = ({ profile, recommendations }) => {
+const DashboardPage = ({ profile, recommendations, questions = [] }) => {
   const navigate = useNavigate();
   const recent = profile?.analytics?.recentResults || [];
   const weakTopics = profile?.progress?.weakTopics || [];
-  const recommendedTopics = profile?.progress?.recommendedTopics || [];
   const [selectedCompany, setSelectedCompany] = useState("General");
   const [roadmap, setRoadmap] = useState([]);
   const [companyQuestions, setCompanyQuestions] = useState([]);
-  const [prepRecords, setPrepRecords] = useState(() => readPrepRecords());
+  const [attemptRecords, setAttemptRecords] = useState(() => readDailyAttemptRecords());
 
-  const todayKey = useMemo(() => getTodayKey(), []);
-  const todayRecord = prepRecords[todayKey] || {};
+  const todayKey = useMemo(() => getDailyPrepKey(), []);
+  const todayAttempts = attemptRecords[todayKey] || {};
 
   useEffect(() => {
     const loadRoadmap = async () => {
@@ -75,8 +49,14 @@ const DashboardPage = ({ profile, recommendations }) => {
   }, [selectedCompany]);
 
   useEffect(() => {
-    writePrepRecords(prepRecords);
-  }, [prepRecords]);
+    const syncAttempts = () => setAttemptRecords(readDailyAttemptRecords());
+    window.addEventListener("focus", syncAttempts);
+    window.addEventListener("storage", syncAttempts);
+    return () => {
+      window.removeEventListener("focus", syncAttempts);
+      window.removeEventListener("storage", syncAttempts);
+    };
+  }, []);
 
   const openRecommendedTopic = (question) => {
     const params = new URLSearchParams();
@@ -91,20 +71,32 @@ const DashboardPage = ({ profile, recommendations }) => {
     navigate(`/questions?${params.toString()}`);
   };
 
-  const togglePrepTask = (taskId) => {
-    setPrepRecords((current) => ({
-      ...current,
-      [todayKey]: {
-        ...(current[todayKey] || {}),
-        [taskId]: !(current[todayKey] || {})[taskId]
-      }
-    }));
-  };
+  const focusTopic = weakTopics[0] || recommendations?.[0]?.topic || "Interview fundamentals";
+  const streak = useMemo(() => calculateStreak(attemptRecords), [attemptRecords]);
 
-  const completedTasks = prepTaskTemplates.filter((task) => todayRecord[task.id]).length;
-  const dailyGoalProgress = Math.round((completedTasks / prepTaskTemplates.length) * 100);
-  const streak = useMemo(() => calculateStreak(prepRecords), [prepRecords]);
-  const focusTopic = weakTopics[0] || recommendedTopics[0] || "Interview fundamentals";
+  const dailyPrepTasks = useMemo(() => {
+    const daySeed = Number(todayKey.replace(/-/g, "")) || 0;
+
+    return DAILY_INTERVIEW_TRACKS.map((track, index) => {
+      const pool = questions.filter((question) => question.category === track.category);
+      const question = pool.length ? pool[(daySeed + index) % pool.length] : null;
+      const attempt = todayAttempts[track.bucket];
+
+      return {
+        ...track,
+        question,
+        completed: !!attempt?.completed,
+        completionLabel: attempt?.completed ? "Completed" : "Attempt question",
+        completionMeta: attempt?.completed
+          ? `Attempted from ${attempt.source || "practice"}`
+          : "Not attempted yet today"
+      };
+    });
+  }, [questions, todayAttempts, todayKey]);
+
+  const completedTasks = dailyPrepTasks.filter((task) => task.completed).length;
+  const dailyGoalProgress = Math.round((completedTasks / dailyPrepTasks.length) * 100);
+
   const quickActions = [
     { label: "Practice Questions", hint: "Sharpen concept recall", route: "/practice" },
     { label: "Mock Test", hint: "Simulate pressure and timing", route: "/mock-tests" },
@@ -191,26 +183,28 @@ const DashboardPage = ({ profile, recommendations }) => {
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                 <div>
                   <h2 className="h5 mb-1">Daily Preparation Plan</h2>
-                  <p className="text-secondary mb-0">Small consistent actions build interview confidence faster than random long sessions.</p>
+                  <p className="text-secondary mb-0">Each task is tied to a real interview round and completes automatically when you attempt a question today.</p>
                 </div>
-                <span className="badge text-bg-info">{completedTasks}/{prepTaskTemplates.length} completed today</span>
+                <span className="badge text-bg-info">{completedTasks}/{dailyPrepTasks.length} completed today</span>
               </div>
               <div className="prep-plan-list">
-                {prepTaskTemplates.map((task) => {
-                  const completed = !!todayRecord[task.id];
-                  return (
-                    <div className={`prep-plan-item ${completed ? "completed" : ""}`} key={task.id}>
-                      <button type="button" className={`prep-check ${completed ? "completed" : ""}`} onClick={() => togglePrepTask(task.id)}>
-                        {completed ? "Done" : "Mark"}
-                      </button>
-                      <div className="prep-plan-copy">
-                        <strong>{task.label}</strong>
-                        <span>{task.route === "/mock-tests" ? "Best for building timing discipline" : task.route === "/review-mistakes" ? "Best for turning weaknesses into revision" : task.route === "/ai-interviewer" ? "Best for answer structure and speaking confidence" : "Best for quick concept reinforcement"}</span>
-                      </div>
-                      <button type="button" className="btn btn-outline-light btn-sm" onClick={() => navigate(task.route)}>Open</button>
+                {dailyPrepTasks.map((task) => (
+                  <div className={`prep-plan-item ${task.completed ? "completed" : ""}`} key={task.bucket}>
+                    <div className={`prep-check ${task.completed ? "completed" : ""}`}>{task.completed ? "Done" : "Live"}</div>
+                    <div className="prep-plan-copy">
+                      <strong>{task.label}: {task.question?.title || "Question loading..."}</strong>
+                      <span>{task.question ? `${task.question.topic} | ${task.question.difficulty} | ${task.guidance}` : task.guidance}</span>
+                      <small className="text-secondary">{task.completionMeta}</small>
                     </div>
-                  );
-                })}
+                    <button
+                      type="button"
+                      className="btn btn-outline-light btn-sm"
+                      onClick={() => task.question ? openRecommendedTopic(task.question) : navigate("/questions")}
+                    >
+                      {task.completionLabel}
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

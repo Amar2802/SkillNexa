@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import api from "../api/client";
+import { mapCategoryToBucket, recordDailyAttempt } from "../utils/prepTracking";
 
 const roundOptions = ["Mixed", "Technical", "HR", "Managerial", "Project Discussion"];
 const experienceOptions = ["Student", "Fresher", "Experienced"];
@@ -63,6 +64,14 @@ const AIInterviewerPage = () => {
         roundType
       });
       setEvaluation(data);
+      recordDailyAttempt({
+        bucket: mapCategoryToBucket(selectedQuestion.category, roundType),
+        questionId: selectedQuestion.id,
+        title: selectedQuestion.question,
+        topic: selectedQuestion.intent || selectedQuestion.category,
+        category: selectedQuestion.category || roundType,
+        source: "ai"
+      });
     } finally {
       setEvaluating(false);
     }
