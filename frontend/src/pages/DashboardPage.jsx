@@ -273,12 +273,16 @@ const DashboardPage = ({ profile, recommendations }) => {
         <div className="col-lg-5">
           <div className="card glass-card h-100">
             <div className="card-body">
-              <h2 className="h5 mb-3">Company Prep Questions</h2>
-              <div className="list-group list-group-flush">
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h2 className="h5 mb-0">Company Prep Questions</h2>
+                <span className="badge text-bg-secondary">Swipe or scroll</span>
+              </div>
+              <div className="company-prep-track-row">
                 {companyQuestions.map((q) => (
-                  <button type="button" className="list-group-item bg-transparent px-0 recommendation-link text-start border-0" key={q._id} onClick={() => openRecommendedTopic(q)}>
-                    <h3 className="h6 mb-1">{q.title}</h3>
-                    <p className="mb-0 text-secondary">{q.company} | {q.category} | {q.topic}</p>
+                  <button type="button" className="company-prep-track-card recommendation-link text-start border-0" key={q._id} onClick={() => openRecommendedTopic(q)}>
+                    <span className="company-prep-track-badge">{q.company || selectedCompany}</span>
+                    <h3 className="h6 mb-2">{q.title}</h3>
+                    <p className="mb-0 text-secondary">{q.category} | {q.topic}</p>
                   </button>
                 ))}
                 {!companyQuestions.length && <p className="text-secondary mb-0">No company-tagged questions found yet for this track.</p>}
