@@ -156,7 +156,8 @@ export const toggleBookmark = async (req, res) => {
 
 export const getHistory = async (req, res) => {
   const history = await Result.find({ user: req.user._id })
-    .populate("test", "title")
+    .populate("test", "title description")
+    .populate("answers.question", "title topic category difficulty description correctAnswer explanation type")
     .sort({ createdAt: -1 });
 
   res.json(history);

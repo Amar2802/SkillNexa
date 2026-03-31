@@ -1451,3 +1451,20 @@ body {
     padding: 1rem;
   }
 }
+.review-count-badge {
+  font-size: 0.85rem;
+  padding: 0.55rem 0.8rem;
+}
+
+.review-filter-grid .form-control,
+.review-filter-grid .form-select {
+  min-height: 46px;
+}
+
+.mistake-card .feedback-detail-card p {
+  color: var(--text-primary, #2d1c15);
+}
+
+:root[data-theme="dark"] .mistake-card .feedback-detail-card p {
+  color: rgba(255, 244, 236, 0.92);
+}
