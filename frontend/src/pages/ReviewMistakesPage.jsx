@@ -12,7 +12,6 @@ const toDateInputValue = (value) => {
 
 const ReviewMistakesPage = ({ history = [] }) => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
   const [activeTopic, setActiveTopic] = useState("All Topics");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -49,24 +48,15 @@ const ReviewMistakesPage = ({ history = [] }) => {
   );
 
   const filteredMistakes = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-
     return mistakes.filter((mistake) => {
       const dateKey = toDateInputValue(mistake.createdAt);
-      const matchesSearch = !query || [
-        mistake.testTitle,
-        mistake.questionTitle,
-        mistake.questionDescription,
-        mistake.topic,
-        mistake.category
-      ].some((value) => String(value || "").toLowerCase().includes(query));
       const matchesTopic = activeTopic === "All Topics" || mistake.topic === activeTopic;
       const matchesFrom = !dateFrom || dateKey >= dateFrom;
       const matchesTo = !dateTo || dateKey <= dateTo;
 
-      return matchesSearch && matchesTopic && matchesFrom && matchesTo;
+      return matchesTopic && matchesFrom && matchesTo;
     });
-  }, [mistakes, searchTerm, activeTopic, dateFrom, dateTo]);
+  }, [mistakes, activeTopic, dateFrom, dateTo]);
 
   const openTopicReview = (mistake) => {
     const params = new URLSearchParams();
@@ -76,7 +66,6 @@ const ReviewMistakesPage = ({ history = [] }) => {
   };
 
   const resetFilters = () => {
-    setSearchTerm("");
     setActiveTopic("All Topics");
     setDateFrom("");
     setDateTo("");
@@ -94,24 +83,15 @@ const ReviewMistakesPage = ({ history = [] }) => {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                 <div>
-                  <h2 className="h5 mb-1">Find a mistake quickly</h2>
-                  <p className="text-secondary mb-0">Search by question, topic, category, or test name, and narrow it by date.</p>
+                  <h2 className="h5 mb-1">Filter mistakes by topic or date</h2>
+                  <p className="text-secondary mb-0">Use the topic selector and date range to quickly review the mistakes you want.</p>
                 </div>
                 <span className="badge text-bg-info review-count-badge">
                   Showing {filteredMistakes.length} of {mistakes.length}
                 </span>
               </div>
               <div className="row g-3 review-filter-grid">
-                <div className="col-lg-4 col-md-6">
-                  <label className="form-label">Search</label>
-                  <input
-                    className="form-control"
-                    placeholder="Question, topic, test..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <div className="col-lg-3 col-md-6">
+                <div className="col-lg-5 col-md-12">
                   <label className="form-label">Topic</label>
                   <select className="form-select" value={activeTopic} onChange={(e) => setActiveTopic(e.target.value)}>
                     {topics.map((topic) => (
@@ -119,11 +99,11 @@ const ReviewMistakesPage = ({ history = [] }) => {
                     ))}
                   </select>
                 </div>
-                <div className="col-lg-2 col-md-6">
+                <div className="col-lg-3 col-md-6">
                   <label className="form-label">From Date</label>
                   <input className="form-control" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
                 </div>
-                <div className="col-lg-2 col-md-6">
+                <div className="col-lg-3 col-md-6">
                   <label className="form-label">To Date</label>
                   <input className="form-control" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
                 </div>
