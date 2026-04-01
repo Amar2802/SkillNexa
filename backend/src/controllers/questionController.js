@@ -9,6 +9,12 @@ const parseSafeLimit = (value, fallback) => {
   return Math.min(parsed, 1000);
 };
 
+const parseSafePage = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+  return parsed;
+};
+
 const softwareSeedQuestions = seedQuestions
   .filter((question) => (question.field || SOFTWARE_FIELD) === SOFTWARE_FIELD)
   .map((question, index) => ({
@@ -68,6 +74,9 @@ export const getQuestions = async (req, res) => {
   const queryField = req.query.field || SOFTWARE_FIELD;
   const hasFocusedFilter = Boolean(req.query.category || req.query.difficulty || req.query.topic || req.query.company || req.query.type || req.query.search);
   const safeLimit = parseSafeLimit(req.query.limit, hasFocusedFilter ? 320 : 220);
+  const page = parseSafePage(req.query.page);
+  const skip = (page - 1) * safeLimit;
+  const wantsPaginated = req.query.paginated === "true";
 
   try {
     const query = { field: queryField };
@@ -78,16 +87,41 @@ export const getQuestions = async (req, res) => {
     if (req.query.type) query.type = req.query.type;
     if (req.query.search) query.title = new RegExp(req.query.search, "i");
 
-    const dbResults = await Question.find(query).sort({ createdAt: -1 }).limit(safeLimit);
-    if (dbResults.length) {
+    const [dbResults, total] = await Promise.all([
+      Question.find(query).sort({ createdAt: -1 }).skip(skip).limit(safeLimit),
+      Question.countDocuments(query)
+    ]);
+
+    if (dbResults.length || total > 0) {
+      if (wantsPaginated) {
+        return res.json({
+          items: dbResults,
+          total,
+          page,
+          limit: safeLimit,
+          totalPages: Math.max(1, Math.ceil(total / safeLimit))
+        });
+      }
       return res.json(dbResults);
     }
   } catch (error) {
     console.error("getQuestions error:", error);
   }
 
-  const fallbackResults = filterQuestionList(softwareSeedQuestions, { ...req.query, field: queryField }).slice(0, safeLimit);
-  return res.json(fallbackResults);
+  const filteredSeedQuestions = filterQuestionList(softwareSeedQuestions, { ...req.query, field: queryField });
+  const pagedSeedQuestions = filteredSeedQuestions.slice(skip, skip + safeLimit);
+
+  if (wantsPaginated) {
+    return res.json({
+      items: pagedSeedQuestions,
+      total: filteredSeedQuestions.length,
+      page,
+      limit: safeLimit,
+      totalPages: Math.max(1, Math.ceil(filteredSeedQuestions.length / safeLimit))
+    });
+  }
+
+  return res.json(filteredSeedQuestions.slice(0, safeLimit));
 };
 
 export const evaluateQuestion = async (req, res) => {

@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import api from "../api/client";
+
+const PAGE_SIZE = 24;
 
 const typeSections = [
   { id: "all", label: "All Questions" },
@@ -49,21 +52,57 @@ const parseQuestionDisplay = (question) => {
   };
 };
 
+const defaultCategoryOptions = ["DSA", "Aptitude", "HR", "Core Subjects"];
+
 const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defaultField = "Software" }) => {
   const location = useLocation();
   const [openAnswers, setOpenAnswers] = useState({});
   const [activeSection, setActiveSection] = useState("all");
   const [activeCategory, setActiveCategory] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pagedQuestions, setPagedQuestions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const bankCopy = FIELD_BANK_COPY[defaultField] || FIELD_BANK_COPY.Software;
 
-  useEffect(() => {
-    if (questions.length) return;
+  const usableQuestions = useMemo(
+    () => questions.filter((question) => question && question._id && (question.field || defaultField) === defaultField),
+    [questions, defaultField]
+  );
+
+  const filterOptions = useMemo(() => ({
+    category: [...new Set([...defaultCategoryOptions, ...usableQuestions.map((question) => question.category).filter(Boolean)])].sort(),
+    difficulty: [...new Set(usableQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
+    topic: [...new Set(usableQuestions.map((question) => question.topic).filter(Boolean))].sort(),
+    company: [...new Set(usableQuestions.map((question) => question.company).filter(Boolean))].sort()
+  }), [usableQuestions]);
+
+  const fetchPage = async (page, nextFilters = filters, nextCategory = activeCategory, nextSection = activeSection) => {
     setLoading(true);
-    loadQuestions(filters)
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  }, [questions.length]);
+    try {
+      const params = {
+        ...nextFilters,
+        field: defaultField,
+        page,
+        limit: PAGE_SIZE,
+        paginated: true
+      };
+
+      if (nextCategory) params.category = nextCategory;
+      if (nextSection !== "all") params.type = nextSection;
+
+      const { data } = await api.get("/questions", { params, timeout: 4000 });
+      setPagedQuestions(data.items || []);
+      setCurrentPage(data.page || page);
+      setTotalPages(data.totalPages || 1);
+    } catch {
+      setPagedQuestions([]);
+      setCurrentPage(1);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -79,45 +118,27 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
         company: filters.company || ""
       };
       setFilters(nextFilters);
-      setLoading(true);
-      loadQuestions(nextFilters)
-        .catch(() => undefined)
-        .finally(() => setLoading(false));
-      if (category) setActiveCategory(category);
+      setActiveCategory(category || "");
+      fetchPage(1, nextFilters, category || "", activeSection).catch(() => undefined);
+      return;
     }
+
+    fetchPage(1).catch(() => undefined);
   }, [location.search]);
+
+  useEffect(() => {
+    if (!location.search) {
+      fetchPage(1).catch(() => undefined);
+    }
+  }, [activeSection, activeCategory]);
 
   const toggleAnswer = (id) => {
     setOpenAnswers((current) => ({ ...current, [id]: !current[id] }));
   };
 
-  const usableQuestions = useMemo(
-    () => questions.filter((question) => question && question._id && (question.field || defaultField) === defaultField),
-    [questions, defaultField]
-  );
-
-  const nonMcqQuestions = useMemo(
-    () => usableQuestions.filter((question) => question.type !== "MCQ"),
-    [usableQuestions]
-  );
-
-  const categories = useMemo(() => [...new Set(nonMcqQuestions.map((question) => question.category).filter(Boolean))], [nonMcqQuestions]);
-
-  const filterOptions = useMemo(() => ({
-    category: [...new Set(usableQuestions.map((question) => question.category).filter(Boolean))].sort(),
-    difficulty: [...new Set(usableQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
-    topic: [...new Set(usableQuestions.map((question) => question.topic).filter(Boolean))].sort(),
-    company: [...new Set(usableQuestions.map((question) => question.company).filter(Boolean))].sort()
-  }), [usableQuestions]);
-
-  const sectionQuestions = useMemo(() => {
-    const source = nonMcqQuestions.length ? nonMcqQuestions : usableQuestions;
-    return source.filter((question) => {
-      const typeMatch = activeSection === "all" ? true : question.type === activeSection;
-      const categoryMatch = !activeCategory ? true : question.category === activeCategory;
-      return typeMatch && categoryMatch;
-    });
-  }, [usableQuestions, nonMcqQuestions, activeSection, activeCategory]);
+  const applyFilters = () => {
+    fetchPage(1, filters, activeCategory, activeSection).catch(() => undefined);
+  };
 
   return (
     <div className="container py-4">
@@ -139,7 +160,7 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
               </div>
             ))}
           </div>
-          <button className="btn btn-info mt-3" onClick={() => { setLoading(true); loadQuestions(filters).catch(() => undefined).finally(() => setLoading(false)); }}>Apply Filters</button>
+          <button className="btn btn-info mt-3" onClick={applyFilters}>Apply Filters</button>
         </div>
       </div>
 
@@ -147,14 +168,14 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
         <div className="card-body">
           <div className="question-bank-tabs mb-3">
             {typeSections.map((section) => (
-              <button key={section.id} className={`question-bank-tab ${activeSection === section.id ? "active" : ""}`} onClick={() => setActiveSection(section.id)}>
+              <button key={section.id} className={`question-bank-tab ${activeSection === section.id ? "active" : ""}`} onClick={() => { setActiveSection(section.id); setCurrentPage(1); }}>
                 {section.label}
               </button>
             ))}
           </div>
           <div className="question-bank-tabs compact">
-            {categories.map((category) => (
-              <button key={category} className={`question-bank-tab ${activeCategory === category ? "active" : ""}`} onClick={() => setActiveCategory(category)}>
+            {filterOptions.category.map((category) => (
+              <button key={category} className={`question-bank-tab ${activeCategory === category ? "active" : ""}`} onClick={() => { setActiveCategory(activeCategory === category ? "" : category); setCurrentPage(1); }}>
                 {category}
               </button>
             ))}
@@ -162,12 +183,12 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
         </div>
       </div>
 
-      {loading && !sectionQuestions.length ? (
+      {loading && !pagedQuestions.length ? (
         <div className="card glass-card mt-4"><div className="card-body"><p className="text-secondary mb-0">Loading questions...</p></div></div>
       ) : (
         <>
           <div className="question-bank-stack">
-            {sectionQuestions.map((q) => {
+            {pagedQuestions.map((q) => {
               const isOpen = !!openAnswers[q._id];
               const display = parseQuestionDisplay(q);
               const starterCode = q.type === "Coding" ? Object.entries(q.starterCode || {}).filter(([, value]) => value) : [];
@@ -217,7 +238,15 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
             })}
           </div>
 
-          {!sectionQuestions.length && (
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
+            <p className="text-secondary mb-0">Page {currentPage} of {totalPages}</p>
+            <div className="d-flex gap-2">
+              <button className="btn btn-outline-light" disabled={currentPage <= 1 || loading} onClick={() => fetchPage(currentPage - 1, filters, activeCategory, activeSection)}>Previous Page</button>
+              <button className="btn btn-outline-light" disabled={currentPage >= totalPages || loading} onClick={() => fetchPage(currentPage + 1, filters, activeCategory, activeSection)}>Next Page</button>
+            </div>
+          </div>
+
+          {!pagedQuestions.length && (
             <div className="card glass-card mt-4">
               <div className="card-body">
                 <p className="text-secondary mb-0">No questions found for this section yet. Try another subject or format.</p>
