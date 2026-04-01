@@ -1,48 +1,28 @@
-import { useNavigate } from "react-router-dom";
-
 const HistoryPage = ({ history = [] }) => {
-  const navigate = useNavigate();
-
-  const openHistoryItem = (result) => {
-    const firstWeakTopic = result?.weakTopics?.[0];
-    if (firstWeakTopic) {
-      const params = new URLSearchParams({ topic: firstWeakTopic });
-      navigate(`/questions?${params.toString()}`);
-      return;
-    }
-
-    navigate("/mock-tests");
-  };
-
   return (
     <div className="container py-4">
-      <p className="eyebrow mb-1">Attempt History</p>
-      <h1 className="h2 fw-bold mb-4">Past tests and evaluations</h1>
+      <p className="eyebrow mb-1">History</p>
+      <h1 className="h2 fw-bold mb-2">Past mock tests</h1>
+      <p className="text-secondary mb-4">Review your earlier software mock tests and see how your scores change over time.</p>
       {history.length ? (
         <div className="vstack gap-3">
-          {history.map((r) => (
-            <button type="button" className="card glass-card history-link-card" key={r._id} onClick={() => openHistoryItem(r)}>
-              <div className="card-body text-start">
-                <div className="d-flex justify-content-between flex-wrap gap-2">
-                  <div>
-                    <h2 className="h5 mb-1">{r.test?.title || "Practice Session"}</h2>
-                    <p className="mb-0 text-secondary">Accuracy: {r.accuracy}% | Score: {r.score}</p>
-                  </div>
-                  <span className="badge text-bg-info align-self-start">{new Date(r.createdAt).toLocaleDateString()}</span>
+          {history.map((item) => (
+            <div className="glass-card p-4" key={item._id}>
+              <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                <div>
+                  <h2 className="h4 mb-1">{item.test?.title || "Mock Test"}</h2>
+                  <p className="text-secondary mb-0">{new Date(item.createdAt).toLocaleString()}</p>
                 </div>
-                <div className="mt-3"><strong>Weak topics:</strong> {r.weakTopics?.length ? r.weakTopics.join(", ") : "None"}</div>
-                <p className="mt-3 mb-0 text-secondary">Click to review the most relevant topic from this attempt.</p>
+                <div className="d-flex gap-2 flex-wrap">
+                  <span className="badge text-bg-dark">Score {item.score || 0}</span>
+                  <span className="badge text-bg-info">Accuracy {item.accuracy || 0}%</span>
+                </div>
               </div>
-            </button>
+              <div className="mt-3 text-secondary">Weak Topics: {(item.weakTopics || []).join(", ") || "None"}</div>
+            </div>
           ))}
         </div>
-      ) : (
-        <div className="card glass-card">
-          <div className="card-body">
-            <p className="text-secondary mb-0">No past tests are showing yet. Complete one mock test and it will appear here automatically.</p>
-          </div>
-        </div>
-      )}
+      ) : <div className="glass-card p-4"><p className="text-secondary mb-0">No mock test history yet.</p></div>}
     </div>
   );
 };

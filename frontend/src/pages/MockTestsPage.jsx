@@ -1,300 +1,126 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import api from "../api/client";
-import { mapCategoryToBucket, recordDailyAttempt } from "../utils/prepTracking";
-import { FIELD_COMPANY_TRACKS } from "../utils/fieldOptions";
 
-const DEFAULT_DURATION = 30;
-const DEFAULT_TOTAL_QUESTIONS = 30;
-
-const formatTimeLeft = (seconds) => {
-  const safeSeconds = Math.max(seconds, 0);
-  const minutes = Math.floor(safeSeconds / 60);
-  const secs = safeSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+const formatTimer = (seconds) => {
+  const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+  return `${mins}:${secs}`;
 };
 
-const buildFallbackTest = ({ questions, targetField, selectedCompany }) => {
-  const filteredByCompany = selectedCompany
-    ? questions.filter((question) => (question.company || "").toLowerCase().includes(selectedCompany.toLowerCase()))
-    : questions;
-  const sourcePool = filteredByCompany.length ? filteredByCompany : questions;
-  const categories = [...new Set(sourcePool.map((question) => question.category).filter(Boolean))];
-
-  return {
-    _id: `fallback-test-${Date.now()}`,
-    title: selectedCompany ? `${selectedCompany} ${targetField} Mock Test` : `${targetField} Adaptive Mock Test`,
-    description: "Locally prepared fallback mock test built from the current question bank.",
-    duration: DEFAULT_DURATION,
-    sections: categories.slice(0, 4).map((category, index) => ({
-      name: `${category} Section`,
-      category,
-      questions: sourcePool
-        .filter((question) => question.category === category)
-        .slice(0, 8)
-        .map((question, questionIndex) => ({
-          ...question,
-          _id: question._id || `fallback-${category}-${index}-${questionIndex}`
-        }))
-    })).filter((section) => section.questions.length)
-  };
-};
-
-const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, targetField = "Software", questions = [] }) => {
+const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistory, questions = [] }) => {
   const [activeTest, setActiveTest] = useState(null);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(0);
   const [result, setResult] = useState(null);
-  const companyOptions = useMemo(() => ["", ...(FIELD_COMPANY_TRACKS[targetField] || FIELD_COMPANY_TRACKS.Software).filter((company) => company !== "General")], [targetField]);
-  const [selectedCompany, setSelectedCompany] = useState("");
-  const flat = useMemo(() => activeTest?.sections?.flatMap((section) => section.questions) || [], [activeTest]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setSelectedCompany("");
-  }, [targetField]);
+  const questionCount = useMemo(() => activeTest ? activeTest.sections.flatMap((section) => section.questions).length : 0, [activeTest]);
 
-  useEffect(() => {
-    if (!activeTest || timeLeft <= 0) return;
-    const timer = setInterval(() => setTimeLeft((value) => value - 1), 1000);
-    return () => clearInterval(timer);
-  }, [activeTest, timeLeft]);
-
-  useEffect(() => {
-    if (activeTest && timeLeft === 0) submit();
-  }, [timeLeft]);
-
-  const generate = async () => {
+  const generateTest = async () => {
     try {
-      const { data } = await api.post("/tests", {
-        company: selectedCompany,
-        totalQuestions: DEFAULT_TOTAL_QUESTIONS,
-        duration: DEFAULT_DURATION,
-        targetField
-      });
-
-      const hasQuestions = data?.sections?.some((section) => section.questions?.length);
-      const nextTest = hasQuestions ? data : buildFallbackTest({ questions, targetField, selectedCompany });
-      setTests((current) => [nextTest, ...current]);
-    } catch {
-      const fallbackTest = buildFallbackTest({ questions, targetField, selectedCompany });
-      if (fallbackTest.sections.length) {
-        setTests((current) => [fallbackTest, ...current]);
-      }
+      setLoading(true);
+      const { data } = await api.post("/tests", {});
+      setActiveTest(data);
+      setAnswers({});
+      setResult(null);
+      refreshTests?.();
+    } finally {
+      setLoading(false);
     }
   };
 
-  const start = (test) => {
-    setActiveTest(test);
-    setAnswers({});
-    setTimeLeft((test.duration || DEFAULT_DURATION) * 60);
-    setResult(null);
-  };
-
-  const submit = async () => {
+  const submitTest = async () => {
     if (!activeTest) return;
-
-    const isFallbackTest = String(activeTest._id || "").startsWith("fallback-test-");
-    if (isFallbackTest) {
-      setResult({
-        score: 0,
-        accuracy: 0,
-        weakTopics: flat.map((question) => question.topic).filter(Boolean).slice(0, 3),
-        strengths: []
-      });
-      setActiveTest(null);
-      setTimeLeft(0);
-      return;
-    }
-
-    const payload = flat.map((q) => ({ questionId: q._id, submittedAnswer: answers[q._id] || "", timeSpent: 60 }));
-    const { data } = await api.post(`/tests/${activeTest._id}/submit`, {
-      answers: payload,
-      totalTimeSpent: activeTest.duration * 60 - timeLeft
-    });
-
-    flat.forEach((question) => {
-      const submittedAnswer = answers[question._id];
-      const hasAnswer = typeof submittedAnswer === "string" ? submittedAnswer.trim().length > 0 : Boolean(submittedAnswer);
-      if (!hasAnswer) return;
-      recordDailyAttempt({
-        bucket: mapCategoryToBucket(question.category, "", targetField),
-        questionId: question._id,
-        title: question.title,
-        topic: question.topic,
-        category: question.category,
-        source: "mock-test"
-      });
-    });
-
+    const payload = Object.entries(answers).map(([questionId, submittedAnswer]) => ({ questionId, submittedAnswer, timeSpent: 0 }));
+    const { data } = await api.post(`/tests/${activeTest._id}/submit`, { answers: payload, totalTimeSpent: 1800 });
     setResult(data);
     setActiveTest(null);
-    setTimeLeft(0);
-    await Promise.allSettled([refreshProfile?.(), refreshHistory?.()]);
+    setAnswers({});
+    refreshProfile?.();
+    refreshHistory?.();
   };
 
-  const attemptedCount = flat.filter((question) => {
-    const currentAnswer = answers[question._id];
-    return typeof currentAnswer === "string" ? currentAnswer.trim().length > 0 : Boolean(currentAnswer);
-  }).length;
-  const unansweredCount = Math.max(flat.length - attemptedCount, 0);
-  const progressPercent = flat.length ? Math.round((attemptedCount / flat.length) * 100) : 0;
-
   return (
-    <div className="container py-4 mock-tests-page">
-      <div className="mock-tests-hero mb-4">
+    <div className="container py-4">
+      <div className="hero-panel mb-4 mock-tests-hero">
         <div>
-          <p className="eyebrow mb-2">Mock Test System</p>
-          <h1 className="h2 fw-bold mb-2">Simulate a real interview assessment</h1>
-          <p className="text-secondary mb-0">Generate a timed 30-question test for the {targetField} track, track how much you have attempted, and review your latest result in one place.</p>
+          <p className="eyebrow mb-2">Mock Tests</p>
+          <h1 className="h2 fw-bold mb-2">30-question software mock test</h1>
+          <p className="text-secondary mb-0">Each generated test contains 30 software interview questions and a 30-minute timer.</p>
         </div>
         <div className="mock-tests-hero-actions">
-          <select className="form-select question-select" value={selectedCompany} onChange={(e) => setSelectedCompany(e.target.value)}>
-            {companyOptions.map((company) => <option key={company || "general"} value={company}>{company || "General Mix"}</option>)}
-          </select>
-          <button className="btn btn-info" onClick={generate}>Generate Mock Test</button>
+          <button className="btn btn-info" onClick={generateTest} disabled={loading}>{loading ? "Generating..." : "Generate Mock Test"}</button>
         </div>
       </div>
 
-      {!activeTest ? (
-        <div className="row g-4">
-          <div className="col-lg-8">
-            <div className="row g-3">
-              {tests.length ? tests.map((test) => {
-                const questionCount = test.sections?.reduce((sum, section) => sum + (section.questions?.length || 0), 0) || 0;
-
-                return (
-                  <div className="col-md-6" key={test._id}>
-                    <div className="card glass-card h-100 mock-test-card">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-start gap-3 mb-3">
-                          <div>
-                            <p className="eyebrow mb-2">Generated Test</p>
-                            <h2 className="h5 mb-1">{test.title}</h2>
-                            <p className="text-secondary mb-0">{test.description}</p>
-                          </div>
-                          <span className="badge text-bg-info">{questionCount} Qs</span>
-                        </div>
-                        <div className="mock-test-meta mb-3">
-                          <div>
-                            <span>Duration</span>
-                            <strong>{test.duration} mins</strong>
-                          </div>
-                          <div>
-                            <span>Sections</span>
-                            <strong>{test.sections?.length || 0}</strong>
-                          </div>
-                        </div>
-                        <button className="btn btn-outline-light" onClick={() => start(test)}>Start Test</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }) : (
-                <div className="col-12">
-                  <div className="card glass-card mock-test-empty-state">
-                    <div className="card-body">
-                      <h2 className="h4 mb-2">No tests generated yet</h2>
-                      <p className="text-secondary mb-0">Generate your first 30-minute assessment to start building a realistic interview rhythm.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+      {activeTest ? (
+        <div className="glass-card p-4 mock-test-active-card">
+          <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+              <h2 className="h3 mb-2">{activeTest.title}</h2>
+              <p className="text-secondary mb-0">Answer each question and submit when ready.</p>
+            </div>
+            <div className="mock-test-timer-card">
+              <span>Duration</span>
+              <strong>{formatTimer((activeTest.duration || 30) * 60)}</strong>
             </div>
           </div>
 
-          <div className="col-lg-4">
-            <div className="vstack gap-3">
-              <div className="card glass-card mock-test-side-card">
-                <div className="card-body">
-                  <p className="eyebrow mb-2">Default Test Format</p>
-                  <h2 className="h5 mb-3">Interview-style structure</h2>
-                  <div className="mock-test-format-grid">
-                    <div><span>Questions</span><strong>{DEFAULT_TOTAL_QUESTIONS}</strong></div>
-                    <div><span>Duration</span><strong>{DEFAULT_DURATION} mins</strong></div>
-                    <div><span>Company</span><strong>{selectedCompany || "General"}</strong></div>
-                    <div><span>Field</span><strong>{targetField}</strong></div>
-                    <div><span>Result</span><strong>Instant</strong></div>
-                  </div>
-                </div>
-              </div>
-
-              {result && (
-                <div className="card glass-card mock-test-side-card">
-                  <div className="card-body">
-                    <p className="eyebrow mb-2">Latest Result</p>
-                    <h2 className="h5 mb-3">Performance Snapshot</h2>
-                    <div className="mock-test-result-grid mb-3">
-                      <div><span>Score</span><strong>{result.score}</strong></div>
-                      <div><span>Accuracy</span><strong>{result.accuracy}%</strong></div>
-                    </div>
-                    <p className="mb-2"><strong>Weak topics:</strong> {result.weakTopics.join(", ") || "None"}</p>
-                    <p className="mb-0"><strong>Strong topics:</strong> {result.strengths.join(", ") || "Keep practicing"}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="row g-4 align-items-start">
-          <div className="col-xl-4">
-            <div className="card glass-card mock-test-side-card mock-test-active-summary">
-              <div className="card-body">
-                <p className="eyebrow mb-2">Live Test Summary</p>
-                <h2 className="h4 mb-1">{activeTest.title}</h2>
-                <p className="text-secondary mb-4">Stay aware of your pace and finish every question with a deliberate answer.</p>
-                <div className="mock-test-timer-card mb-4"><span>Time Left</span><strong>{formatTimeLeft(timeLeft)}</strong></div>
-                <div className="mock-test-progress-block mb-4">
-                  <div className="d-flex justify-content-between mb-2"><span>Attempt Progress</span><strong>{progressPercent}%</strong></div>
-                  <div className="progress mock-test-progress-bar">
-                    <div className="progress-bar bg-warning" role="progressbar" style={{ width: `${progressPercent}%` }} aria-valuenow={progressPercent} aria-valuemin="0" aria-valuemax="100" />
-                  </div>
-                </div>
-                <div className="mock-test-format-grid">
-                  <div><span>Attempted</span><strong>{attemptedCount}</strong></div>
-                  <div><span>Pending</span><strong>{unansweredCount}</strong></div>
-                  <div><span>Questions</span><strong>{flat.length}</strong></div>
-                  <div><span>Duration</span><strong>{activeTest.duration} mins</strong></div>
-                </div>
-              </div>
-            </div>
+          <div className="mock-test-format-grid mb-4">
+            <div><span>Questions</span><strong>{questionCount}</strong></div>
+            <div><span>Duration</span><strong>{activeTest.duration || 30} minutes</strong></div>
           </div>
 
-          <div className="col-xl-8">
-            <div className="card glass-card mock-test-active-card">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div className="vstack gap-4">
+            {activeTest.sections.flatMap((section) => section.questions).map((question, index) => (
+              <div key={question._id} className="mock-test-question-block">
+                <div className="mock-test-question-head mb-3">
+                  <span className="mock-test-question-number">{index + 1}</span>
                   <div>
-                    <p className="eyebrow mb-2">Active Assessment</p>
-                    <h2 className="h4 mb-1">Answer each question before time runs out</h2>
-                    <p className="text-secondary mb-0">{flat.length} questions | {activeTest.duration} minutes</p>
-                  </div>
-                  <button className="btn btn-success" onClick={submit}>Submit Test</button>
-                </div>
-                {flat.map((q, i) => (
-                  <div key={q._id} className="mock-test-question-block mb-4">
-                    <div className="mock-test-question-head">
-                      <span className="mock-test-question-number">Q{i + 1}</span>
-                      <div>
-                        <p className="fw-semibold mb-1">{q.title}</p>
-                        <p className="text-secondary mb-0">{q.description}</p>
-                      </div>
+                    <h3 className="h5 mb-2">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h3>
+                    <p className="text-secondary mb-2">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
+                    <div className="d-flex gap-2 flex-wrap">
+                      <span className="badge text-bg-dark">{question.category}</span>
+                      <span className="badge text-bg-dark">{question.topic}</span>
+                      <span className="badge text-bg-info">{question.type}</span>
                     </div>
-                    {q.type === "MCQ" ? (
-                      <div className="vstack gap-2 mt-3">
-                        {q.options.map((option) => (
-                          <button key={option} className={`btn ${answers[q._id] === option ? "btn-info" : "btn-outline-light"} text-start`} onClick={() => setAnswers({ ...answers, [q._id]: option })}>{option}</button>
-                        ))}
-                      </div>
-                    ) : (
-                      <textarea className="form-control mt-3" rows="4" value={answers[q._id] || ""} onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })} placeholder="Write your answer here..." />
-                    )}
                   </div>
-                ))}
+                </div>
+                {question.type === "MCQ" ? (
+                  <div className="vstack gap-2">
+                    {(question.options || []).map((option) => (
+                      <button key={option} className={`btn text-start ${answers[question._id] === option ? "btn-info" : "btn-outline-light"}`} onClick={() => setAnswers((current) => ({ ...current, [question._id]: option }))}>{option}</button>
+                    ))}
+                  </div>
+                ) : (
+                  <textarea className="form-control" rows="5" value={answers[question._id] || ""} onChange={(event) => setAnswers((current) => ({ ...current, [question._id]: event.target.value }))} placeholder={question.type === "Coding" ? "Write code or approach here..." : "Write your answer here..."} />
+                )}
               </div>
-            </div>
+            ))}
+          </div>
+
+          <button className="btn btn-info mt-4" onClick={submitTest}>Submit Test</button>
+        </div>
+      ) : null}
+
+      {result ? (
+        <div className="glass-card p-4 mt-4">
+          <p className="eyebrow mb-2">Latest Result</p>
+          <h2 className="h4 mb-3">Mock test submitted successfully</h2>
+          <div className="mock-test-result-grid mb-4">
+            <div><span>Score</span><strong>{result.score}</strong></div>
+            <div><span>Accuracy</span><strong>{result.accuracy}%</strong></div>
+            <div><span>Weak Topics</span><strong>{(result.weakTopics || []).join(", ") || "None"}</strong></div>
+            <div><span>Strengths</span><strong>{(result.strengths || []).join(", ") || "None"}</strong></div>
           </div>
         </div>
-      )}
+      ) : null}
+
+      {!activeTest && !result ? (
+        <div className="glass-card p-4 mock-test-empty-state">
+          <h2 className="h4 mb-2">Ready for a fresh mock?</h2>
+          <p className="text-secondary mb-0">Generate a new software mock test to practice DSA, aptitude, HR, and core subjects in one round.</p>
+        </div>
+      ) : null}
     </div>
   );
 };

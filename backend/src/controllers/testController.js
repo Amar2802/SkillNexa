@@ -1,89 +1,83 @@
 import Test from "../models/Test.js";
 import Result from "../models/Result.js";
 import Question from "../models/Question.js";
-import { FIELD_CATEGORY_MAP } from "../utils/prepFields.js";
+import seedQuestions from "../data/seedQuestions.js";
 
+const SOFTWARE_FIELD = "Software";
 const DEFAULT_TOTAL_QUESTIONS = 30;
 const DEFAULT_DURATION = 30;
+const DEFAULT_CATEGORIES = ["DSA", "Aptitude", "HR", "Core Subjects"];
 
-const buildDistribution = (categories, totalQuestions, questionsPerCategory) => {
-  if (questionsPerCategory) {
-    return categories.map((category) => ({ category, count: Number(questionsPerCategory) || 1 }));
-  }
+const ensureSeededQuestions = async () => {
+  const count = await Question.countDocuments({ field: SOFTWARE_FIELD });
+  if (count > 0) return;
+  await Question.insertMany(seedQuestions.map((question) => ({ ...question, field: SOFTWARE_FIELD })), { ordered: false }).catch(() => undefined);
+};
 
-  const safeTotal = Math.max(Number(totalQuestions) || DEFAULT_TOTAL_QUESTIONS, categories.length);
-  const baseCount = Math.floor(safeTotal / categories.length);
-  const remainder = safeTotal % categories.length;
+const buildDistribution = (categories, totalQuestions) => {
+  const safeCategories = categories.length ? categories : DEFAULT_CATEGORIES;
+  const safeTotal = Math.max(Number(totalQuestions) || DEFAULT_TOTAL_QUESTIONS, safeCategories.length);
+  const baseCount = Math.floor(safeTotal / safeCategories.length);
+  const remainder = safeTotal % safeCategories.length;
 
-  return categories.map((category, index) => ({
+  return safeCategories.map((category, index) => ({
     category,
     count: baseCount + (index < remainder ? 1 : 0)
   }));
 };
 
-export const getTests = async (req, res) => {
-  const query = {};
-  if (req.query.field) {
-    query.targetField = req.query.field;
+const evaluateSubmission = (question, submittedAnswer) => {
+  if (question.type === "MCQ") {
+    return String(submittedAnswer || "").trim() === String(question.correctAnswer || "").trim();
   }
 
-  res.json(await Test.find(query).populate("sections.questions").sort({ createdAt: -1 }));
+  if (question.type === "Coding") {
+    return String(submittedAnswer || "").trim().length >= 20;
+  }
+
+  const answerText = String(submittedAnswer || "").toLowerCase();
+  const keywords = String(question.correctAnswer || "").toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length > 3);
+  if (!keywords.length) return false;
+  const hits = keywords.filter((word) => answerText.includes(word)).length;
+  return hits / keywords.length >= 0.35;
+};
+
+export const getTests = async (req, res) => {
+  const tests = await Test.find({ targetField: SOFTWARE_FIELD }).populate("sections.questions").sort({ createdAt: -1 }).lean();
+  res.json(tests);
 };
 
 export const createTest = async (req, res) => {
-  const targetField = req.body.targetField || req.user.targetField || "Software";
-  const defaultCategories = FIELD_CATEGORY_MAP[targetField] || FIELD_CATEGORY_MAP.Software;
-  const {
-    categories = defaultCategories,
-    duration = DEFAULT_DURATION,
-    totalQuestions = DEFAULT_TOTAL_QUESTIONS,
-    questionsPerCategory,
-    company = ""
-  } = req.body;
+  await ensureSeededQuestions();
 
-  const distribution = buildDistribution(categories, totalQuestions, questionsPerCategory);
+  const categories = Array.isArray(req.body.categories) && req.body.categories.length ? req.body.categories : DEFAULT_CATEGORIES;
+  const distribution = buildDistribution(categories, req.body.totalQuestions || DEFAULT_TOTAL_QUESTIONS);
   const sections = [];
 
-  for (const { category, count } of distribution) {
-    const match = { category, field: targetField };
-    if (company) {
-      match.company = { $in: [company, "General"] };
-    }
-
-    let questions = await Question.aggregate([
-      { $match: match },
-      { $sample: { size: Number(count) } }
+  for (const item of distribution) {
+    const questions = await Question.aggregate([
+      { $match: { field: SOFTWARE_FIELD, category: item.category } },
+      { $sample: { size: item.count } }
     ]);
 
-    if (!questions.length) {
-      questions = await Question.aggregate([
-        { $match: { category, field: targetField } },
-        { $sample: { size: Number(count) } }
-      ]);
-    }
-
     sections.push({
-      name: `${category} Section`,
-      category,
+      name: `${item.category} Section`,
+      category: item.category,
       questions: questions.map((question) => question._id)
     });
   }
 
-  const title = company ? `${company} ${targetField} Mock Test` : `${targetField} Adaptive Mock Test`;
-  const description = company
-    ? `Auto-generated interview practice test focused on ${company} style ${targetField} questions.`
-    : `Auto-generated mock test for ${targetField} interview practice.`;
-
   const test = await Test.create({
-    title,
-    description,
-    duration: Number(duration) || DEFAULT_DURATION,
-    targetField,
+    title: "Software Interview Mock Test",
+    description: "A balanced mock test covering DSA, aptitude, HR, and core subjects.",
+    duration: DEFAULT_DURATION,
+    targetField: SOFTWARE_FIELD,
     sections,
     createdBy: req.user._id
   });
 
-  res.status(201).json(await Test.findById(test._id).populate("sections.questions"));
+  const hydrated = await Test.findById(test._id).populate("sections.questions").lean();
+  res.status(201).json(hydrated);
 };
 
 export const submitTest = async (req, res) => {
@@ -92,19 +86,20 @@ export const submitTest = async (req, res) => {
     return res.status(404).json({ message: "Test not found" });
   }
 
-  const submitted = req.body.answers || [];
+  const submittedAnswers = Array.isArray(req.body.answers) ? req.body.answers : [];
   const flatQuestions = test.sections.flatMap((section) => section.questions);
+
   const answers = flatQuestions.map((question) => {
-    const input = submitted.find((answer) => answer.questionId === question._id.toString()) || {};
-    const isCorrect = String(input.submittedAnswer || "").trim() === String(question.correctAnswer).trim();
+    const matched = submittedAnswers.find((item) => item.questionId === String(question._id)) || {};
+    const isCorrect = evaluateSubmission(question, matched.submittedAnswer);
 
     return {
-      question,
-      submittedAnswer: input.submittedAnswer || "",
+      question: question._id,
+      submittedAnswer: matched.submittedAnswer || "",
       isCorrect,
       score: isCorrect ? 1 : 0,
-      timeSpent: input.timeSpent || 0,
-      feedback: isCorrect ? "Correct." : question.explanation
+      timeSpent: Number(matched.timeSpent) || 0,
+      feedback: isCorrect ? "Correct answer." : question.explanation
     };
   });
 
@@ -112,44 +107,39 @@ export const submitTest = async (req, res) => {
   const accuracy = flatQuestions.length ? Math.round((score / flatQuestions.length) * 100) : 0;
   const topicStats = {};
 
-  answers.forEach((answer) => {
-    topicStats[answer.question.topic] ||= { total: 0, correct: 0 };
-    topicStats[answer.question.topic].total += 1;
-    if (answer.isCorrect) topicStats[answer.question.topic].correct += 1;
+  flatQuestions.forEach((question, index) => {
+    const answer = answers[index];
+    topicStats[question.topic] ||= { total: 0, correct: 0 };
+    topicStats[question.topic].total += 1;
+    if (answer.isCorrect) topicStats[question.topic].correct += 1;
   });
 
-  const weakTopics = Object.entries(topicStats)
-    .filter(([, value]) => value.correct / value.total < 0.5)
-    .map(([topic]) => topic);
-  const strengths = Object.entries(topicStats)
-    .filter(([, value]) => value.correct / value.total >= 0.75)
-    .map(([topic]) => topic);
+  const weakTopics = Object.entries(topicStats).filter(([, stat]) => stat.correct / stat.total < 0.5).map(([topic]) => topic);
+  const strengths = Object.entries(topicStats).filter(([, stat]) => stat.correct / stat.total >= 0.75).map(([topic]) => topic);
 
   const result = await Result.create({
     user: req.user._id,
     test: test._id,
-    answers: answers.map((answer) => ({
-      question: answer.question._id,
-      submittedAnswer: answer.submittedAnswer,
-      isCorrect: answer.isCorrect,
-      score: answer.score,
-      timeSpent: answer.timeSpent,
-      feedback: answer.feedback
-    })),
+    answers,
     score,
     accuracy,
     weakTopics,
     strengths,
-    totalTimeSpent: req.body.totalTimeSpent || 0
+    totalTimeSpent: Number(req.body.totalTimeSpent) || 0
   });
 
   req.user.progress = {
     testsTaken: (req.user.progress?.testsTaken || 0) + 1,
     accuracy,
     weakTopics,
-    recommendedTopics: weakTopics.length ? weakTopics : strengths
+    recommendedTopics: weakTopics.length ? weakTopics.slice(0, 4) : strengths.slice(0, 4)
   };
   await req.user.save();
 
-  res.status(201).json(await Result.findById(result._id).populate("answers.question", "title topic difficulty"));
+  const hydratedResult = await Result.findById(result._id)
+    .populate("answers.question", "title topic category difficulty description correctAnswer explanation type")
+    .populate("test", "title duration")
+    .lean();
+
+  res.status(201).json(hydratedResult);
 };

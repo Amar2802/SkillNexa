@@ -1,265 +1,94 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import api from "../api/client";
-import { FIELD_INTEREST_OPTIONS } from "../utils/fieldOptions";
 
-const AvatarPreview = ({ profile }) => {
-  const initials = (profile?.name || "U")
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+const INTEREST_OPTIONS = [
+  "Arrays",
+  "Strings",
+  "Linked List",
+  "Trees",
+  "Graphs",
+  "Dynamic Programming",
+  "Probability",
+  "Time and Work",
+  "DBMS",
+  "SQL",
+  "Operating Systems",
+  "Computer Networks",
+  "OOP",
+  "Java",
+  "Python",
+  "HR"
+];
 
-  return profile?.avatar ? (
-    <img src={profile.avatar} alt={profile.name} className="profile-photo" />
-  ) : (
-    <div className="profile-photo profile-photo-fallback">{initials}</div>
-  );
-};
+const ProfilePage = ({ profile = {}, refreshProfile, logout }) => {
+  const fileInputRef = useRef(null);
+  const [selectedInterests, setSelectedInterests] = useState(profile?.interests || []);
+  const initials = useMemo(() => (profile?.name || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(), [profile?.name]);
 
-const ProfilePage = ({ profile, refreshProfile, logout }) => {
-  const galleryInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
-  const [status, setStatus] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
-  const [interests, setInterests] = useState(profile?.interests || []);
-  const [savedInterests, setSavedInterests] = useState(profile?.interests || []);
-
-  useEffect(() => {
-    const nextInterests = profile?.interests || [];
-    setInterests(nextInterests);
-    setSavedInterests(nextInterests);
-  }, [profile?.interests]);
-
-  const uploadAvatar = async (file) => {
-    if (!file) return;
-
+  const updateAvatar = async (file) => {
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        setSaving(true);
-        setStatus("");
-        await api.put("/users/profile/avatar", { avatar: reader.result });
-        await refreshProfile();
-        setPhotoMenuOpen(false);
-        setStatus("Profile photo updated successfully.");
-      } catch (error) {
-        setStatus(error.response?.data?.message || "Unable to update profile photo.");
-      } finally {
-        setSaving(false);
-      }
+    reader.onload = async () => {
+      await api.put("/users/profile/avatar", { avatar: reader.result });
+      refreshProfile();
     };
     reader.readAsDataURL(file);
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    uploadAvatar(file);
-    event.target.value = "";
-  };
-
-  const toggleInterest = (interest) => {
-    setStatus("");
-    setInterests((current) =>
-      current.includes(interest)
-        ? current.filter((item) => item !== interest)
-        : [...current, interest]
-    );
-  };
-
   const saveInterests = async () => {
-    try {
-      setSaving(true);
-      setStatus("");
-      await api.put("/users/profile/interests", { interests });
-      await refreshProfile();
-      setSavedInterests(interests);
-      setStatus("Preparation interests updated successfully.");
-    } catch (error) {
-      setStatus(error.response?.data?.message || "Unable to update interests.");
-    } finally {
-      setSaving(false);
-    }
+    await api.put("/users/profile/interests", { interests: selectedInterests });
+    refreshProfile();
   };
-
-  const resetInterests = () => {
-    setInterests(savedInterests);
-    setStatus("Changes reset to your last saved interests.");
-  };
-
-  const weakTopics = profile?.progress?.weakTopics || [];
-  const interestOptions = FIELD_INTEREST_OPTIONS.Software;
-  const recommendedTopics = profile?.progress?.recommendedTopics || [];
-  const accuracy = profile?.progress?.accuracy || 0;
-  const testsTaken = profile?.progress?.testsTaken || 0;
-  const hasInterestChanges = JSON.stringify([...interests].sort()) !== JSON.stringify([...savedInterests].sort());
-  const profileStrengthLabel = accuracy >= 70 ? "Consistent performer" : accuracy >= 40 ? "Building momentum" : "Early progress";
-  const priorityTopic = weakTopics[0] || recommendedTopics[0] || interests[0] || "Core interview topics";
-  const profileEmail = profile?.email || "Email hidden";
-
-  const metrics = [
-    { label: "Accuracy", value: `${accuracy}%`, caption: "Overall interview performance" },
-    { label: "Tests Taken", value: testsTaken, caption: "Completed assessments" },
-    { label: "Weak Topics", value: weakTopics.length, caption: "Areas that need revision" },
-    { label: "Recommendations", value: recommendedTopics.length, caption: "Topics suggested for growth" }
-  ];
 
   return (
-    <div className="container py-4 profile-page-pro">
+    <div className="container py-4">
       <div className="profile-hero-surface mb-4">
         <div className="profile-hero-main">
           <div className="profile-identity-block profile-identity-block-pro">
-            <div className="profile-photo-stack profile-photo-stack-minimal">
-              <input ref={galleryInputRef} type="file" accept="image/*" className="d-none" onChange={handleFileChange} />
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="d-none" onChange={handleFileChange} />
-              <button type="button" className="profile-photo-trigger profile-photo-trigger-minimal" onClick={() => setPhotoMenuOpen((current) => !current)} aria-label="Update profile photo">
-                <AvatarPreview profile={profile} />
-              </button>
-              <p className="profile-photo-caption mb-0">Click the profile photo to update it.</p>
-              {photoMenuOpen && (
-                <div className="profile-photo-actions mt-3">
-                  <button className="btn btn-info" onClick={() => galleryInputRef.current?.click()} disabled={saving}>Upload Image</button>
-                  <button className="btn btn-outline-light" onClick={() => cameraInputRef.current?.click()} disabled={saving}>Use Camera</button>
-                </div>
-              )}
-            </div>
+            <button type="button" className="border-0 bg-transparent p-0" onClick={() => fileInputRef.current?.click()}>
+              {profile?.avatar ? <img src={profile.avatar} alt={profile.name} className="profile-photo" /> : <div className="profile-photo profile-photo-fallback">{initials}</div>}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" className="d-none" onChange={(event) => { const file = event.target.files?.[0]; if (file) updateAvatar(file); }} />
             <div className="profile-identity-copy">
               <p className="eyebrow mb-2">Profile Dashboard</p>
-              <h1 className="display-6 fw-bold mb-2">{profile?.name}</h1>
-              <p className="text-secondary mb-3 profile-subtitle">A polished control center for your software interview preparation, progress signals, and personalization settings.</p>
-              <div className="profile-hero-pills">
-                <span className="hero-pill">{profileStrengthLabel}</span>
-                <span className="hero-pill">Priority: {priorityTopic}</span>
-                <span className="hero-pill">Software Track</span>
-                <span className="hero-pill">{interests.length} interests selected</span>
-              </div>
-              {status && <p className="small mb-0 text-secondary mt-2 profile-photo-status">{status}</p>}
+              <h1 className="h2 fw-bold mb-2">{profile?.name || "SkillNexa User"}</h1>
+              <p className="text-secondary mb-2">{profile?.email}</p>
+              <p className="text-secondary mb-0">Click the profile photo to update it. Upload starts right after you select an image.</p>
             </div>
           </div>
-
           <div className="profile-hero-aside">
-            <div className="profile-aside-card profile-identity-card">
-              <div className="d-flex justify-content-between align-items-start gap-3 mb-3">
-                <div>
-                  <span className="feedback-label">Account Overview</span>
-                  <h2 className="h5 mb-1">{profile?.name}</h2>
-                  <p className="text-secondary mb-0">{profileEmail}</p>
-                </div>
-                <button className="btn btn-outline-danger btn-sm" onClick={logout}>Logout</button>
-              </div>
-              <div className="profile-account-meta">
-                <div>
-                  <span>Interview Track</span>
-                  <strong>Software</strong>
-                </div>
-                <div>
-                  <span>Focus Topic</span>
-                  <strong>{priorityTopic}</strong>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <strong>{profileStrengthLabel}</strong>
-                </div>
-              </div>
+            <div className="profile-aside-card">
+              <p className="eyebrow mb-1">Software Track</p>
+              <h2 className="h5 mb-2">Focused for software interviews</h2>
+              <p className="text-secondary mb-0">SkillNexa is currently configured for software interview preparation only.</p>
+            </div>
+            <div className="profile-aside-card">
+              <button className="btn btn-info w-100" onClick={logout}>Logout</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="profile-metric-grid mb-4">
-        {metrics.map((metric) => (
-          <div key={metric.label} className="metric-card profile-metric-card profile-metric-card-pro">
-            <span>{metric.label}</span>
-            <h3>{metric.value}</h3>
-            <small>{metric.caption}</small>
-          </div>
-        ))}
+      <div className="row g-4 mb-4">
+        <div className="col-md-4"><div className="metric-card profile-metric-card-pro"><span>Tests Taken</span><h3>{profile?.progress?.testsTaken || 0}</h3></div></div>
+        <div className="col-md-4"><div className="metric-card profile-metric-card-pro"><span>Accuracy</span><h3>{profile?.progress?.accuracy || 0}%</h3></div></div>
+        <div className="col-md-4"><div className="metric-card profile-metric-card-pro"><span>Weak Topics</span><h3>{(profile?.progress?.weakTopics || []).length}</h3></div></div>
       </div>
 
-      <div className="row g-4">
-        <div className="col-xl-8">
-          <div className="profile-section-card h-100">
-            <div className="profile-section-head mb-3">
-              <div>
-                <p className="eyebrow mb-2">Personalization</p>
-                <h2 className="h4 mb-1">Software Preparation Interests</h2>
-                <p className="text-secondary mb-0">Tune the platform around the software interview topics that matter most for your preparation.</p>
-              </div>
-              <div className="profile-section-actions">
-                <span className="small text-secondary">Selected: {interests.length}</span>
-                <button className="btn btn-outline-light" onClick={resetInterests} disabled={saving || !hasInterestChanges}>Reset</button>
-                <button className="btn btn-info" onClick={saveInterests} disabled={saving || !hasInterestChanges}>Save Interests</button>
-              </div>
-            </div>
-
-            <div className="profile-status-strip mb-4">
-              <div>
-                <span className="feedback-label">Platform Scope</span>
-                <p className="mb-0 text-secondary">SkillNexa is currently focused on software interview preparation only, including DSA, aptitude, HR, and core computer science subjects.</p>
-              </div>
-            </div>
-
-            <div className="interest-grid mb-3">
-              {interestOptions.map((interest) => (
-                <button
-                  key={interest}
-                  className={`interest-chip ${interests.includes(interest) ? "active" : ""}`}
-                  onClick={() => toggleInterest(interest)}
-                >
-                  {interest}
-                </button>
-              ))}
-            </div>
-
-            <div className="profile-status-strip">
-              <div>
-                <span className="feedback-label">Preference Status</span>
-                <p className="mb-0 text-secondary">
-                  {hasInterestChanges
-                    ? "You have unsaved software-topic changes ready to publish."
-                    : "Your saved software interests are actively shaping recommendations across the website."}
-                </p>
-              </div>
-            </div>
+      <div className="glass-card p-4 mb-4">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+          <div>
+            <p className="eyebrow mb-1">Interested Topics</p>
+            <h2 className="h4 mb-0">Choose what you want to focus on</h2>
           </div>
+          <button className="btn btn-info" onClick={saveInterests}>Save Interests</button>
         </div>
-
-        <div className="col-xl-4">
-          <div className="profile-section-card h-100 profile-focus-card">
-            <div className="profile-section-head mb-3">
-              <div>
-                <p className="eyebrow mb-2">Focus Summary</p>
-                <h2 className="h4 mb-1">Next Best Step</h2>
-                <p className="text-secondary mb-0">A clear direction for what to revise next and where your strongest opportunity lies.</p>
-              </div>
-            </div>
-
-            <div className="profile-next-step-card mb-4">
-              <span className="feedback-label">Focus Topic</span>
-              <h3 className="h5 mb-2">{priorityTopic}</h3>
-              <p className="text-secondary mb-0">Use this topic as your next high-value revision area before starting another mock test.</p>
-            </div>
-
-            <div className="profile-topic-stack">
-              <div>
-                <p className="fw-semibold mb-2">Weak Topics</p>
-                <div className="d-flex gap-2 flex-wrap mb-4">
-                  {weakTopics.length ? weakTopics.map((topic) => (
-                    <span key={topic} className="badge text-bg-secondary">{topic}</span>
-                  )) : <span className="text-secondary">No weak topics recorded yet.</span>}
-                </div>
-              </div>
-              <div>
-                <p className="fw-semibold mb-2">Recommended Topics</p>
-                <div className="d-flex gap-2 flex-wrap">
-                  {recommendedTopics.length ? recommendedTopics.map((topic) => (
-                    <span key={topic} className="badge text-bg-info">{topic}</span>
-                  )) : <span className="text-secondary">Recommendations will appear as you practice more.</span>}
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="interest-grid">
+          {INTEREST_OPTIONS.map((item) => {
+            const active = selectedInterests.includes(item);
+            return (
+              <button key={item} className={`interest-chip ${active ? "active" : ""}`} onClick={() => setSelectedInterests((current) => active ? current.filter((value) => value !== item) : [...current, item])}>{item}</button>
+            );
+          })}
         </div>
       </div>
     </div>
