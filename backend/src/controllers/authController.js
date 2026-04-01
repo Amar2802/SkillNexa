@@ -49,6 +49,16 @@ export const login = async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
+  const safeField = normalizeTargetField(user.targetField);
+  if (user.targetField !== safeField) {
+    user.targetField = safeField;
+    user.progress = {
+      ...(user.progress || {}),
+      recommendedTopics: FIELD_DEFAULT_TOPICS[safeField] || FIELD_DEFAULT_TOPICS.Software
+    };
+    await user.save();
+  }
+
   res.json({ token: tokenFor(user._id), user });
 };
 
@@ -68,3 +78,4 @@ export const googleCallback = [
     res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/oauth-success?token=${token}`);
   }
 ];
+
