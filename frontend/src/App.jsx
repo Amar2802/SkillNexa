@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LineElement, LinearScale, PointElement, Tooltip } from "chart.js";
 import api from "./api/client";
@@ -28,8 +28,7 @@ export default function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
 
-  const savedTargetField = profile?.targetField || user?.targetField || "";
-  const activeField = useMemo(() => savedTargetField || "Software", [savedTargetField]);
+  const activeField = "Software";
 
   const refreshProfile = async () => {
     if (!localStorage.getItem("token")) return null;
@@ -115,3 +114,4 @@ export default function App() {
     </div>
   );
 }
+
