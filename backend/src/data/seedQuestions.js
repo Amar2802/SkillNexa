@@ -1456,7 +1456,8 @@ const FIELD_CATEGORY_ORDER = {
   Railways: ["Technical Aptitude", "General Awareness", "Mathematics", "Railway Operations"],
   Teaching: ["Teaching Aptitude", "Pedagogy", "Subject Mastery", "Classroom Communication"],
   "State PSC": ["General Studies", "Current Affairs", "State Administration", "Interview Personality"]
-};`r`nconst bulkCompanies = [
+};
+const bulkCompanies = [
   "Amazon",
   "Microsoft",
   "Google",
@@ -1479,7 +1480,8 @@ const fieldCompanyMap = {
   Railways: ["Railways", "RRB", "Technical Rail", "Operations Round"],
   Teaching: ["Teaching", "CTET", "Classroom Interview", "Subject Pedagogy"],
   "State PSC": ["State PSC", "Administrative Services", "State Governance", "Public Policy"]
-};`r`nconst practiceAngles = [
+};
+const practiceAngles = [
   "Focus on the interview-ready explanation and mention one practical use case.",
   "Frame your answer the way you would explain it in a technical round.",
   "Add one edge case or limitation while answering this version.",
@@ -1565,6 +1567,7 @@ const allBaseQuestions = [
 const seedQuestions = buildLargeQuestionBank(allBaseQuestions);
 
 export default seedQuestions;
+
 
 
 
