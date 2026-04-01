@@ -15,54 +15,71 @@ const sanitizeInterests = (interests) => {
 const createOtp = () => `${Math.floor(100000 + Math.random() * 900000)}`;
 
 export const signup = async (req, res) => {
-  const { name, email, password, targetField, interests } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
+  try {
+    const { name, email, password, targetField, interests } = req.body;
+    const safeName = String(name || "").trim();
+    const safeEmail = String(email || "").trim().toLowerCase();
+    const safePassword = String(password || "");
 
-  if (await User.findOne({ email })) {
-    return res.status(400).json({ message: "User already exists" });
-  }
-
-  const safeField = normalizeTargetField(targetField);
-  const safeInterests = sanitizeInterests(interests);
-
-  const user = await User.create({
-    name,
-    email,
-    password,
-    targetField: safeField,
-    interests: safeInterests,
-    progress: {
-      testsTaken: 0,
-      accuracy: 0,
-      weakTopics: [],
-      recommendedTopics: FIELD_DEFAULT_TOPICS[safeField] || FIELD_DEFAULT_TOPICS.Software
+    if (!safeName || !safeEmail || !safePassword) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-  });
 
-  res.status(201).json({ token: tokenFor(user._id), user });
+    if (await User.findOne({ email: safeEmail })) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const safeField = normalizeTargetField(targetField);
+    const safeInterests = sanitizeInterests(interests);
+
+    const user = await User.create({
+      name: safeName,
+      email: safeEmail,
+      password: safePassword,
+      targetField: safeField,
+      interests: safeInterests,
+      progress: {
+        testsTaken: 0,
+        accuracy: 0,
+        weakTopics: [],
+        recommendedTopics: FIELD_DEFAULT_TOPICS[safeField] || FIELD_DEFAULT_TOPICS.Software
+      }
+    });
+
+    return res.status(201).json({ token: tokenFor(user._id), user });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    return res.status(500).json({ message: error?.message || "Unable to create account right now" });
+  }
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const user = await User.findOne({ email });
 
-  if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ message: "Invalid credentials" });
+    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const safeField = normalizeTargetField(user.targetField);
+    if (user.targetField !== safeField) {
+      user.targetField = safeField;
+      user.progress = {
+        ...(user.progress || {}),
+        recommendedTopics: FIELD_DEFAULT_TOPICS[safeField] || FIELD_DEFAULT_TOPICS.Software
+      };
+      await user.save();
+    }
+
+    return res.json({ token: tokenFor(user._id), user });
+  } catch (error) {
+    return res.status(500).json({ message: error?.message || "Unable to log in right now" });
   }
-
-  const safeField = normalizeTargetField(user.targetField);
-  if (user.targetField !== safeField) {
-    user.targetField = safeField;
-    user.progress = {
-      ...(user.progress || {}),
-      recommendedTopics: FIELD_DEFAULT_TOPICS[safeField] || FIELD_DEFAULT_TOPICS.Software
-    };
-    await user.save();
-  }
-
-  res.json({ token: tokenFor(user._id), user });
 };
 
 export const requestPasswordResetOtp = async (req, res) => {
