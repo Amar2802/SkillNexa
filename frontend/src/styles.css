@@ -2246,9 +2246,14 @@ body {
   overflow-x: clip;
 }
 
-.app-content,
+.app-content {
+  width: calc(100% - var(--sidebar-width));
+  min-width: 0;
+}
+
 .auth-content {
   width: 100%;
+  min-width: 0;
 }
 
 .page-loader-shell {
@@ -2468,5 +2473,59 @@ body {
   .shell-avatar {
     width: 46px;
     height: 46px;
+  }
+}
+
+
+
+/* Prevent dashboard and shell overflow on narrowed desktop windows */
+.app-topbar,
+.app-content,
+.dashboard-pro,
+.dashboard-pro .row,
+.dashboard-pro .row > div,
+.hero-copy-block,
+.dashboard-highlight-card,
+.quick-action-grid,
+.quick-action-card,
+.prep-plan-item,
+.prep-plan-copy,
+.company-prep-track-item {
+  min-width: 0;
+}
+
+.dashboard-pro .row {
+  --bs-gutter-x: 1.25rem;
+}
+
+.quick-action-card,
+.prep-plan-item,
+.company-prep-track-item {
+  overflow: hidden;
+}
+
+.quick-action-card span,
+.prep-plan-copy span,
+.prep-plan-copy small,
+.company-prep-track-item p,
+.dashboard-highlight-metric strong,
+.dashboard-highlight-metric span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1280px) {
+  .dashboard-pro .row > [class*="col-lg-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .quick-action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 991px) {
+  .app-content {
+    width: 100%;
   }
 }
