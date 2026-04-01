@@ -1,36 +1,44 @@
 import Question from "../models/Question.js";
 
+const filterSeedQuestions = (seedQuestions, queryParams = {}) => {
+  const { field, category, difficulty, topic, company, type, search } = queryParams;
+
+  return seedQuestions.filter((question) => {
+    if (field && (question.field || "Software") !== field) return false;
+    if (category && question.category !== category) return false;
+    if (difficulty && question.difficulty !== difficulty) return false;
+    if (topic && !new RegExp(topic, "i").test(question.topic || "")) return false;
+    if (company && !new RegExp(company, "i").test(question.company || "")) return false;
+    if (type && question.type !== type) return false;
+    if (search && !new RegExp(search, "i").test(question.title || "")) return false;
+    return true;
+  });
+};
+
 export const getQuestions = async (req, res) => {
+  const { field, category, difficulty, topic, company, type, search } = req.query;
+  const query = {};
+
+  if (field) query.field = field;
+  if (category) query.category = category;
+  if (difficulty) query.difficulty = difficulty;
+  if (topic) query.topic = new RegExp(topic, "i");
+  if (company) query.company = new RegExp(company, "i");
+  if (type) query.type = type;
+  if (search) query.title = new RegExp(search, "i");
+
   try {
-    const { field, category, difficulty, topic, company, type, search } = req.query;
-    const query = {};
+    const results = await Question.find(query).sort({ createdAt: -1 });
+    if (results.length) {
+      return res.json(results);
+    }
 
-    if (field) query.field = field;
-    if (category) query.category = category;
-    if (difficulty) query.difficulty = difficulty;
-    if (topic) query.topic = new RegExp(topic, "i");
-    if (company) query.company = new RegExp(company, "i");
-    if (type) query.type = type;
-    if (search) query.title = new RegExp(search, "i");
-
-    res.json(await Question.find(query).sort({ createdAt: -1 }));
+    const { default: seedQuestions } = await import("../data/seedQuestions.js");
+    return res.json(filterSeedQuestions(seedQuestions, req.query));
   } catch (error) {
     console.error("getQuestions error:", error);
     const { default: seedQuestions } = await import("../data/seedQuestions.js");
-    const { field, category, difficulty, topic, company, type, search } = req.query;
-
-    const fallbackQuestions = seedQuestions.filter((question) => {
-      if (field && question.field !== field) return false;
-      if (category && question.category !== category) return false;
-      if (difficulty && question.difficulty !== difficulty) return false;
-      if (topic && !new RegExp(topic, "i").test(question.topic || "")) return false;
-      if (company && !new RegExp(company, "i").test(question.company || "")) return false;
-      if (type && question.type !== type) return false;
-      if (search && !new RegExp(search, "i").test(question.title || "")) return false;
-      return true;
-    });
-
-    res.json(fallbackQuestions);
+    return res.json(filterSeedQuestions(seedQuestions, req.query));
   }
 };
 
