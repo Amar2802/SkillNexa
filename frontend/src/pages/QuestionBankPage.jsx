@@ -23,7 +23,7 @@ const splitDisplay = (question) => {
 
 const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software" }) => {
   const location = useLocation();
-  const didInitRef = useRef(false);
+  const skipFirstTypeEffect = useRef(true);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
   const [type, setType] = useState("all");
   const [page, setPage] = useState(1);
@@ -32,12 +32,13 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
   const [loading, setLoading] = useState(false);
   const [openAnswers, setOpenAnswers] = useState({});
 
+  const sourceQuestions = questions.length ? questions : items;
   const filterOptions = useMemo(() => ({
-    category: [...new Set(questions.map((question) => question.category).filter(Boolean))].sort(),
-    difficulty: [...new Set(questions.map((question) => question.difficulty).filter(Boolean))].sort(),
-    topic: [...new Set(questions.map((question) => question.topic).filter(Boolean))].sort(),
-    company: [...new Set(questions.map((question) => question.company).filter(Boolean))].sort()
-  }), [questions]);
+    category: [...new Set(sourceQuestions.map((question) => question.category).filter(Boolean))].sort(),
+    difficulty: [...new Set(sourceQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
+    topic: [...new Set(sourceQuestions.map((question) => question.topic).filter(Boolean))].sort(),
+    company: [...new Set(sourceQuestions.map((question) => question.company).filter(Boolean))].sort()
+  }), [sourceQuestions]);
 
   const fetchQuestions = async (nextPage = page, nextFilters = filters, nextType = type) => {
     setLoading(true);
@@ -60,7 +61,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       setPage(data.page || nextPage);
     } catch {
       const fallback = await loadQuestions({ ...nextFilters, limit: PAGE_SIZE, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
-      setItems((fallback || []).filter((question) => nextType === "all" || question.type === nextType).slice(0, PAGE_SIZE));
+      setItems((fallback || []).filter((question) => question.type !== "MCQ" && (nextType === "all" || question.type === nextType)).slice(0, PAGE_SIZE));
       setTotalPages(1);
       setPage(1);
     } finally {
@@ -77,12 +78,14 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       company: ""
     };
     setFilters(nextFilters);
-    didInitRef.current = true;
     fetchQuestions(1, nextFilters, type).catch(() => undefined);
   }, [location.search]);
 
   useEffect(() => {
-    if (!didInitRef.current) return;
+    if (skipFirstTypeEffect.current) {
+      skipFirstTypeEffect.current = false;
+      return;
+    }
     fetchQuestions(1, filters, type).catch(() => undefined);
   }, [type]);
 

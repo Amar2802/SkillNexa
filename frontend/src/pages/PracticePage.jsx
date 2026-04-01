@@ -13,8 +13,16 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 
   useEffect(() => {
     if (questions.length || !loadQuestions) return;
+    let active = true;
     setLoading(true);
-    loadQuestions({ limit: 60 }).finally(() => setLoading(false));
+    loadQuestions({ limit: 60 })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [questions.length, loadQuestions]);
 
   const categories = useMemo(() => [...new Set(questions.map((question) => question.category).filter(Boolean))], [questions]);
@@ -61,7 +69,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
   const toggleBookmark = async () => {
     if (!question) return;
     await api.post(`/users/bookmarks/${question._id}`, {}, { timeout: 25000 });
-    refreshBookmarks();
+    refreshBookmarks?.();
   };
 
   const nextQuestion = () => {

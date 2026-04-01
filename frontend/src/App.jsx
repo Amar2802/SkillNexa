@@ -110,14 +110,6 @@ export default function App() {
       try {
         setLoadingApp(true);
         await refreshProfile();
-        if (!active) return;
-        await loadQuestions();
-        if (!active) return;
-        await Promise.allSettled([
-          refreshBookmarks(),
-          refreshHistory(),
-          refreshTests()
-        ]);
       } finally {
         if (active) setLoadingApp(false);
       }
@@ -151,8 +143,8 @@ export default function App() {
         <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} refreshTests={refreshTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} questions={questions} /></ProtectedRoute>} />
         <Route path="/review-mistakes" element={<ProtectedRoute user={user}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
         <Route path="/ai-interviewer" element={<ProtectedRoute user={user}><AIInterviewerPage questions={questions} /></ProtectedRoute>} />
-        <Route path="/bookmarks" element={<ProtectedRoute user={user}><BookmarksPage bookmarks={bookmarks} /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute user={user}><HistoryPage history={history} /></ProtectedRoute>} />
+        <Route path="/bookmarks" element={<ProtectedRoute user={user}><BookmarksPage bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute user={user}><HistoryPage history={history} refreshHistory={refreshHistory} /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute user={user}><ProfilePage profile={profile || user} refreshProfile={refreshProfile} logout={logout} /></ProtectedRoute>} />
       </Routes>
     </Suspense>
