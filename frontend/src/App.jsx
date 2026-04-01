@@ -5,6 +5,7 @@ import api from "./api/client";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import softwareQuestionBank from "./data/softwareQuestionBank";
 
 const AIInterviewerPage = lazy(() => import("./pages/AIInterviewerPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -37,6 +38,17 @@ const normalizeQuestions = (questionList = [], fallbackField = "Software") => {
     starterCode: question.starterCode || {}
   }));
 };
+const filterLocalQuestions = (questionList, params = {}, fallbackField = "Software") => {
+  return questionList.filter((question) => {
+    if ((question.field || fallbackField) !== fallbackField) return false;
+    if (params.category && question.category !== params.category) return false;
+    if (params.difficulty && question.difficulty !== params.difficulty) return false;
+    if (params.topic && !(new RegExp(params.topic, "i").test(question.topic || ""))) return false;
+    if (params.company && !(new RegExp(params.company, "i").test(question.company || ""))) return false;
+    if (params.type && question.type !== params.type) return false;
+    return true;
+  });
+};
 
 export default function App() {
   const { user, setUser, profile, setProfile, applyAuth, logout } = useAuth();
@@ -61,21 +73,27 @@ export default function App() {
 
   const loadQuestions = async (params = {}) => {
     const mergedParams = { limit: 220, field: activeField, ...params };
-    let { data } = await api.get("/questions", { params: mergedParams });
-    let normalized = normalizeQuestions(data, activeField);
+    const localFallback = normalizeQuestions(filterLocalQuestions(softwareQuestionBank, mergedParams, activeField).slice(0, mergedParams.limit || 220), activeField);
 
-    if (!normalized.length) {
-      ({ data } = await api.get("/questions", { params: { field: activeField, limit: 220 } }));
-      normalized = normalizeQuestions(data, activeField);
+    try {
+      let { data } = await api.get("/questions", { params: mergedParams, timeout: 3000 });
+      let normalized = normalizeQuestions(data, activeField);
+
+      if (!normalized.length) {
+        ({ data } = await api.get("/questions", { params: { field: activeField, limit: 220 }, timeout: 3000 }));
+        normalized = normalizeQuestions(data, activeField);
+      }
+
+      if (!normalized.length) {
+        normalized = localFallback;
+      }
+
+      setQuestions(normalized);
+      return normalized;
+    } catch {
+      setQuestions(localFallback);
+      return localFallback;
     }
-
-    if (!normalized.length) {
-      ({ data } = await api.get("/questions", { params: { limit: 220 } }));
-      normalized = normalizeQuestions(data, activeField).filter((question) => (question.field || activeField) === activeField);
-    }
-
-    setQuestions(normalized);
-    return normalized;
   };
 
   const refreshBookmarks = async () => setBookmarks((await api.get("/users/bookmarks")).data);
@@ -159,6 +177,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 
