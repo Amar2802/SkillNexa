@@ -21,6 +21,50 @@ const calculateStreak = (records, tracks) => {
   return streak;
 };
 
+const buildFallbackRoadmap = ({ company, focusTopics, weakTopics }) => {
+  const topics = focusTopics.length ? focusTopics : ["Arrays", "DBMS", "Operating Systems"];
+  const weakTopicLabel = weakTopics.length ? weakTopics.join(", ") : topics.slice(0, 2).join(", ");
+
+  return [
+    {
+      week: "Week 1",
+      goal: "Strengthen core fundamentals and build rhythm",
+      sessions: [
+        `Revise ${topics[0] || "core fundamentals"} and solve 8 focused questions`,
+        "Complete one guided practice block and note the mistakes you repeat",
+        "Write short revision notes for formulas, patterns, and shortcuts"
+      ]
+    },
+    {
+      week: "Week 2",
+      goal: "Target weak topics with structured practice",
+      sessions: [
+        `Prioritize weak topics: ${weakTopicLabel}`,
+        "Take one timed mock test and review every incorrect answer",
+        `Prepare interview explanations that fit ${company || "your target company"} expectations`
+      ]
+    },
+    {
+      week: "Week 3",
+      goal: "Blend interview rounds into one preparation cycle",
+      sessions: [
+        `Mix ${topics.slice(0, 3).join(", ")} in a single revision plan`,
+        "Practice one coding question and one subjective answer daily",
+        "Refine communication for HR and project discussion rounds"
+      ]
+    },
+    {
+      week: "Week 4",
+      goal: "Finalize with mocks, review, and confidence building",
+      sessions: [
+        `Attempt a full mock test for ${company || "your target company"}`,
+        "Review bookmarks, top mistakes, and weak-topic notes",
+        "Practice confident, structured answers before the final interview round"
+      ]
+    }
+  ];
+};
+
 const DashboardPage = ({ profile, recommendations, questions = [] }) => {
   const activeField = profile?.targetField || "Software";
   const companyOptions = FIELD_COMPANY_TRACKS[activeField] || FIELD_COMPANY_TRACKS.Software;
@@ -35,23 +79,69 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
   const todayKey = useMemo(() => getDailyPrepKey(), []);
   const todayAttempts = attemptRecords[todayKey] || {};
 
+  const fallbackTopics = useMemo(() => {
+    const profileTopics = profile?.progress?.recommendedTopics || [];
+    const interestTopics = profile?.interests || [];
+    const questionTopics = questions.map((question) => question.topic).filter(Boolean);
+    return [...new Set([...weakTopics, ...profileTopics, ...interestTopics, ...questionTopics])].slice(0, 6);
+  }, [profile?.progress?.recommendedTopics, profile?.interests, questions, weakTopics]);
+
+  const recommendedItems = useMemo(() => {
+    if (recommendations?.length) return recommendations.slice(0, 6);
+
+    const preferredTopics = new Set(fallbackTopics);
+    const prioritized = questions.filter((question) => preferredTopics.has(question.topic));
+    const fallbackPool = prioritized.length ? prioritized : questions;
+    return fallbackPool.slice(0, 6);
+  }, [recommendations, questions, fallbackTopics]);
+
   useEffect(() => {
     setSelectedCompany("General");
   }, [activeField]);
 
   useEffect(() => {
-    const loadRoadmap = async () => {
-      const roadmapResponse = await api.post("/users/roadmap", { company: selectedCompany, targetField: activeField });
-      setRoadmap(roadmapResponse.data.roadmap || []);
+    const fallbackRoadmap = buildFallbackRoadmap({
+      company: selectedCompany,
+      focusTopics: fallbackTopics,
+      weakTopics
+    });
 
-      const questionResponse = await api.get("/questions", {
-        params: selectedCompany === "General" ? { field: activeField } : { company: selectedCompany, field: activeField }
-      });
-      setCompanyQuestions(questionResponse.data.slice(0, 6));
+    const fallbackQuestionPool = (() => {
+      const preferredTopics = new Set(fallbackTopics);
+      const companyMatched = selectedCompany === "General"
+        ? questions
+        : questions.filter((question) => (question.company || "").toLowerCase().includes(selectedCompany.toLowerCase()));
+      const topicMatched = companyMatched.filter((question) => preferredTopics.has(question.topic));
+      const usablePool = topicMatched.length ? topicMatched : companyMatched.length ? companyMatched : questions;
+      return usablePool.slice(0, 6);
+    })();
+
+    const loadRoadmap = async () => {
+      try {
+        const roadmapResponse = await api.post("/users/roadmap", { company: selectedCompany, targetField: activeField });
+        const roadmapItems = roadmapResponse.data?.roadmap?.length ? roadmapResponse.data.roadmap : fallbackRoadmap;
+        setRoadmap(roadmapItems);
+
+        let questionResponse = await api.get("/questions", {
+          params: selectedCompany === "General" ? { field: activeField } : { company: selectedCompany, field: activeField }
+        });
+
+        let nextQuestions = questionResponse.data || [];
+
+        if (!nextQuestions.length && selectedCompany !== "General") {
+          questionResponse = await api.get("/questions", { params: { field: activeField } });
+          nextQuestions = (questionResponse.data || []).filter((question) => fallbackTopics.includes(question.topic));
+        }
+
+        setCompanyQuestions((nextQuestions.length ? nextQuestions : fallbackQuestionPool).slice(0, 6));
+      } catch {
+        setRoadmap(fallbackRoadmap);
+        setCompanyQuestions(fallbackQuestionPool);
+      }
     };
 
     loadRoadmap().catch(() => undefined);
-  }, [selectedCompany, activeField]);
+  }, [selectedCompany, activeField, fallbackTopics, weakTopics, questions]);
 
   useEffect(() => {
     const syncAttempts = () => setAttemptRecords(readDailyAttemptRecords());
@@ -76,7 +166,7 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
     navigate(`/questions?${params.toString()}`);
   };
 
-  const focusTopic = weakTopics[0] || recommendations?.[0]?.topic || "Interview fundamentals";
+  const focusTopic = weakTopics[0] || recommendedItems?.[0]?.topic || fallbackTopics[0] || "Interview fundamentals";
   const dailyTracks = useMemo(() => getDailyInterviewTracks(activeField), [activeField]);
   const streak = useMemo(() => calculateStreak(attemptRecords, dailyTracks), [attemptRecords, dailyTracks]);
 
@@ -133,7 +223,7 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
       label: "Weak Areas",
       value: weakTopics.length || 0,
       hint: weakTopics.length ? `Top focus: ${weakTopics[0]}` : "Topics needing revision",
-      onClick: () => openWeakArea(weakTopics[0] || "")
+      onClick: () => openWeakArea(weakTopics[0] || focusTopic || "")
     }
   ];
 
@@ -243,8 +333,8 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
       <div className="row g-4">
         <div className="col-lg-8"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5 mb-4">Performance Trend</h2><Line data={{ labels: recent.map((_, i) => `Test ${i + 1}`), datasets: [{ label: "Accuracy", data: recent.map((r) => r.accuracy), borderColor: "#35c2ff", backgroundColor: "rgba(53,194,255,0.15)" }] }} /></div></div></div>
         <div className="col-lg-4"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5 mb-4">Readiness Snapshot</h2><Doughnut data={{ labels: ["Correct", "Needs Work"], datasets: [{ data: [profile?.progress?.accuracy || 0, 100 - (profile?.progress?.accuracy || 0)], backgroundColor: ["#35c2ff", "#ff8e72"] }] }} /></div></div></div>
-        <div className="col-lg-6"><div className="card glass-card h-100"><div className="card-body"><div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><h2 className="h5 mb-0">Weak Topics</h2>{weakTopics.length > 0 && <button type="button" className="btn btn-outline-light btn-sm" onClick={() => openWeakArea(weakTopics[0])}>Open Weak Area</button>}</div><Bar data={{ labels: weakTopics.length ? weakTopics : ["Arrays", "DBMS", "Probability"], datasets: [{ label: "Priority", data: weakTopics.length ? weakTopics.map((_, i) => 90 - i * 15) : [80, 70, 60], backgroundColor: ["#ff8e72", "#ffd166", "#35c2ff"] }] }} /><div className="d-flex gap-2 flex-wrap mt-3">{weakTopics.map((topic) => <button type="button" key={topic} className="badge text-bg-secondary weak-topic-chip" onClick={() => openWeakArea(topic)}>{topic}</button>)}</div></div></div></div>
-        <div className="col-lg-6"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5">Recommended Topics</h2><div className="list-group list-group-flush">{recommendations.map((q) => <button type="button" className="list-group-item bg-transparent px-0 recommendation-link" key={q._id} onClick={() => openRecommendedTopic(q)}><h3 className="h6 mb-1">{q.title}</h3><p className="mb-0 text-secondary">{q.topic} | {q.category} | {q.difficulty}</p></button>)}{!recommendations.length && <p className="text-secondary mb-0">Recommendations will appear here as you complete practice and mock tests.</p>}</div></div></div></div>
+        <div className="col-lg-6"><div className="card glass-card h-100"><div className="card-body"><div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><h2 className="h5 mb-0">Weak Topics</h2>{(weakTopics.length > 0 || focusTopic) && <button type="button" className="btn btn-outline-light btn-sm" onClick={() => openWeakArea(weakTopics[0] || focusTopic)}>Open Weak Area</button>}</div><Bar data={{ labels: weakTopics.length ? weakTopics : fallbackTopics.slice(0, 3), datasets: [{ label: "Priority", data: weakTopics.length ? weakTopics.map((_, i) => 90 - i * 15) : [80, 70, 60], backgroundColor: ["#ff8e72", "#ffd166", "#35c2ff"] }] }} /><div className="d-flex gap-2 flex-wrap mt-3">{(weakTopics.length ? weakTopics : fallbackTopics.slice(0, 3)).map((topic) => <button type="button" key={topic} className="badge text-bg-secondary weak-topic-chip" onClick={() => openWeakArea(topic)}>{topic}</button>)}</div></div></div></div>
+        <div className="col-lg-6"><div className="card glass-card h-100"><div className="card-body"><h2 className="h5">Recommended Topics</h2><div className="list-group list-group-flush">{recommendedItems.map((q, index) => <button type="button" className="list-group-item bg-transparent px-0 recommendation-link" key={q._id || `${q.title}-${index}`} onClick={() => openRecommendedTopic(q)}><h3 className="h6 mb-1">{q.title}</h3><p className="mb-0 text-secondary">{q.topic} | {q.category} | {q.difficulty}</p></button>)}{!recommendedItems.length && <p className="text-secondary mb-0">Recommendations will appear here as you complete practice and mock tests.</p>}</div></div></div></div>
       </div>
 
       <div className="row g-4 mt-1">
@@ -267,6 +357,7 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
                     </div>
                   </div>
                 ))}
+                {!roadmap.length && <p className="text-secondary mb-0">Your roadmap will appear here once your preparation data is ready.</p>}
               </div>
             </div>
           </div>
@@ -279,14 +370,14 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
                 <span className="badge text-bg-secondary">Swipe or scroll</span>
               </div>
               <div className="company-prep-track-row">
-                {companyQuestions.map((q) => (
-                  <button type="button" className="company-prep-track-item recommendation-link text-start border-0" key={q._id} onClick={() => openRecommendedTopic(q)}>
+                {companyQuestions.map((q, index) => (
+                  <button type="button" className="company-prep-track-item recommendation-link text-start border-0" key={q._id || `${q.title}-${index}`} onClick={() => openRecommendedTopic(q)}>
                     <span className="company-prep-track-badge">{q.company || selectedCompany}</span>
                     <h3 className="h6 mb-2">{q.title}</h3>
                     <p className="mb-0 text-secondary">{q.category} | {q.topic}</p>
                   </button>
                 ))}
-                {!companyQuestions.length && <p className="text-secondary mb-0">No company-tagged questions found yet for this track.</p>}
+                {!companyQuestions.length && <p className="text-secondary mb-0">Company prep questions will appear here as soon as the question bank is ready.</p>}
               </div>
             </div>
           </div>
@@ -297,9 +388,3 @@ const DashboardPage = ({ profile, recommendations, questions = [] }) => {
 };
 
 export default DashboardPage;
-
-
-
-
-
-
