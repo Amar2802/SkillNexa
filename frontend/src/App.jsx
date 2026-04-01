@@ -144,11 +144,17 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setQuestions([]);
+      setTests([]);
+      return;
+    }
+
     const clearedFilters = { category: "", difficulty: "", topic: "", company: "" };
     setFilters(clearedFilters);
     loadQuestions(clearedFilters).catch(() => undefined);
     refreshTests().catch(() => undefined);
-  }, [activeField]);
+  }, [activeField, user?.email]);
 
   useEffect(() => {
     if (!user) {
@@ -199,6 +205,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
