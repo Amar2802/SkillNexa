@@ -1,5 +1,11 @@
 import Question from "../models/Question.js";
 
+const parseSafeLimit = (value, fallback) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, 500);
+};
+
 const filterSeedQuestions = (seedQuestions, queryParams = {}) => {
   const { field, category, difficulty, topic, company, type, search } = queryParams;
 
@@ -16,7 +22,9 @@ const filterSeedQuestions = (seedQuestions, queryParams = {}) => {
 };
 
 export const getQuestions = async (req, res) => {
-  const { field, category, difficulty, topic, company, type, search } = req.query;
+  const { field, category, difficulty, topic, company, type, search, limit } = req.query;
+  const hasFocusedFilter = Boolean(category || difficulty || topic || company || type || search);
+  const safeLimit = parseSafeLimit(limit, hasFocusedFilter ? 240 : 120);
   const query = {};
 
   if (field) query.field = field;
@@ -28,17 +36,17 @@ export const getQuestions = async (req, res) => {
   if (search) query.title = new RegExp(search, "i");
 
   try {
-    const results = await Question.find(query).sort({ createdAt: -1 });
+    const results = await Question.find(query).sort({ createdAt: -1 }).limit(safeLimit);
     if (results.length) {
       return res.json(results);
     }
 
     const { default: seedQuestions } = await import("../data/seedQuestions.js");
-    return res.json(filterSeedQuestions(seedQuestions, req.query));
+    return res.json(filterSeedQuestions(seedQuestions, req.query).slice(0, safeLimit));
   } catch (error) {
     console.error("getQuestions error:", error);
     const { default: seedQuestions } = await import("../data/seedQuestions.js");
-    return res.json(filterSeedQuestions(seedQuestions, req.query));
+    return res.json(filterSeedQuestions(seedQuestions, req.query).slice(0, safeLimit));
   }
 };
 
