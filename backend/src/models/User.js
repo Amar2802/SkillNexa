@@ -17,7 +17,9 @@ const userSchema = new mongoose.Schema(
       accuracy: { type: Number, default: 0 },
       weakTopics: [String],
       recommendedTopics: [String]
-    }
+    },
+    passwordResetOtp: String,
+    passwordResetOtpExpiresAt: Date
   },
   { timestamps: true }
 );
