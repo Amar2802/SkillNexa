@@ -5,7 +5,6 @@ import api from "./api/client";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
-import softwareQuestionBank from "./data/softwareQuestionBank";
 
 const AIInterviewerPage = lazy(() => import("./pages/AIInterviewerPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -20,6 +19,9 @@ const ReviewMistakesPage = lazy(() => import("./pages/ReviewMistakesPage"));
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
 
+const SOFTWARE_FIELD = "Software";
+const QUESTION_CACHE_KEY = "skillnexa-software-questions";
+
 const PageLoader = () => (
   <div className="page-loader-shell">
     <div className="page-loader-card glass-card">
@@ -30,7 +32,7 @@ const PageLoader = () => (
   </div>
 );
 
-const normalizeQuestions = (questionList = [], fallbackField = "Software") => {
+const normalizeQuestions = (questionList = [], fallbackField = SOFTWARE_FIELD) => {
   return questionList.map((question, index) => ({
     ...question,
     _id: question._id || question.id || `${fallbackField}-${question.category || "General"}-${question.topic || "Topic"}-${index}`,
@@ -38,29 +40,34 @@ const normalizeQuestions = (questionList = [], fallbackField = "Software") => {
     starterCode: question.starterCode || {}
   }));
 };
-const filterLocalQuestions = (questionList, params = {}, fallbackField = "Software") => {
-  return questionList.filter((question) => {
-    if ((question.field || fallbackField) !== fallbackField) return false;
-    if (params.category && question.category !== params.category) return false;
-    if (params.difficulty && question.difficulty !== params.difficulty) return false;
-    if (params.topic && !(new RegExp(params.topic, "i").test(question.topic || ""))) return false;
-    if (params.company && !(new RegExp(params.company, "i").test(question.company || ""))) return false;
-    if (params.type && question.type !== params.type) return false;
-    return true;
-  });
+
+const readCachedQuestions = () => {
+  try {
+    return normalizeQuestions(JSON.parse(localStorage.getItem(QUESTION_CACHE_KEY) || "[]"), SOFTWARE_FIELD);
+  } catch {
+    return [];
+  }
+};
+
+const writeCachedQuestions = (questionList) => {
+  try {
+    localStorage.setItem(QUESTION_CACHE_KEY, JSON.stringify(questionList));
+  } catch {
+    // ignore storage failures
+  }
 };
 
 export default function App() {
   const { user, setUser, profile, setProfile, applyAuth, logout } = useAuth();
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState(() => readCachedQuestions());
   const [tests, setTests] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
   const [history, setHistory] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
 
-  const activeField = useMemo(() => "Software", []);
+  const activeField = useMemo(() => SOFTWARE_FIELD, []);
 
   const refreshProfile = async () => {
     if (!localStorage.getItem("token")) return null;
@@ -73,27 +80,41 @@ export default function App() {
 
   const loadQuestions = async (params = {}) => {
     const mergedParams = { limit: 220, field: activeField, ...params };
-    const localFallback = normalizeQuestions(filterLocalQuestions(softwareQuestionBank, mergedParams, activeField).slice(0, mergedParams.limit || 220), activeField);
+    const cachedQuestions = readCachedQuestions();
 
     try {
-      let { data } = await api.get("/questions", { params: mergedParams, timeout: 3000 });
+      let { data } = await api.get("/questions", { params: mergedParams, timeout: 4000 });
       let normalized = normalizeQuestions(data, activeField);
 
       if (!normalized.length) {
-        ({ data } = await api.get("/questions", { params: { field: activeField, limit: 220 }, timeout: 3000 }));
+        ({ data } = await api.get("/questions", { params: { field: activeField, limit: 220 }, timeout: 4000 }));
         normalized = normalizeQuestions(data, activeField);
       }
 
-      if (!normalized.length) {
-        normalized = localFallback;
+      if (normalized.length) {
+        setQuestions(normalized);
+        writeCachedQuestions(normalized);
+        return normalized;
       }
-
-      setQuestions(normalized);
-      return normalized;
     } catch {
-      setQuestions(localFallback);
-      return localFallback;
+      // fallback below
     }
+
+    if (cachedQuestions.length) {
+      const fallbackQuestions = cachedQuestions.filter((question) => {
+        if ((question.field || activeField) !== activeField) return false;
+        if (mergedParams.category && question.category !== mergedParams.category) return false;
+        if (mergedParams.difficulty && question.difficulty !== mergedParams.difficulty) return false;
+        if (mergedParams.topic && !(new RegExp(mergedParams.topic, "i").test(question.topic || ""))) return false;
+        if (mergedParams.company && !(new RegExp(mergedParams.company, "i").test(question.company || ""))) return false;
+        return true;
+      });
+      setQuestions(fallbackQuestions.length ? fallbackQuestions : cachedQuestions);
+      return fallbackQuestions.length ? fallbackQuestions : cachedQuestions;
+    }
+
+    setQuestions([]);
+    return [];
   };
 
   const refreshBookmarks = async () => setBookmarks((await api.get("/users/bookmarks")).data);
@@ -139,7 +160,7 @@ export default function App() {
 
     refreshProfile()
       .then(async (currentProfile) => {
-        const loadedQuestions = await loadQuestions(filters).catch(() => []);
+        const loadedQuestions = await loadQuestions(filters).catch(() => readCachedQuestions());
         const recs = await api.post("/ai/recommendations", { weakTopics: currentProfile?.progress?.weakTopics || [] }).catch(() => ({ data: [] }));
         const normalizedRecs = normalizeQuestions(recs.data, activeField);
         setRecommendations(normalizedRecs.length ? normalizedRecs : loadedQuestions.slice(0, 6));
@@ -177,9 +198,3 @@ export default function App() {
     </div>
   );
 }
-
-
-
-
-
-
