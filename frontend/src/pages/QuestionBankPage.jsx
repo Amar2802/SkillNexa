@@ -24,34 +24,6 @@ const FIELD_BANK_COPY = {
   Software: {
     title: "Explore software interview questions by subject",
     subtitle: "Browse coding and descriptive questions for technical rounds, aptitude, HR, and core-CS prep."
-  },
-  UPSC: {
-    title: "Explore civil-services questions by subject",
-    subtitle: "Browse descriptive questions for general studies, ethics, current affairs, and personality-test practice."
-  },
-  NDA: {
-    title: "Explore defence-prep questions by subject",
-    subtitle: "Browse practice questions for mathematics, current affairs, general ability, and SSB-style preparation."
-  },
-  Banking: {
-    title: "Explore banking-prep questions by subject",
-    subtitle: "Browse quant, reasoning, English, and banking-awareness questions in one structured bank."
-  },
-  SSC: {
-    title: "Explore SSC-prep questions by subject",
-    subtitle: "Browse reasoning, quantitative aptitude, English, and awareness questions for competitive exam prep."
-  },
-  Railways: {
-    title: "Explore railway-prep questions by subject",
-    subtitle: "Browse technical, operational, awareness, and mathematics questions relevant to railway interviews and exams."
-  },
-  Teaching: {
-    title: "Explore teaching-interview questions by subject",
-    subtitle: "Browse pedagogy, teaching aptitude, classroom communication, and subject-mastery questions."
-  },
-  "State PSC": {
-    title: "Explore state-services questions by subject",
-    subtitle: "Browse questions for state governance, general studies, current affairs, and personality-test preparation."
   }
 };
 
@@ -82,7 +54,16 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
   const [openAnswers, setOpenAnswers] = useState({});
   const [activeSection, setActiveSection] = useState("all");
   const [activeCategory, setActiveCategory] = useState("");
+  const [loading, setLoading] = useState(false);
   const bankCopy = FIELD_BANK_COPY[defaultField] || FIELD_BANK_COPY.Software;
+
+  useEffect(() => {
+    if (questions.length) return;
+    setLoading(true);
+    loadQuestions(filters)
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, [questions.length]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -98,7 +79,10 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
         company: filters.company || ""
       };
       setFilters(nextFilters);
-      loadQuestions(nextFilters);
+      setLoading(true);
+      loadQuestions(nextFilters)
+        .catch(() => undefined)
+        .finally(() => setLoading(false));
       if (category) setActiveCategory(category);
     }
   }, [location.search]);
@@ -107,26 +91,33 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
     setOpenAnswers((current) => ({ ...current, [id]: !current[id] }));
   };
 
-  const nonMcqQuestions = useMemo(
-    () => questions.filter((question) => question.type !== "MCQ" && (question.field || defaultField) === defaultField),
+  const usableQuestions = useMemo(
+    () => questions.filter((question) => question && question._id && (question.field || defaultField) === defaultField),
     [questions, defaultField]
   );
+
+  const nonMcqQuestions = useMemo(
+    () => usableQuestions.filter((question) => question.type !== "MCQ"),
+    [usableQuestions]
+  );
+
   const categories = useMemo(() => [...new Set(nonMcqQuestions.map((question) => question.category).filter(Boolean))], [nonMcqQuestions]);
 
   const filterOptions = useMemo(() => ({
-    category: [...new Set(nonMcqQuestions.map((question) => question.category).filter(Boolean))].sort(),
-    difficulty: [...new Set(nonMcqQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
-    topic: [...new Set(nonMcqQuestions.map((question) => question.topic).filter(Boolean))].sort(),
-    company: [...new Set(nonMcqQuestions.map((question) => question.company).filter(Boolean))].sort()
-  }), [nonMcqQuestions]);
+    category: [...new Set(usableQuestions.map((question) => question.category).filter(Boolean))].sort(),
+    difficulty: [...new Set(usableQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
+    topic: [...new Set(usableQuestions.map((question) => question.topic).filter(Boolean))].sort(),
+    company: [...new Set(usableQuestions.map((question) => question.company).filter(Boolean))].sort()
+  }), [usableQuestions]);
 
   const sectionQuestions = useMemo(() => {
-    return nonMcqQuestions.filter((question) => {
+    const source = nonMcqQuestions.length ? nonMcqQuestions : usableQuestions;
+    return source.filter((question) => {
       const typeMatch = activeSection === "all" ? true : question.type === activeSection;
       const categoryMatch = !activeCategory ? true : question.category === activeCategory;
       return typeMatch && categoryMatch;
     });
-  }, [nonMcqQuestions, activeSection, activeCategory]);
+  }, [usableQuestions, nonMcqQuestions, activeSection, activeCategory]);
 
   return (
     <div className="container py-4">
@@ -141,20 +132,14 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
             {Object.keys(filters).map((key) => (
               <div className="col-md-3" key={key}>
                 <label className="form-label">{filterLabels[key] || key}</label>
-                <select
-                  className="form-select"
-                  value={filters[key]}
-                  onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
-                >
+                <select className="form-select" value={filters[key]} onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}>
                   <option value="">All {filterLabels[key] || key}</option>
-                  {(filterOptions[key] || []).map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
+                  {(filterOptions[key] || []).map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
               </div>
             ))}
           </div>
-          <button className="btn btn-info mt-3" onClick={() => loadQuestions(filters)}>Apply Filters</button>
+          <button className="btn btn-info mt-3" onClick={() => { setLoading(true); loadQuestions(filters).catch(() => undefined).finally(() => setLoading(false)); }}>Apply Filters</button>
         </div>
       </div>
 
@@ -162,22 +147,14 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
         <div className="card-body">
           <div className="question-bank-tabs mb-3">
             {typeSections.map((section) => (
-              <button
-                key={section.id}
-                className={`question-bank-tab ${activeSection === section.id ? "active" : ""}`}
-                onClick={() => setActiveSection(section.id)}
-              >
+              <button key={section.id} className={`question-bank-tab ${activeSection === section.id ? "active" : ""}`} onClick={() => setActiveSection(section.id)}>
                 {section.label}
               </button>
             ))}
           </div>
           <div className="question-bank-tabs compact">
             {categories.map((category) => (
-              <button
-                key={category}
-                className={`question-bank-tab ${activeCategory === category ? "active" : ""}`}
-                onClick={() => setActiveCategory(category)}
-              >
+              <button key={category} className={`question-bank-tab ${activeCategory === category ? "active" : ""}`} onClick={() => setActiveCategory(category)}>
                 {category}
               </button>
             ))}
@@ -185,81 +162,69 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
         </div>
       </div>
 
-      <div className="question-bank-stack">
-        {sectionQuestions.map((q) => {
-          const isOpen = !!openAnswers[q._id];
-          const display = parseQuestionDisplay(q);
-          const starterCode = q.type === "Coding" ? Object.entries(q.starterCode || {}).filter(([, value]) => value) : [];
+      {loading && !sectionQuestions.length ? (
+        <div className="card glass-card mt-4"><div className="card-body"><p className="text-secondary mb-0">Loading questions...</p></div></div>
+      ) : (
+        <>
+          <div className="question-bank-stack">
+            {sectionQuestions.map((q) => {
+              const isOpen = !!openAnswers[q._id];
+              const display = parseQuestionDisplay(q);
+              const starterCode = q.type === "Coding" ? Object.entries(q.starterCode || {}).filter(([, value]) => value) : [];
 
-          return (
-            <div className="question-bank-stack-item" key={q._id}>
-              <div className="card glass-card h-100">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between gap-3 mb-3 flex-wrap">
-                    <div>
-                      <h2 className="h5">{display.title}</h2>
-                      <p className="text-secondary mb-0">
-                        {display.description}
-                        {display.advice ? <span className="question-bank-advice"> ({display.advice})</span> : null}
-                      </p>
-                    </div>
-                    <span className="badge text-bg-secondary align-self-start">{q.difficulty}</span>
-                  </div>
-
-                  <div className="d-flex gap-2 flex-wrap mb-3">
-                    <span className="badge text-bg-dark">{q.field || defaultField}</span>
-                    <span className="badge text-bg-dark">{q.category}</span>
-                    <span className="badge text-bg-dark">{q.topic}</span>
-                    <span className="badge text-bg-dark">{q.company}</span>
-                    <span className="badge text-bg-info">{q.type}</span>
-                  </div>
-
-                  <button className="btn btn-outline-light mb-3" onClick={() => toggleAnswer(q._id)}>
-                    {isOpen ? "Hide Answers" : "Show Answers"}
-                  </button>
-
-                  {isOpen && (
-                    <>
-                      <div className="mb-3">
-                        <p className="fw-semibold mb-2">Suggested Answer</p>
-                        <div className="question-bank-answer">{String(q.correctAnswer)}</div>
+              return (
+                <div className="question-bank-stack-item" key={q._id}>
+                  <div className="card glass-card h-100">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between gap-3 mb-3 flex-wrap">
+                        <div>
+                          <h2 className="h5">{display.title}</h2>
+                          <p className="text-secondary mb-0">{display.description}{display.advice ? <span className="question-bank-advice"> ({display.advice})</span> : null}</p>
+                        </div>
+                        <span className="badge text-bg-secondary align-self-start">{q.difficulty}</span>
                       </div>
-
-                      {starterCode.length ? (
-                        <div className="mb-3">
-                          <p className="fw-semibold mb-2">Starter Code</p>
-                          <div className="vstack gap-3">
-                            {starterCode.map(([language, code]) => (
-                              <div className="question-bank-code-block" key={`${q._id}-${language}`}>
-                                <span className="question-bank-code-label">{codeLanguageLabels[language] || language}</span>
-                                <pre className="question-bank-code-pre"><code>{code}</code></pre>
+                      <div className="d-flex gap-2 flex-wrap mb-3">
+                        <span className="badge text-bg-dark">{q.field || defaultField}</span>
+                        <span className="badge text-bg-dark">{q.category}</span>
+                        <span className="badge text-bg-dark">{q.topic}</span>
+                        <span className="badge text-bg-dark">{q.company}</span>
+                        <span className="badge text-bg-info">{q.type}</span>
+                      </div>
+                      <button className="btn btn-outline-light mb-3" onClick={() => toggleAnswer(q._id)}>{isOpen ? "Hide Answers" : "Show Answers"}</button>
+                      {isOpen && (
+                        <>
+                          <div className="mb-3"><p className="fw-semibold mb-2">Suggested Answer</p><div className="question-bank-answer">{String(q.correctAnswer)}</div></div>
+                          {starterCode.length ? (
+                            <div className="mb-3">
+                              <p className="fw-semibold mb-2">Starter Code</p>
+                              <div className="vstack gap-3">
+                                {starterCode.map(([language, code]) => (
+                                  <div className="question-bank-code-block" key={`${q._id}-${language}`}>
+                                    <span className="question-bank-code-label">{codeLanguageLabels[language] || language}</span>
+                                    <pre className="question-bank-code-pre"><code>{code}</code></pre>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      <div>
-                        <p className="fw-semibold mb-2">Explanation</p>
-                        <div className="question-bank-explanation">
-                          {display.explanation}
-                        </div>
-                      </div>
-                    </>
-                  )}
+                            </div>
+                          ) : null}
+                          <div><p className="fw-semibold mb-2">Explanation</p><div className="question-bank-explanation">{display.explanation}</div></div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+          {!sectionQuestions.length && (
+            <div className="card glass-card mt-4">
+              <div className="card-body">
+                <p className="text-secondary mb-0">No questions found for this section yet. Try another subject or format.</p>
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {!sectionQuestions.length && (
-        <div className="card glass-card mt-4">
-          <div className="card-body">
-            <p className="text-secondary mb-0">No questions found for this section yet. Try another subject or format.</p>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
