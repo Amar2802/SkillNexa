@@ -15,7 +15,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     if (questions.length || !loadQuestions) return;
     setLoading(true);
     loadQuestions({ limit: 60 }).finally(() => setLoading(false));
-  }, [questions.length]);
+  }, [questions.length, loadQuestions]);
 
   const categories = useMemo(() => [...new Set(questions.map((question) => question.category).filter(Boolean))], [questions]);
   const filteredQuestions = useMemo(() => questions.filter((question) => !selectedCategory || question.category === selectedCategory), [questions, selectedCategory]);
@@ -49,18 +49,18 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     const { data } = await api.post(`/questions/${question._id}/evaluate`, {
       answer,
       timeSpent: Math.round((Date.now() - startedAt) / 1000)
-    });
+    }, { timeout: 25000 });
     setFeedback(data);
   };
 
   const runCode = async () => {
-    const { data } = await api.post("/code/run", { code: answer, language });
+    const { data } = await api.post("/code/run", { code: answer, language }, { timeout: 25000 });
     setFeedback((current) => ({ ...current, codeOutput: data.output, codeStatus: data.status }));
   };
 
   const toggleBookmark = async () => {
     if (!question) return;
-    await api.post(`/users/bookmarks/${question._id}`);
+    await api.post(`/users/bookmarks/${question._id}`, {}, { timeout: 25000 });
     refreshBookmarks();
   };
 

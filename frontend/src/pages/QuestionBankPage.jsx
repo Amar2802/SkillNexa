@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 
@@ -23,6 +23,7 @@ const splitDisplay = (question) => {
 
 const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software" }) => {
   const location = useLocation();
+  const didInitRef = useRef(false);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
   const [type, setType] = useState("all");
   const [page, setPage] = useState(1);
@@ -48,14 +49,18 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
         limit: PAGE_SIZE,
         ...nextFilters
       };
+      if (!params.category) delete params.category;
+      if (!params.difficulty) delete params.difficulty;
+      if (!params.topic) delete params.topic;
+      if (!params.company) delete params.company;
       if (nextType !== "all") params.type = nextType;
-      const { data } = await api.get("/questions", { params, timeout: 12000 });
+      const { data } = await api.get("/questions", { params, timeout: 25000 });
       setItems(data.items || []);
       setTotalPages(data.totalPages || 1);
       setPage(data.page || nextPage);
     } catch {
-      const fallback = await loadQuestions({ ...nextFilters, type: nextType !== "all" ? nextType : "", limit: PAGE_SIZE }).catch(() => []);
-      setItems((fallback || []).slice(0, PAGE_SIZE));
+      const fallback = await loadQuestions({ ...nextFilters, limit: PAGE_SIZE, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
+      setItems((fallback || []).filter((question) => nextType === "all" || question.type === nextType).slice(0, PAGE_SIZE));
       setTotalPages(1);
       setPage(1);
     } finally {
@@ -72,13 +77,13 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       company: ""
     };
     setFilters(nextFilters);
+    didInitRef.current = true;
     fetchQuestions(1, nextFilters, type).catch(() => undefined);
   }, [location.search]);
 
   useEffect(() => {
-    if (!location.search) {
-      fetchQuestions(1, filters, type).catch(() => undefined);
-    }
+    if (!didInitRef.current) return;
+    fetchQuestions(1, filters, type).catch(() => undefined);
   }, [type]);
 
   const visibleItems = items.filter((question) => question.type !== "MCQ");

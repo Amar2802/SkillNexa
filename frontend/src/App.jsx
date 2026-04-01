@@ -48,7 +48,7 @@ export default function App() {
   const [loadingApp, setLoadingApp] = useState(false);
 
   const refreshProfile = async () => {
-    const { data } = await api.get("/users/profile");
+    const { data } = await api.get("/users/profile", { timeout: 25000 });
     setProfile(data);
     setUser(data);
     localStorage.setItem("user", JSON.stringify(data));
@@ -56,30 +56,36 @@ export default function App() {
   };
 
   const loadQuestions = async (params = {}) => {
+    const requestParams = { field: SOFTWARE_FIELD, limit: 80, ...params };
+    if (!requestParams.type || requestParams.type === "all") {
+      delete requestParams.type;
+    }
     const { data } = await api.get("/questions", {
-      params: { field: SOFTWARE_FIELD, limit: 80, ...params },
-      timeout: 12000
+      params: requestParams,
+      timeout: 25000
     });
 
     const nextQuestions = normalizeQuestions(Array.isArray(data) ? data : data?.items || []);
-    setQuestions(nextQuestions);
+    if (!params.page && !params.paginated) {
+      setQuestions(nextQuestions);
+    }
     return nextQuestions;
   };
 
   const refreshBookmarks = async () => {
-    const { data } = await api.get("/users/bookmarks");
+    const { data } = await api.get("/users/bookmarks", { timeout: 25000 });
     setBookmarks(data || []);
     return data || [];
   };
 
   const refreshHistory = async () => {
-    const { data } = await api.get("/users/history");
+    const { data } = await api.get("/users/history", { timeout: 25000 });
     setHistory(data || []);
     return data || [];
   };
 
   const refreshTests = async () => {
-    const { data } = await api.get("/tests", { params: { field: SOFTWARE_FIELD } });
+    const { data } = await api.get("/tests", { params: { field: SOFTWARE_FIELD }, timeout: 25000 });
     setTests(data || []);
     return data || [];
   };
@@ -103,10 +109,11 @@ export default function App() {
     const bootstrap = async () => {
       try {
         setLoadingApp(true);
-        await api.post("/setup/seed").catch(() => undefined);
-        await Promise.all([
-          refreshProfile(),
-          loadQuestions(),
+        await refreshProfile();
+        if (!active) return;
+        await loadQuestions();
+        if (!active) return;
+        await Promise.allSettled([
           refreshBookmarks(),
           refreshHistory(),
           refreshTests()
