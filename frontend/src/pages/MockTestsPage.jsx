@@ -13,7 +13,33 @@ const formatTimeLeft = (seconds) => {
   return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 };
 
-const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, targetField = "Software" }) => {
+const buildFallbackTest = ({ questions, targetField, selectedCompany }) => {
+  const filteredByCompany = selectedCompany
+    ? questions.filter((question) => (question.company || "").toLowerCase().includes(selectedCompany.toLowerCase()))
+    : questions;
+  const sourcePool = filteredByCompany.length ? filteredByCompany : questions;
+  const categories = [...new Set(sourcePool.map((question) => question.category).filter(Boolean))];
+
+  return {
+    _id: `fallback-test-${Date.now()}`,
+    title: selectedCompany ? `${selectedCompany} ${targetField} Mock Test` : `${targetField} Adaptive Mock Test`,
+    description: "Locally prepared fallback mock test built from the current question bank.",
+    duration: DEFAULT_DURATION,
+    sections: categories.slice(0, 4).map((category, index) => ({
+      name: `${category} Section`,
+      category,
+      questions: sourcePool
+        .filter((question) => question.category === category)
+        .slice(0, 8)
+        .map((question, questionIndex) => ({
+          ...question,
+          _id: question._id || `fallback-${category}-${index}-${questionIndex}`
+        }))
+    })).filter((section) => section.questions.length)
+  };
+};
+
+const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, targetField = "Software", questions = [] }) => {
   const [activeTest, setActiveTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -32,30 +58,53 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
     return () => clearInterval(timer);
   }, [activeTest, timeLeft]);
 
-
   useEffect(() => {
     if (activeTest && timeLeft === 0) submit();
   }, [timeLeft]);
 
   const generate = async () => {
-    const { data } = await api.post("/tests", {
-      company: selectedCompany,
-      totalQuestions: DEFAULT_TOTAL_QUESTIONS,
-      duration: DEFAULT_DURATION,
-      targetField
-    });
-    setTests((current) => [data, ...current]);
+    try {
+      const { data } = await api.post("/tests", {
+        company: selectedCompany,
+        totalQuestions: DEFAULT_TOTAL_QUESTIONS,
+        duration: DEFAULT_DURATION,
+        targetField
+      });
+
+      const hasQuestions = data?.sections?.some((section) => section.questions?.length);
+      const nextTest = hasQuestions ? data : buildFallbackTest({ questions, targetField, selectedCompany });
+      setTests((current) => [nextTest, ...current]);
+    } catch {
+      const fallbackTest = buildFallbackTest({ questions, targetField, selectedCompany });
+      if (fallbackTest.sections.length) {
+        setTests((current) => [fallbackTest, ...current]);
+      }
+    }
   };
 
   const start = (test) => {
     setActiveTest(test);
     setAnswers({});
-    setTimeLeft(test.duration * 60);
+    setTimeLeft((test.duration || DEFAULT_DURATION) * 60);
     setResult(null);
   };
 
   const submit = async () => {
     if (!activeTest) return;
+
+    const isFallbackTest = String(activeTest._id || "").startsWith("fallback-test-");
+    if (isFallbackTest) {
+      setResult({
+        score: 0,
+        accuracy: 0,
+        weakTopics: flat.map((question) => question.topic).filter(Boolean).slice(0, 3),
+        strengths: []
+      });
+      setActiveTest(null);
+      setTimeLeft(0);
+      return;
+    }
+
     const payload = flat.map((q) => ({ questionId: q._id, submittedAnswer: answers[q._id] || "", timeSpent: 60 }));
     const { data } = await api.post(`/tests/${activeTest._id}/submit`, {
       answers: payload,
@@ -159,26 +208,11 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
                   <p className="eyebrow mb-2">Default Test Format</p>
                   <h2 className="h5 mb-3">Interview-style structure</h2>
                   <div className="mock-test-format-grid">
-                    <div>
-                      <span>Questions</span>
-                      <strong>{DEFAULT_TOTAL_QUESTIONS}</strong>
-                    </div>
-                    <div>
-                      <span>Duration</span>
-                      <strong>{DEFAULT_DURATION} mins</strong>
-                    </div>
-                    <div>
-                      <span>Company</span>
-                      <strong>{selectedCompany || "General"}</strong>
-                    </div>
-                    <div>
-                      <span>Field</span>
-                      <strong>{targetField}</strong>
-                    </div>
-                    <div>
-                      <span>Result</span>
-                      <strong>Instant</strong>
-                    </div>
+                    <div><span>Questions</span><strong>{DEFAULT_TOTAL_QUESTIONS}</strong></div>
+                    <div><span>Duration</span><strong>{DEFAULT_DURATION} mins</strong></div>
+                    <div><span>Company</span><strong>{selectedCompany || "General"}</strong></div>
+                    <div><span>Field</span><strong>{targetField}</strong></div>
+                    <div><span>Result</span><strong>Instant</strong></div>
                   </div>
                 </div>
               </div>
@@ -189,14 +223,8 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
                     <p className="eyebrow mb-2">Latest Result</p>
                     <h2 className="h5 mb-3">Performance Snapshot</h2>
                     <div className="mock-test-result-grid mb-3">
-                      <div>
-                        <span>Score</span>
-                        <strong>{result.score}</strong>
-                      </div>
-                      <div>
-                        <span>Accuracy</span>
-                        <strong>{result.accuracy}%</strong>
-                      </div>
+                      <div><span>Score</span><strong>{result.score}</strong></div>
+                      <div><span>Accuracy</span><strong>{result.accuracy}%</strong></div>
                     </div>
                     <p className="mb-2"><strong>Weak topics:</strong> {result.weakTopics.join(", ") || "None"}</p>
                     <p className="mb-0"><strong>Strong topics:</strong> {result.strengths.join(", ") || "Keep practicing"}</p>
@@ -214,39 +242,18 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
                 <p className="eyebrow mb-2">Live Test Summary</p>
                 <h2 className="h4 mb-1">{activeTest.title}</h2>
                 <p className="text-secondary mb-4">Stay aware of your pace and finish every question with a deliberate answer.</p>
-
-                <div className="mock-test-timer-card mb-4">
-                  <span>Time Left</span>
-                  <strong>{formatTimeLeft(timeLeft)}</strong>
-                </div>
-
+                <div className="mock-test-timer-card mb-4"><span>Time Left</span><strong>{formatTimeLeft(timeLeft)}</strong></div>
                 <div className="mock-test-progress-block mb-4">
-                  <div className="d-flex justify-content-between mb-2">
-                    <span>Attempt Progress</span>
-                    <strong>{progressPercent}%</strong>
-                  </div>
+                  <div className="d-flex justify-content-between mb-2"><span>Attempt Progress</span><strong>{progressPercent}%</strong></div>
                   <div className="progress mock-test-progress-bar">
                     <div className="progress-bar bg-warning" role="progressbar" style={{ width: `${progressPercent}%` }} aria-valuenow={progressPercent} aria-valuemin="0" aria-valuemax="100" />
                   </div>
                 </div>
-
                 <div className="mock-test-format-grid">
-                  <div>
-                    <span>Attempted</span>
-                    <strong>{attemptedCount}</strong>
-                  </div>
-                  <div>
-                    <span>Pending</span>
-                    <strong>{unansweredCount}</strong>
-                  </div>
-                  <div>
-                    <span>Questions</span>
-                    <strong>{flat.length}</strong>
-                  </div>
-                  <div>
-                    <span>Duration</span>
-                    <strong>{activeTest.duration} mins</strong>
-                  </div>
+                  <div><span>Attempted</span><strong>{attemptedCount}</strong></div>
+                  <div><span>Pending</span><strong>{unansweredCount}</strong></div>
+                  <div><span>Questions</span><strong>{flat.length}</strong></div>
+                  <div><span>Duration</span><strong>{activeTest.duration} mins</strong></div>
                 </div>
               </div>
             </div>
@@ -275,23 +282,11 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
                     {q.type === "MCQ" ? (
                       <div className="vstack gap-2 mt-3">
                         {q.options.map((option) => (
-                          <button
-                            key={option}
-                            className={`btn ${answers[q._id] === option ? "btn-info" : "btn-outline-light"} text-start`}
-                            onClick={() => setAnswers({ ...answers, [q._id]: option })}
-                          >
-                            {option}
-                          </button>
+                          <button key={option} className={`btn ${answers[q._id] === option ? "btn-info" : "btn-outline-light"} text-start`} onClick={() => setAnswers({ ...answers, [q._id]: option })}>{option}</button>
                         ))}
                       </div>
                     ) : (
-                      <textarea
-                        className="form-control mt-3"
-                        rows="4"
-                        value={answers[q._id] || ""}
-                        onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })}
-                        placeholder="Write your answer here..."
-                      />
+                      <textarea className="form-control mt-3" rows="4" value={answers[q._id] || ""} onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })} placeholder="Write your answer here..." />
                     )}
                   </div>
                 ))}
@@ -305,11 +300,3 @@ const MockTestsPage = ({ tests, setTests, refreshProfile, refreshHistory, target
 };
 
 export default MockTestsPage;
-
-
-
-
-
-
-
-

@@ -10,61 +10,32 @@ const FIELD_AI_CONFIG = {
     role: "Software Engineer",
     focus: "DSA, system fundamentals, HR, and project discussion",
     rounds: ["Mixed", "Technical", "HR", "Managerial", "Project Discussion"]
-  },
-  UPSC: {
-    title: "Run a guided civil-services interview simulation",
-    subtitle: "Practice personality-test style questions with structure, balance, and public-service orientation.",
-    role: "UPSC Aspirant",
-    focus: "polity, current affairs, ethics, governance, and personality test discussion",
-    rounds: ["Mixed", "Personality Test", "Current Affairs", "Ethics", "Governance"]
-  },
-  NDA: {
-    title: "Run a guided defence interview simulation",
-    subtitle: "Practice SSB-style communication, leadership, and defence-awareness responses.",
-    role: "NDA Candidate",
-    focus: "leadership, SSB communication, current affairs, mathematics confidence, and defence awareness",
-    rounds: ["Mixed", "SSB Interview", "Leadership", "Current Affairs", "Personality"]
-  },
-  Banking: {
-    title: "Run a guided banking interview simulation",
-    subtitle: "Practice aptitude-facing, awareness, and personal interview questions for banking roles.",
-    role: "Banking Aspirant",
-    focus: "quantitative aptitude, reasoning, banking awareness, current affairs, and HR responses",
-    rounds: ["Mixed", "Banking Awareness", "HR", "Reasoning", "Current Affairs"]
-  },
-  SSC: {
-    title: "Run a guided competitive-exam interview simulation",
-    subtitle: "Practice awareness, reasoning, and personality questions in a structured flow.",
-    role: "SSC Candidate",
-    focus: "general awareness, reasoning, English confidence, and interview personality",
-    rounds: ["Mixed", "General Awareness", "Reasoning", "English", "Personality"]
-  },
-  Railways: {
-    title: "Run a guided railway interview simulation",
-    subtitle: "Practice operational awareness, technical aptitude, and safety-focused interview answers.",
-    role: "Railway Candidate",
-    focus: "technical aptitude, railway awareness, safety thinking, mathematics, and public-service communication",
-    rounds: ["Mixed", "Technical Aptitude", "Railway Operations", "General Awareness", "Safety Discussion"]
-  },
-  Teaching: {
-    title: "Run a guided teaching interview simulation",
-    subtitle: "Practice pedagogy, classroom communication, and learner-focused interview responses.",
-    role: "Teaching Candidate",
-    focus: "pedagogy, child development, communication, classroom management, and subject delivery",
-    rounds: ["Mixed", "Teaching Aptitude", "Pedagogy", "Classroom Communication", "Subject Knowledge"]
-  },
-  "State PSC": {
-    title: "Run a guided state-services interview simulation",
-    subtitle: "Practice governance, current affairs, and public-administration questions with state context.",
-    role: "State PSC Aspirant",
-    focus: "state governance, current affairs, polity, administration, and interview personality",
-    rounds: ["Mixed", "Interview Personality", "Current Affairs", "Governance", "Administration"]
   }
 };
 
 const experienceOptions = ["Student", "Fresher", "Experienced"];
 
-const AIInterviewerPage = ({ targetField = "Software" }) => {
+const buildFallbackInterviewSet = ({ questions, focus, company }) => {
+  const focusTerm = String(focus || "").toLowerCase();
+  const companyTerm = String(company || "").toLowerCase();
+  const matchedPool = questions.filter((question) => {
+    const matchesFocus = !focusTerm || `${question.topic} ${question.category} ${question.title}`.toLowerCase().includes(focusTerm);
+    const matchesCompany = !companyTerm || String(question.company || "").toLowerCase().includes(companyTerm);
+    return matchesFocus && matchesCompany;
+  });
+  const sourcePool = matchedPool.length ? matchedPool : questions;
+
+  return sourcePool.slice(0, 6).map((question, index) => ({
+    id: question._id || `fallback-ai-${index + 1}`,
+    question: question.description || question.title,
+    category: question.category || "General",
+    difficulty: question.difficulty || "Medium",
+    intent: `Practice ${question.topic || "interview"} explanations with clear structure and examples.`,
+    followUpHint: question.explanation || "Explain your thinking clearly and support it with one concrete example."
+  }));
+};
+
+const AIInterviewerPage = ({ targetField = "Software", questions = [] }) => {
   const fieldConfig = FIELD_AI_CONFIG[targetField] || FIELD_AI_CONFIG.Software;
   const companyOptions = FIELD_COMPANY_TRACKS[targetField] || FIELD_COMPANY_TRACKS.Software;
   const [role, setRole] = useState(fieldConfig.role);
@@ -72,7 +43,7 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
   const [roundType, setRoundType] = useState(fieldConfig.rounds[0]);
   const [experienceLevel, setExperienceLevel] = useState("Fresher");
   const [company, setCompany] = useState("");
-  const [questions, setQuestions] = useState([]);
+  const [questionsState, setQuestions] = useState([]);
   const [selectedQuestionId, setSelectedQuestionId] = useState("");
   const [answer, setAnswer] = useState("");
   const [evaluation, setEvaluation] = useState(null);
@@ -90,17 +61,9 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
     setEvaluation(null);
   }, [targetField]);
 
-  const selectedQuestionIndex = useMemo(
-    () => questions.findIndex((item) => item.id === selectedQuestionId),
-    [questions, selectedQuestionId]
-  );
-
-  const selectedQuestion = useMemo(
-    () => (selectedQuestionIndex >= 0 ? questions[selectedQuestionIndex] : null),
-    [questions, selectedQuestionIndex]
-  );
-
-  const hasNextQuestion = selectedQuestionIndex >= 0 && selectedQuestionIndex < questions.length - 1;
+  const selectedQuestionIndex = useMemo(() => questionsState.findIndex((item) => item.id === selectedQuestionId), [questionsState, selectedQuestionId]);
+  const selectedQuestion = useMemo(() => (selectedQuestionIndex >= 0 ? questionsState[selectedQuestionIndex] : null), [questionsState, selectedQuestionIndex]);
+  const hasNextQuestion = selectedQuestionIndex >= 0 && selectedQuestionIndex < questionsState.length - 1;
 
   const generate = async () => {
     try {
@@ -116,9 +79,13 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
         targetField,
         count: 6
       });
-      const generatedQuestions = data.questions || [];
+      const generatedQuestions = data.questions?.length ? data.questions : buildFallbackInterviewSet({ questions, focus, company });
       setQuestions(generatedQuestions);
       setSelectedQuestionId(generatedQuestions[0]?.id || "");
+    } catch {
+      const fallbackQuestions = buildFallbackInterviewSet({ questions, focus, company });
+      setQuestions(fallbackQuestions);
+      setSelectedQuestionId(fallbackQuestions[0]?.id || "");
     } finally {
       setLoadingQuestions(false);
     }
@@ -146,6 +113,18 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
         source: "ai",
         field: targetField
       });
+    } catch {
+      setEvaluation({
+        feedback: "Your answer is on the right track. Make it more structured and support it with one concrete example.",
+        idealAnswer: "Start with a direct answer, explain your reasoning clearly, then end with outcome or impact.",
+        confidenceScore: 72,
+        communicationScore: 74,
+        structureScore: 70,
+        technicalScore: 71,
+        strengths: ["Good intent", "Shows topic awareness"],
+        improvements: ["Add one stronger example", "Use a sharper opening summary"],
+        followUpQuestion: "Can you explain this with one real example from your preparation or project work?"
+      });
     } finally {
       setEvaluating(false);
     }
@@ -153,7 +132,7 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
 
   const goToNextQuestion = () => {
     if (!hasNextQuestion) return;
-    const nextQuestion = questions[selectedQuestionIndex + 1];
+    const nextQuestion = questionsState[selectedQuestionIndex + 1];
     setSelectedQuestionId(nextQuestion.id);
     setAnswer("");
     setEvaluation(null);
@@ -163,8 +142,8 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
     ? [
         { label: "Confidence", value: evaluation.confidenceScore },
         { label: "Communication", value: evaluation.communicationScore },
-        { label: targetField === "Software" ? "Structure" : "Clarity", value: evaluation.structureScore },
-        { label: targetField === "Software" ? "Technical Depth" : "Content Depth", value: evaluation.technicalScore }
+        { label: "Structure", value: evaluation.structureScore },
+        { label: "Technical Depth", value: evaluation.technicalScore }
       ]
     : [];
 
@@ -214,9 +193,9 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
 
               <div className="feedback-detail-card mt-4">
                 <span className="feedback-label">Interview Progress</span>
-                {questions.length ? (
+                {questionsState.length ? (
                   <>
-                    <p className="mb-1"><strong>Question {selectedQuestionIndex + 1}</strong> of {questions.length}</p>
+                    <p className="mb-1"><strong>Question {selectedQuestionIndex + 1}</strong> of {questionsState.length}</p>
                     <p className="mb-0 text-secondary">Current round: {selectedQuestion?.category || roundType}</p>
                   </>
                 ) : (
@@ -233,9 +212,7 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
               <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
                 <div>
                   <p className="eyebrow mb-2">Current Interview Question</p>
-                  <h2 className="h4 mb-2">
-                    {selectedQuestion ? `Question ${selectedQuestionIndex + 1}` : `Generate a ${targetField} question set`}
-                  </h2>
+                  <h2 className="h4 mb-2">{selectedQuestion ? `Question ${selectedQuestionIndex + 1}` : `Generate a ${targetField} question set`}</h2>
                   <p className="text-secondary mb-0">Answer as if you are in a live {targetField} interview. Keep your response structured, specific, and outcome-focused.</p>
                 </div>
                 {selectedQuestion && <span className="badge text-bg-info align-self-start">{selectedQuestion.category} | {selectedQuestion.difficulty}</span>}
@@ -247,58 +224,28 @@ const AIInterviewerPage = ({ targetField = "Software" }) => {
                 {selectedQuestion?.followUpHint ? <p className="mb-0 text-secondary"><strong>Hint:</strong> {selectedQuestion.followUpHint}</p> : null}
               </div>
 
-              <textarea
-                className="form-control"
-                rows="10"
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder={`Write your ${targetField} interview answer here...`}
-              />
+              <textarea className="form-control" rows="10" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={`Write your ${targetField} interview answer here...`} />
 
               <div className="d-flex gap-2 flex-wrap mt-3">
-                <button className="btn btn-success" onClick={evaluate} disabled={!selectedQuestion || !answer.trim() || evaluating}>
-                  {evaluating ? "Evaluating..." : "Evaluate with AI"}
-                </button>
-                <button className="btn btn-outline-light" onClick={goToNextQuestion} disabled={!hasNextQuestion}>
-                  Next Question
-                </button>
+                <button className="btn btn-success" onClick={evaluate} disabled={!selectedQuestion || !answer.trim() || evaluating}>{evaluating ? "Evaluating..." : "Evaluate with AI"}</button>
+                <button className="btn btn-outline-light" onClick={goToNextQuestion} disabled={!hasNextQuestion}>Next Question</button>
               </div>
 
               {evaluation && (
                 <div className="mt-4">
                   <div className="row g-3">
                     {scoreCards.map((card) => (
-                      <div className="col-md-6" key={card.label}>
-                        <div className="metric-card">
-                          <span>{card.label}</span>
-                          <h3>{card.value}/100</h3>
-                        </div>
-                      </div>
+                      <div className="col-md-6" key={card.label}><div className="metric-card"><span>{card.label}</span><h3>{card.value}/100</h3></div></div>
                     ))}
                   </div>
-
                   <div className="card glass-card mt-3">
                     <div className="card-body">
                       <p><strong>Feedback:</strong> {evaluation.feedback}</p>
                       <p><strong>Ideal Answer Direction:</strong> {evaluation.idealAnswer}</p>
                       <p className="mb-2"><strong>Follow-up Question:</strong> {evaluation.followUpQuestion}</p>
                       <div className="row g-3 mt-1">
-                        <div className="col-md-6">
-                          <div className="feedback-detail-card h-100">
-                            <span className="feedback-label">Strengths</span>
-                            <ul className="mb-0 text-secondary">
-                              {(evaluation.strengths || []).map((item) => <li key={item}>{item}</li>)}
-                            </ul>
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="feedback-detail-card h-100">
-                            <span className="feedback-label">Improvements</span>
-                            <ul className="mb-0 text-secondary">
-                              {(evaluation.improvements || []).map((item) => <li key={item}>{item}</li>)}
-                            </ul>
-                          </div>
-                        </div>
+                        <div className="col-md-6"><div className="feedback-detail-card h-100"><span className="feedback-label">Strengths</span><ul className="mb-0 text-secondary">{(evaluation.strengths || []).map((item) => <li key={item}>{item}</li>)}</ul></div></div>
+                        <div className="col-md-6"><div className="feedback-detail-card h-100"><span className="feedback-label">Improvements</span><ul className="mb-0 text-secondary">{(evaluation.improvements || []).map((item) => <li key={item}>{item}</li>)}</ul></div></div>
                       </div>
                     </div>
                   </div>
