@@ -11,7 +11,6 @@ import BookmarksPage from "./pages/BookmarksPage";
 import DashboardPage from "./pages/DashboardPage";
 import HistoryPage from "./pages/HistoryPage";
 import MockTestsPage from "./pages/MockTestsPage";
-import OnboardingPage from "./pages/OnboardingPage";
 import PracticePage from "./pages/PracticePage";
 import ProfilePage from "./pages/ProfilePage";
 import QuestionBankPage from "./pages/QuestionBankPage";
@@ -31,7 +30,6 @@ export default function App() {
 
   const savedTargetField = profile?.targetField || user?.targetField || "";
   const activeField = useMemo(() => savedTargetField || "Software", [savedTargetField]);
-  const needsSetup = Boolean(user) && (!(savedTargetField) || !((profile?.interests?.length || user?.interests?.length) > 0));
 
   const refreshProfile = async () => {
     if (!localStorage.getItem("token")) return null;
@@ -61,7 +59,7 @@ export default function App() {
     const token = params.get("token");
     if (window.location.pathname === "/oauth-success" && token) {
       localStorage.setItem("token", token);
-      window.history.replaceState({}, "", "/setup-preferences");
+      window.history.replaceState({}, "", "/dashboard");
       refreshProfile();
     }
   }, []);
@@ -94,20 +92,19 @@ export default function App() {
 
   const content = (
     <Routes>
-      <Route path="/" element={<Navigate to={user ? (needsSetup ? "/setup-preferences" : "/dashboard") : "/login"} replace />} />
+      <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
       <Route path="/login" element={<AuthPage mode="login" onAuth={applyAuth} />} />
       <Route path="/signup" element={<AuthPage mode="signup" onAuth={applyAuth} />} />
       <Route path="/oauth-success" element={<div className="container py-5">Signing you in...</div>} />
-      <Route path="/setup-preferences" element={<ProtectedRoute user={user} needsSetup={false} allowOnboarding><OnboardingPage profile={profile || user || {}} refreshProfile={refreshProfile} needsSetup={needsSetup} /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<ProtectedRoute user={user} needsSetup={needsSetup}><DashboardPage profile={profile || user || {}} recommendations={recommendations} questions={questions} /></ProtectedRoute>} />
-      <Route path="/questions" element={<ProtectedRoute user={user} needsSetup={needsSetup}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} defaultField={activeField} /></ProtectedRoute>} />
-      <Route path="/practice" element={<ProtectedRoute user={user} needsSetup={needsSetup}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={activeField} /></ProtectedRoute>} />
-      <Route path="/mock-tests" element={<ProtectedRoute user={user} needsSetup={needsSetup}><MockTestsPage tests={tests} setTests={setTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} targetField={activeField} /></ProtectedRoute>} />
-      <Route path="/review-mistakes" element={<ProtectedRoute user={user} needsSetup={needsSetup}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
-      <Route path="/ai-interviewer" element={<ProtectedRoute user={user} needsSetup={needsSetup}><AIInterviewerPage targetField={activeField} /></ProtectedRoute>} />
-      <Route path="/bookmarks" element={<ProtectedRoute user={user} needsSetup={needsSetup}><BookmarksPage bookmarks={bookmarks} /></ProtectedRoute>} />
-      <Route path="/history" element={<ProtectedRoute user={user} needsSetup={needsSetup}><HistoryPage history={history} /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute user={user} needsSetup={needsSetup}><ProfilePage profile={profile || user || { progress: { recommendedTopics: [] } }} refreshProfile={refreshProfile} logout={logout} /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user || {}} recommendations={recommendations} questions={questions} /></ProtectedRoute>} />
+      <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} defaultField={activeField} /></ProtectedRoute>} />
+      <Route path="/practice" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={activeField} /></ProtectedRoute>} />
+      <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} setTests={setTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} targetField={activeField} /></ProtectedRoute>} />
+      <Route path="/review-mistakes" element={<ProtectedRoute user={user}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
+      <Route path="/ai-interviewer" element={<ProtectedRoute user={user}><AIInterviewerPage targetField={activeField} /></ProtectedRoute>} />
+      <Route path="/bookmarks" element={<ProtectedRoute user={user}><BookmarksPage bookmarks={bookmarks} /></ProtectedRoute>} />
+      <Route path="/history" element={<ProtectedRoute user={user}><HistoryPage history={history} /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute user={user}><ProfilePage profile={profile || user || { progress: { recommendedTopics: [] } }} refreshProfile={refreshProfile} logout={logout} /></ProtectedRoute>} />
     </Routes>
   );
 
@@ -118,4 +115,3 @@ export default function App() {
     </div>
   );
 }
-

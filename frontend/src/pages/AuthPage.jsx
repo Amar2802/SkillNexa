@@ -22,9 +22,7 @@ const AuthPage = ({ mode, onAuth }) => {
             }
       );
       onAuth(data);
-      const hasSavedField = Boolean(data?.user?.targetField);
-      const hasSavedInterests = Array.isArray(data?.user?.interests) && data.user.interests.length > 0;
-      navigate(hasSavedField && hasSavedInterests ? "/dashboard" : "/setup-preferences");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Authentication failed");
     }
@@ -40,7 +38,7 @@ const AuthPage = ({ mode, onAuth }) => {
                 <span className="eyebrow">Career Ready Stack</span>
                 <h1 className="h2 fw-bold mt-3">{isLogin ? "Welcome back" : "Create your account"}</h1>
                 <p className="text-secondary">
-                  Sign in first, then choose your preparation field and interested topics before entering the full platform.
+                  Sign in to access your preparation dashboard, mock tests, question bank, and interview tools.
                 </p>
                 <form onSubmit={submit} className="mt-4">
                   {!isLogin && (
@@ -73,4 +71,3 @@ const AuthPage = ({ mode, onAuth }) => {
 };
 
 export default AuthPage;
-
