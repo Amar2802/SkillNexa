@@ -1,4 +1,5 @@
 const OTP_TTL_MINUTES = 10;
+let transporterPromise;
 
 const hasEmailConfig = () =>
   Boolean(
@@ -9,21 +10,32 @@ const hasEmailConfig = () =>
       process.env.SMTP_FROM
   );
 
-export const sendPasswordResetOtp = async ({ email, name, otp }) => {
+const getTransporter = async () => {
   if (!hasEmailConfig()) {
     throw new Error("Email service is not configured. Add SMTP credentials to enable password reset.");
   }
 
-  const nodemailer = await import("nodemailer");
-  const transporter = nodemailer.default.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
+  if (!transporterPromise) {
+    transporterPromise = import("nodemailer").then(({ default: nodemailer }) =>
+      nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: Number(process.env.SMTP_PORT) === 465,
+        pool: true,
+        maxConnections: 3,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      })
+    );
+  }
+
+  return transporterPromise;
+};
+
+export const sendPasswordResetOtp = async ({ email, name, otp }) => {
+  const transporter = await getTransporter();
 
   await transporter.sendMail({
     from: process.env.SMTP_FROM,

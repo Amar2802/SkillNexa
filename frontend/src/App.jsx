@@ -76,8 +76,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    api.post("/setup/seed").catch(() => undefined);
-  }, []);
+    if (user) {
+      api.post("/setup/seed").catch(() => undefined);
+    }
+  }, [user]);
 
   useEffect(() => {
     const clearedFilters = { category: "", difficulty: "", topic: "", company: "" };
@@ -111,8 +113,8 @@ export default function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
-        <Route path="/login" element={<AuthPage mode="login" onAuth={applyAuth} />} />
-        <Route path="/signup" element={<AuthPage mode="signup" onAuth={applyAuth} />} />
+        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="login" onAuth={applyAuth} />} />
+        <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="signup" onAuth={applyAuth} />} />
         <Route path="/oauth-success" element={<div className="container py-5">Signing you in...</div>} />
         <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user || {}} recommendations={recommendations} questions={questions} /></ProtectedRoute>} />
         <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} defaultField={activeField} /></ProtectedRoute>} />
@@ -129,9 +131,8 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Navbar user={user} profile={profile} logout={logout} theme={theme} setTheme={setTheme} />
-      {user ? <main className="app-content">{content}</main> : content}
+      {user && <Navbar user={user} profile={profile} logout={logout} theme={theme} setTheme={setTheme} />}
+      {user ? <main className="app-content">{content}</main> : <main className="auth-content">{content}</main>}
     </div>
   );
 }
-
