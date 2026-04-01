@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 
@@ -25,15 +26,14 @@ const Brand = () => (
 
 const Navbar = ({ user, profile, logout, theme, setTheme }) => {
   const location = useLocation();
-  const isSetupRoute = location.pathname === "/setup-preferences";
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (!user || isSetupRoute) {
-    return (
-      <header className="auth-topbar">
-        <Link className="navbar-brand fw-bold" to={user ? "/setup-preferences" : "/login"}><Brand /></Link>
-        <ThemeToggle theme={theme} setTheme={setTheme} />
-      </header>
-    );
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  if (!user) {
+    return null;
   }
 
   const currentUser = profile || user;
@@ -51,14 +51,19 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
 
   return (
     <>
-      <aside className="app-sidebar">
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? "active" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden={!sidebarOpen}
+      />
+      <aside className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div>
           <Link className="sidebar-brand" to="/dashboard"><Brand /></Link>
           <p className="sidebar-subtitle">Prepare smarter with mock tests, coding rounds, and AI coaching.</p>
         </div>
         <nav className="sidebar-nav">
           {navItems.map(([label, path]) => (
-            <NavLink key={path} className="sidebar-link" to={path}>
+            <NavLink key={path} className="sidebar-link" to={path} onClick={() => setSidebarOpen(false)}>
               {label}
             </NavLink>
           ))}
@@ -68,9 +73,21 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
         </div>
       </aside>
       <header className="app-topbar">
-        <div>
-          <p className="eyebrow mb-1">Interview Command Center</p>
-          <h2 className="topbar-title mb-0">Stay consistent and track your growth.</h2>
+        <div className="topbar-left-group">
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen((current) => !current)}
+            aria-label="Toggle navigation"
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+          <div>
+            <p className="eyebrow mb-1">Interview Command Center</p>
+            <h2 className="topbar-title mb-0">Stay consistent and track your growth.</h2>
+          </div>
         </div>
         <div className="topbar-actions">
           <ThemeToggle theme={theme} setTheme={setTheme} />

@@ -1,22 +1,33 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LineElement, LinearScale, PointElement, Tooltip } from "chart.js";
 import api from "./api/client";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
-import AIInterviewerPage from "./pages/AIInterviewerPage";
-import AuthPage from "./pages/AuthPage";
-import BookmarksPage from "./pages/BookmarksPage";
-import DashboardPage from "./pages/DashboardPage";
-import HistoryPage from "./pages/HistoryPage";
-import MockTestsPage from "./pages/MockTestsPage";
-import PracticePage from "./pages/PracticePage";
-import ProfilePage from "./pages/ProfilePage";
-import QuestionBankPage from "./pages/QuestionBankPage";
-import ReviewMistakesPage from "./pages/ReviewMistakesPage";
+
+const AIInterviewerPage = lazy(() => import("./pages/AIInterviewerPage"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const BookmarksPage = lazy(() => import("./pages/BookmarksPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const MockTestsPage = lazy(() => import("./pages/MockTestsPage"));
+const PracticePage = lazy(() => import("./pages/PracticePage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const QuestionBankPage = lazy(() => import("./pages/QuestionBankPage"));
+const ReviewMistakesPage = lazy(() => import("./pages/ReviewMistakesPage"));
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
+
+const PageLoader = () => (
+  <div className="page-loader-shell">
+    <div className="page-loader-card glass-card">
+      <div className="page-loader-spinner" />
+      <strong>Loading SkillNexa...</strong>
+      <span>Preparing your workspace</span>
+    </div>
+  </div>
+);
 
 export default function App() {
   const { user, setUser, profile, setProfile, applyAuth, logout } = useAuth();
@@ -28,7 +39,7 @@ export default function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
 
-  const activeField = "Software";
+  const activeField = useMemo(() => "Software", []);
 
   const refreshProfile = async () => {
     if (!localStorage.getItem("token")) return null;
@@ -44,6 +55,7 @@ export default function App() {
     setQuestions(data);
     return data;
   };
+
   const refreshBookmarks = async () => setBookmarks((await api.get("/users/bookmarks")).data);
   const refreshHistory = async () => setHistory((await api.get("/users/history")).data);
   const refreshTests = async () => setTests((await api.get("/tests", { params: { field: activeField } })).data);
@@ -75,36 +87,44 @@ export default function App() {
   }, [activeField]);
 
   useEffect(() => {
-    if (user) {
-      refreshProfile().then(async (currentProfile) => {
+    if (!user) {
+      setBookmarks([]);
+      setHistory([]);
+      setTests([]);
+      setRecommendations([]);
+      return;
+    }
+
+    refreshProfile()
+      .then(async (currentProfile) => {
         loadQuestions(filters).catch(() => undefined);
         const recs = await api.post("/ai/recommendations", { weakTopics: currentProfile?.progress?.weakTopics || [] });
         setRecommendations(recs.data);
-      }).catch(() => undefined);
-      refreshBookmarks().catch(() => undefined);
-      refreshHistory().catch(() => undefined);
-      refreshTests().catch(() => undefined);
-    } else {
-      loadQuestions(filters).catch(() => undefined);
-    }
+      })
+      .catch(() => undefined);
+    refreshBookmarks().catch(() => undefined);
+    refreshHistory().catch(() => undefined);
+    refreshTests().catch(() => undefined);
   }, [user?.email]);
 
   const content = (
-    <Routes>
-      <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
-      <Route path="/login" element={<AuthPage mode="login" onAuth={applyAuth} />} />
-      <Route path="/signup" element={<AuthPage mode="signup" onAuth={applyAuth} />} />
-      <Route path="/oauth-success" element={<div className="container py-5">Signing you in...</div>} />
-      <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user || {}} recommendations={recommendations} questions={questions} /></ProtectedRoute>} />
-      <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} defaultField={activeField} /></ProtectedRoute>} />
-      <Route path="/practice" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={activeField} /></ProtectedRoute>} />
-      <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} setTests={setTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} targetField={activeField} /></ProtectedRoute>} />
-      <Route path="/review-mistakes" element={<ProtectedRoute user={user}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
-      <Route path="/ai-interviewer" element={<ProtectedRoute user={user}><AIInterviewerPage targetField={activeField} /></ProtectedRoute>} />
-      <Route path="/bookmarks" element={<ProtectedRoute user={user}><BookmarksPage bookmarks={bookmarks} /></ProtectedRoute>} />
-      <Route path="/history" element={<ProtectedRoute user={user}><HistoryPage history={history} /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute user={user}><ProfilePage profile={profile || user || { progress: { recommendedTopics: [] } }} refreshProfile={refreshProfile} logout={logout} /></ProtectedRoute>} />
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+        <Route path="/login" element={<AuthPage mode="login" onAuth={applyAuth} />} />
+        <Route path="/signup" element={<AuthPage mode="signup" onAuth={applyAuth} />} />
+        <Route path="/oauth-success" element={<div className="container py-5">Signing you in...</div>} />
+        <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user || {}} recommendations={recommendations} questions={questions} /></ProtectedRoute>} />
+        <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} defaultField={activeField} /></ProtectedRoute>} />
+        <Route path="/practice" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={activeField} /></ProtectedRoute>} />
+        <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} setTests={setTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} targetField={activeField} /></ProtectedRoute>} />
+        <Route path="/review-mistakes" element={<ProtectedRoute user={user}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
+        <Route path="/ai-interviewer" element={<ProtectedRoute user={user}><AIInterviewerPage targetField={activeField} /></ProtectedRoute>} />
+        <Route path="/bookmarks" element={<ProtectedRoute user={user}><BookmarksPage bookmarks={bookmarks} /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute user={user}><HistoryPage history={history} /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute user={user}><ProfilePage profile={profile || user || { progress: { recommendedTopics: [] } }} refreshProfile={refreshProfile} logout={logout} /></ProtectedRoute>} />
+      </Routes>
+    </Suspense>
   );
 
   return (
