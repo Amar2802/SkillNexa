@@ -41,6 +41,7 @@ const normalizeQuestions = (questionList = [], fallbackField = SOFTWARE_FIELD) =
   }));
 };
 
+
 const readCachedQuestions = () => {
   try {
     return normalizeQuestions(JSON.parse(localStorage.getItem(QUESTION_CACHE_KEY) || "[]"), SOFTWARE_FIELD);
@@ -79,16 +80,16 @@ export default function App() {
   };
 
   const loadQuestions = async (params = {}) => {
-    const mergedParams = { limit: 220, field: activeField, ...params };
+    const mergedParams = { limit: 120, field: activeField, ...params };
     const cachedQuestions = readCachedQuestions();
 
     try {
-      let { data } = await api.get("/questions", { params: mergedParams, timeout: 4000 });
-      let normalized = normalizeQuestions(data, activeField);
+      let { data } = await api.get("/questions", { params: mergedParams, timeout: 12000 });
+      let normalized = normalizeQuestions(Array.isArray(data) ? data : data?.items || [], activeField);
 
       if (!normalized.length) {
-        ({ data } = await api.get("/questions", { params: { field: activeField, limit: 220 }, timeout: 4000 }));
-        normalized = normalizeQuestions(data, activeField);
+        ({ data } = await api.get("/questions", { params: { field: activeField, limit: 120 }, timeout: 12000 }));
+        normalized = normalizeQuestions(Array.isArray(data) ? data : data?.items || [], activeField);
       }
 
       if (normalized.length) {
@@ -198,3 +199,6 @@ export default function App() {
     </div>
   );
 }
+
+
+

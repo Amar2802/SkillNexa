@@ -2529,3 +2529,158 @@ body {
     width: 100%;
   }
 }
+
+
+/* Final mobile shell overrides */
+@media (max-width: 991px) {
+  .app-shell {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .app-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    inset: 0 auto 0 0;
+    width: min(280px, calc(100vw - 2rem)) !important;
+    max-width: calc(100vw - 2rem);
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1000;
+    transform: translateX(-100%);
+  }
+
+  .app-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .app-topbar {
+    position: fixed !important;
+    top: 0;
+    left: 0 !important;
+    right: 0;
+    width: 100%;
+    z-index: 900;
+  }
+
+  .app-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding-top: calc(var(--topbar-height) + 1rem);
+    overflow-x: hidden;
+  }
+
+  .container,
+  .container-fluid,
+  .row,
+  [class*="col-"] {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .app-topbar {
+    padding: 0.85rem 0.75rem !important;
+  }
+
+  .app-content {
+    padding: calc(var(--topbar-height) + 0.85rem) 0.75rem 1rem !important;
+  }
+
+  .question-bank-tabs,
+  .practice-category-tabs,
+  .hero-pill-row,
+  .profile-hero-pills,
+  .topbar-actions {
+    gap: 0.5rem;
+  }
+
+  .question-bank-tab,
+  .practice-category-tab,
+  .interest-chip,
+  .hero-pill {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .profile-chip {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .profile-chip-text span {
+    max-width: 120px;
+  }
+}
+
+/* Question pages mobile fit */
+.question-bank-stack,
+.practice-pro-page,
+.practice-pro-page .row,
+.practice-pro-page .col-xl-4,
+.practice-pro-page .col-xl-8,
+.practice-main-card,
+.practice-panel-card,
+.question-card,
+.question-card-body,
+.practice-control-card,
+.question-bank-stack-item {
+  min-width: 0;
+}
+
+.question-bank-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .container.py-4 {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+
+  .glass-card,
+  .question-bank-stack-item .glass-card,
+  .practice-main-card,
+  .practice-panel-card {
+    border-radius: 20px;
+  }
+
+  .card-body,
+  .question-card-body {
+    padding: 1rem;
+  }
+
+  .question-header {
+    padding-right: 0;
+  }
+
+  .question-bookmark-btn {
+    position: static;
+    margin-bottom: 1rem;
+  }
+
+  .question-bank-tabs,
+  .question-bank-tabs.compact,
+  .practice-category-tabs,
+  .practice-mini-stats,
+  .practice-focus-strip,
+  .answer-reveal-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-question-list {
+    max-height: none;
+  }
+
+  .app-content {
+    overflow-x: hidden;
+  }
+}

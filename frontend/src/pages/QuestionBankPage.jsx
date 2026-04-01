@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 20;
 
 const typeSections = [
   { id: "all", label: "All Questions" },
@@ -77,6 +77,22 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
     company: [...new Set(usableQuestions.map((question) => question.company).filter(Boolean))].sort()
   }), [usableQuestions]);
 
+  const fallbackRenderedQuestions = useMemo(() => {
+    return usableQuestions
+      .filter((question) => {
+        if (activeCategory && question.category !== activeCategory) return false;
+        if (filters.category && question.category !== filters.category) return false;
+        if (filters.difficulty && question.difficulty !== filters.difficulty) return false;
+        if (filters.topic && !(new RegExp(filters.topic, "i").test(question.topic || ""))) return false;
+        if (filters.company && !(new RegExp(filters.company, "i").test(question.company || ""))) return false;
+        if (activeSection !== "all" && question.type !== activeSection) return false;
+        return true;
+      })
+      .slice(0, PAGE_SIZE);
+  }, [usableQuestions, activeCategory, activeSection, filters]);
+
+  const renderedQuestions = loading && !pagedQuestions.length ? fallbackRenderedQuestions : (pagedQuestions.length ? pagedQuestions : fallbackRenderedQuestions);
+
   const fetchPage = async (page, nextFilters = filters, nextCategory = activeCategory, nextSection = activeSection) => {
     setLoading(true);
     try {
@@ -91,12 +107,30 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
       if (nextCategory) params.category = nextCategory;
       if (nextSection !== "all") params.type = nextSection;
 
-      const { data } = await api.get("/questions", { params, timeout: 4000 });
-      setPagedQuestions(data.items || []);
-      setCurrentPage(data.page || page);
-      setTotalPages(data.totalPages || 1);
+      const { data } = await api.get("/questions", { params, timeout: 12000 });
+      const items = data.items || [];
+
+      if (items.length) {
+        setPagedQuestions(items);
+        setCurrentPage(data.page || page);
+        setTotalPages(data.totalPages || 1);
+      } else if (loadQuestions) {
+        const recovered = await loadQuestions({ ...nextFilters, category: nextCategory || nextFilters.category || "", limit: PAGE_SIZE });
+        setPagedQuestions((recovered || []).slice(0, PAGE_SIZE));
+        setCurrentPage(1);
+        setTotalPages(1);
+      } else {
+        setPagedQuestions([]);
+        setCurrentPage(1);
+        setTotalPages(1);
+      }
     } catch {
-      setPagedQuestions([]);
+      if (loadQuestions) {
+        const recovered = await loadQuestions({ ...nextFilters, category: nextCategory || nextFilters.category || "", limit: PAGE_SIZE }).catch(() => []);
+        setPagedQuestions((recovered || []).slice(0, PAGE_SIZE));
+      } else {
+        setPagedQuestions([]);
+      }
       setCurrentPage(1);
       setTotalPages(1);
     } finally {
@@ -183,12 +217,12 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
         </div>
       </div>
 
-      {loading && !pagedQuestions.length ? (
+      {loading && !renderedQuestions.length ? (
         <div className="card glass-card mt-4"><div className="card-body"><p className="text-secondary mb-0">Loading questions...</p></div></div>
       ) : (
         <>
           <div className="question-bank-stack">
-            {pagedQuestions.map((q) => {
+            {renderedQuestions.map((q) => {
               const isOpen = !!openAnswers[q._id];
               const display = parseQuestionDisplay(q);
               const starterCode = q.type === "Coding" ? Object.entries(q.starterCode || {}).filter(([, value]) => value) : [];
@@ -239,17 +273,17 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
           </div>
 
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
-            <p className="text-secondary mb-0">Page {currentPage} of {totalPages}</p>
+            <p className="text-secondary mb-0">Page {currentPage} of {totalPages}{!pagedQuestions.length && renderedQuestions.length ? " | Showing cached software questions" : ""}</p>
             <div className="d-flex gap-2">
               <button className="btn btn-outline-light" disabled={currentPage <= 1 || loading} onClick={() => fetchPage(currentPage - 1, filters, activeCategory, activeSection)}>Previous Page</button>
               <button className="btn btn-outline-light" disabled={currentPage >= totalPages || loading} onClick={() => fetchPage(currentPage + 1, filters, activeCategory, activeSection)}>Next Page</button>
             </div>
           </div>
 
-          {!pagedQuestions.length && (
+          {!loading && !renderedQuestions.length && (
             <div className="card glass-card mt-4">
               <div className="card-body">
-                <p className="text-secondary mb-0">No questions found for this section yet. Try another subject or format.</p>
+                <p className="text-secondary mb-0">No questions found for this section yet. Try another subject, filter, or format.</p>
               </div>
             </div>
           )}
@@ -260,3 +294,5 @@ const QuestionBankPage = ({ questions, filters, setFilters, loadQuestions, defau
 };
 
 export default QuestionBankPage;
+
+
