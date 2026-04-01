@@ -29,6 +29,15 @@ const PageLoader = () => (
   </div>
 );
 
+const normalizeQuestions = (questionList = [], fallbackField = "Software") => {
+  return questionList.map((question, index) => ({
+    ...question,
+    _id: question._id || question.id || `${fallbackField}-${question.category || "General"}-${question.topic || "Topic"}-${index}`,
+    field: question.field || fallbackField,
+    starterCode: question.starterCode || {}
+  }));
+};
+
 export default function App() {
   const { user, setUser, profile, setProfile, applyAuth, logout } = useAuth();
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
@@ -51,9 +60,22 @@ export default function App() {
   };
 
   const loadQuestions = async (params = {}) => {
-    const { data } = await api.get("/questions", { params: { field: activeField, ...params } });
-    setQuestions(data);
-    return data;
+    const mergedParams = { field: activeField, ...params };
+    let { data } = await api.get("/questions", { params: mergedParams });
+    let normalized = normalizeQuestions(data, activeField);
+
+    if (!normalized.length) {
+      ({ data } = await api.get("/questions", { params: { field: activeField } }));
+      normalized = normalizeQuestions(data, activeField);
+    }
+
+    if (!normalized.length) {
+      ({ data } = await api.get("/questions"));
+      normalized = normalizeQuestions(data, activeField).filter((question) => (question.field || activeField) === activeField);
+    }
+
+    setQuestions(normalized);
+    return normalized;
   };
 
   const refreshBookmarks = async () => setBookmarks((await api.get("/users/bookmarks")).data);
@@ -99,9 +121,10 @@ export default function App() {
 
     refreshProfile()
       .then(async (currentProfile) => {
-        loadQuestions(filters).catch(() => undefined);
-        const recs = await api.post("/ai/recommendations", { weakTopics: currentProfile?.progress?.weakTopics || [] });
-        setRecommendations(recs.data);
+        const loadedQuestions = await loadQuestions(filters).catch(() => []);
+        const recs = await api.post("/ai/recommendations", { weakTopics: currentProfile?.progress?.weakTopics || [] }).catch(() => ({ data: [] }));
+        const normalizedRecs = normalizeQuestions(recs.data, activeField);
+        setRecommendations(normalizedRecs.length ? normalizedRecs : loadedQuestions.slice(0, 6));
       })
       .catch(() => undefined);
     refreshBookmarks().catch(() => undefined);
