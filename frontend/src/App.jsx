@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LineElement, LinearScale, PointElement, Tooltip } from "chart.js";
 import api from "./api/client";
@@ -21,6 +21,7 @@ ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, Lin
 
 const SOFTWARE_FIELD = "Software";
 const QUESTION_CACHE_KEY = "skillnexa-software-questions";
+const DEFAULT_FILTERS = { category: "", difficulty: "", topic: "", company: "" };
 
 const PageLoader = () => (
   <div className="page-loader-shell">
@@ -32,29 +33,30 @@ const PageLoader = () => (
   </div>
 );
 
-const normalizeQuestions = (questionList = [], fallbackField = SOFTWARE_FIELD) => {
-  return questionList.map((question, index) => ({
-    ...question,
-    _id: question._id || question.id || `${fallbackField}-${question.category || "General"}-${question.topic || "Topic"}-${index}`,
-    field: question.field || fallbackField,
-    starterCode: question.starterCode || {}
-  }));
-};
-
+const normalizeQuestions = (questionList = []) => (
+  questionList
+    .filter(Boolean)
+    .map((question, index) => ({
+      ...question,
+      _id: question._id || question.id || `software-question-${index}`,
+      field: question.field || SOFTWARE_FIELD,
+      starterCode: question.starterCode || {}
+    }))
+);
 
 const readCachedQuestions = () => {
   try {
-    return normalizeQuestions(JSON.parse(localStorage.getItem(QUESTION_CACHE_KEY) || "[]"), SOFTWARE_FIELD);
+    return normalizeQuestions(JSON.parse(localStorage.getItem(QUESTION_CACHE_KEY) || "[]"));
   } catch {
     return [];
   }
 };
 
-const writeCachedQuestions = (questionList) => {
+const writeCachedQuestions = (questions) => {
   try {
-    localStorage.setItem(QUESTION_CACHE_KEY, JSON.stringify(questionList));
+    localStorage.setItem(QUESTION_CACHE_KEY, JSON.stringify(questions));
   } catch {
-    // ignore storage failures
+    // ignore storage issues
   }
 };
 
@@ -66,61 +68,72 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState([]);
   const [history, setHistory] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   const activeField = useMemo(() => SOFTWARE_FIELD, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (!localStorage.getItem("token")) return null;
     const { data } = await api.get("/users/profile");
     setProfile(data);
     setUser(data);
     localStorage.setItem("user", JSON.stringify(data));
     return data;
-  };
+  }, [setProfile, setUser]);
 
-  const loadQuestions = async (params = {}) => {
-    const mergedParams = { limit: 120, field: activeField, ...params };
-    const cachedQuestions = readCachedQuestions();
+  const loadQuestions = useCallback(async (params = {}) => {
+    const nextParams = { field: activeField, limit: 60, ...params };
 
     try {
-      let { data } = await api.get("/questions", { params: mergedParams, timeout: 12000 });
-      let normalized = normalizeQuestions(Array.isArray(data) ? data : data?.items || [], activeField);
-
-      if (!normalized.length) {
-        ({ data } = await api.get("/questions", { params: { field: activeField, limit: 120 }, timeout: 12000 }));
-        normalized = normalizeQuestions(Array.isArray(data) ? data : data?.items || [], activeField);
-      }
-
+      const { data } = await api.get("/questions", { params: nextParams, timeout: 12000 });
+      const normalized = normalizeQuestions(Array.isArray(data) ? data : data?.items || []);
       if (normalized.length) {
         setQuestions(normalized);
         writeCachedQuestions(normalized);
         return normalized;
       }
     } catch {
-      // fallback below
+      // fall back to cache below
     }
 
-    if (cachedQuestions.length) {
-      const fallbackQuestions = cachedQuestions.filter((question) => {
-        if ((question.field || activeField) !== activeField) return false;
-        if (mergedParams.category && question.category !== mergedParams.category) return false;
-        if (mergedParams.difficulty && question.difficulty !== mergedParams.difficulty) return false;
-        if (mergedParams.topic && !(new RegExp(mergedParams.topic, "i").test(question.topic || ""))) return false;
-        if (mergedParams.company && !(new RegExp(mergedParams.company, "i").test(question.company || ""))) return false;
-        return true;
-      });
-      setQuestions(fallbackQuestions.length ? fallbackQuestions : cachedQuestions);
-      return fallbackQuestions.length ? fallbackQuestions : cachedQuestions;
+    const cached = readCachedQuestions();
+    if (!cached.length) {
+      setQuestions([]);
+      return [];
     }
 
-    setQuestions([]);
-    return [];
-  };
+    const filtered = cached.filter((question) => {
+      if ((question.field || SOFTWARE_FIELD) !== activeField) return false;
+      if (nextParams.category && question.category !== nextParams.category) return false;
+      if (nextParams.difficulty && question.difficulty !== nextParams.difficulty) return false;
+      if (nextParams.topic && !(new RegExp(nextParams.topic, "i").test(question.topic || ""))) return false;
+      if (nextParams.company && !(new RegExp(nextParams.company, "i").test(question.company || ""))) return false;
+      if (nextParams.type && question.type !== nextParams.type) return false;
+      return true;
+    });
 
-  const refreshBookmarks = async () => setBookmarks((await api.get("/users/bookmarks")).data);
-  const refreshHistory = async () => setHistory((await api.get("/users/history")).data);
-  const refreshTests = async () => setTests((await api.get("/tests", { params: { field: activeField } })).data);
+    const fallback = (filtered.length ? filtered : cached).slice(0, nextParams.limit || 60);
+    setQuestions(fallback);
+    return fallback;
+  }, [activeField]);
+
+  const refreshBookmarks = useCallback(async () => {
+    const { data } = await api.get("/users/bookmarks");
+    setBookmarks(data);
+    return data;
+  }, []);
+
+  const refreshHistory = useCallback(async () => {
+    const { data } = await api.get("/users/history");
+    setHistory(data);
+    return data;
+  }, []);
+
+  const refreshTests = useCallback(async () => {
+    const { data } = await api.get("/tests", { params: { field: activeField } });
+    setTests(data);
+    return data;
+  }, [activeField]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -128,55 +141,39 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    if (window.location.pathname === "/oauth-success" && token) {
-      localStorage.setItem("token", token);
-      window.history.replaceState({}, "", "/dashboard");
-      refreshProfile();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      api.post("/setup/seed").catch(() => undefined);
-    }
-  }, [user]);
-
-  useEffect(() => {
     if (!user) {
-      setQuestions([]);
       setTests([]);
-      return;
-    }
-
-    const clearedFilters = { category: "", difficulty: "", topic: "", company: "" };
-    setFilters(clearedFilters);
-    loadQuestions(clearedFilters).catch(() => undefined);
-    refreshTests().catch(() => undefined);
-  }, [activeField, user?.email]);
-
-  useEffect(() => {
-    if (!user) {
       setBookmarks([]);
       setHistory([]);
-      setTests([]);
       setRecommendations([]);
+      setFilters(DEFAULT_FILTERS);
       return;
     }
 
-    refreshProfile()
-      .then(async (currentProfile) => {
-        const loadedQuestions = await loadQuestions(filters).catch(() => readCachedQuestions());
-        const recs = await api.post("/ai/recommendations", { weakTopics: currentProfile?.progress?.weakTopics || [] }).catch(() => ({ data: [] }));
-        const normalizedRecs = normalizeQuestions(recs.data, activeField);
-        setRecommendations(normalizedRecs.length ? normalizedRecs : loadedQuestions.slice(0, 6));
-      })
-      .catch(() => undefined);
-    refreshBookmarks().catch(() => undefined);
-    refreshHistory().catch(() => undefined);
-    refreshTests().catch(() => undefined);
-  }, [user?.email]);
+    api.post("/setup/seed").catch(() => undefined);
+
+    Promise.allSettled([
+      refreshProfile(),
+      loadQuestions(DEFAULT_FILTERS),
+      refreshBookmarks(),
+      refreshHistory(),
+      refreshTests()
+    ]).then((results) => {
+      const profileResult = results[0]?.status === "fulfilled" ? results[0].value : profile || user;
+      const loadedQuestions = results[1]?.status === "fulfilled" ? results[1].value : readCachedQuestions();
+
+      if (profileResult?.progress?.weakTopics?.length) {
+        api.post("/ai/recommendations", { weakTopics: profileResult.progress.weakTopics })
+          .then(({ data }) => {
+            const normalized = normalizeQuestions(data);
+            setRecommendations(normalized.length ? normalized : loadedQuestions.slice(0, 6));
+          })
+          .catch(() => setRecommendations(loadedQuestions.slice(0, 6)));
+      } else {
+        setRecommendations(loadedQuestions.slice(0, 6));
+      }
+    });
+  }, [user?.email, activeField, loadQuestions, refreshBookmarks, refreshHistory, refreshProfile, refreshTests]);
 
   const content = (
     <Suspense fallback={<PageLoader />}>
@@ -184,7 +181,6 @@ export default function App() {
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="login" onAuth={applyAuth} />} />
         <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="signup" onAuth={applyAuth} />} />
-        <Route path="/oauth-success" element={<div className="container py-5">Signing you in...</div>} />
         <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user || {}} recommendations={recommendations} questions={questions} /></ProtectedRoute>} />
         <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} filters={filters} setFilters={setFilters} loadQuestions={loadQuestions} defaultField={activeField} /></ProtectedRoute>} />
         <Route path="/practice" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={activeField} loadQuestions={loadQuestions} /></ProtectedRoute>} />
@@ -205,7 +201,3 @@ export default function App() {
     </div>
   );
 }
-
-
-
-
