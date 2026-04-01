@@ -60,17 +60,17 @@ export default function App() {
   };
 
   const loadQuestions = async (params = {}) => {
-    const mergedParams = { limit: 180, field: activeField, ...params };
+    const mergedParams = { limit: 220, field: activeField, ...params };
     let { data } = await api.get("/questions", { params: mergedParams });
     let normalized = normalizeQuestions(data, activeField);
 
     if (!normalized.length) {
-      ({ data } = await api.get("/questions", { params: { field: activeField, limit: 180 } }));
+      ({ data } = await api.get("/questions", { params: { field: activeField, limit: 220 } }));
       normalized = normalizeQuestions(data, activeField);
     }
 
     if (!normalized.length) {
-      ({ data } = await api.get("/questions", { params: { limit: 180 } }));
+      ({ data } = await api.get("/questions", { params: { limit: 220 } }));
       normalized = normalizeQuestions(data, activeField).filter((question) => (question.field || activeField) === activeField);
     }
 
@@ -159,6 +159,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

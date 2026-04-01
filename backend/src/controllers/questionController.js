@@ -1,16 +1,31 @@
 import Question from "../models/Question.js";
+import seedQuestions from "../data/seedQuestions.js";
+
+const SOFTWARE_FIELD = "Software";
 
 const parseSafeLimit = (value, fallback) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-  return Math.min(parsed, 500);
+  return Math.min(parsed, 1000);
 };
 
-const filterSeedQuestions = (seedQuestions, queryParams = {}) => {
-  const { field, category, difficulty, topic, company, type, search } = queryParams;
+const softwareSeedQuestions = seedQuestions
+  .filter((question) => (question.field || SOFTWARE_FIELD) === SOFTWARE_FIELD)
+  .map((question, index) => ({
+    ...question,
+    _id: `seed-${index}`,
+    field: question.field || SOFTWARE_FIELD,
+    starterCode: question.starterCode || {}
+  }));
 
-  return seedQuestions.filter((question) => {
-    if (field && (question.field || "Software") !== field) return false;
+const getSeedQuestionById = (id) => softwareSeedQuestions.find((question) => String(question._id) === String(id));
+
+const filterQuestionList = (questionList, queryParams = {}) => {
+  const requestedField = queryParams.field || SOFTWARE_FIELD;
+  const { category, difficulty, topic, company, type, search } = queryParams;
+
+  return questionList.filter((question) => {
+    if ((question.field || SOFTWARE_FIELD) !== requestedField) return false;
     if (category && question.category !== category) return false;
     if (difficulty && question.difficulty !== difficulty) return false;
     if (topic && !new RegExp(topic, "i").test(question.topic || "")) return false;
@@ -21,42 +36,7 @@ const filterSeedQuestions = (seedQuestions, queryParams = {}) => {
   });
 };
 
-export const getQuestions = async (req, res) => {
-  const { field, category, difficulty, topic, company, type, search, limit } = req.query;
-  const hasFocusedFilter = Boolean(category || difficulty || topic || company || type || search);
-  const safeLimit = parseSafeLimit(limit, hasFocusedFilter ? 240 : 120);
-  const query = {};
-
-  if (field) query.field = field;
-  if (category) query.category = category;
-  if (difficulty) query.difficulty = difficulty;
-  if (topic) query.topic = new RegExp(topic, "i");
-  if (company) query.company = new RegExp(company, "i");
-  if (type) query.type = type;
-  if (search) query.title = new RegExp(search, "i");
-
-  try {
-    const results = await Question.find(query).sort({ createdAt: -1 }).limit(safeLimit);
-    if (results.length) {
-      return res.json(results);
-    }
-
-    const { default: seedQuestions } = await import("../data/seedQuestions.js");
-    return res.json(filterSeedQuestions(seedQuestions, req.query).slice(0, safeLimit));
-  } catch (error) {
-    console.error("getQuestions error:", error);
-    const { default: seedQuestions } = await import("../data/seedQuestions.js");
-    return res.json(filterSeedQuestions(seedQuestions, req.query).slice(0, safeLimit));
-  }
-};
-
-export const evaluateQuestion = async (req, res) => {
-  const question = await Question.findById(req.params.id);
-  if (!question) {
-    return res.status(404).json({ message: "Question not found" });
-  }
-
-  const { answer, timeSpent = 0 } = req.body;
+const evaluateAnswer = (question, answer, timeSpent = 0) => {
   let isCorrect = false;
   let feedback = question.explanation;
 
@@ -75,11 +55,58 @@ export const evaluateQuestion = async (req, res) => {
     feedback = `Reference approach: ${question.correctAnswer}`;
   }
 
-  res.json({
+  return {
     isCorrect,
     correctAnswer: question.correctAnswer,
     explanation: question.explanation,
     feedback,
     timeSpent
-  });
+  };
+};
+
+export const getQuestions = async (req, res) => {
+  const queryField = req.query.field || SOFTWARE_FIELD;
+  const hasFocusedFilter = Boolean(req.query.category || req.query.difficulty || req.query.topic || req.query.company || req.query.type || req.query.search);
+  const safeLimit = parseSafeLimit(req.query.limit, hasFocusedFilter ? 320 : 220);
+
+  try {
+    const query = { field: queryField };
+    if (req.query.category) query.category = req.query.category;
+    if (req.query.difficulty) query.difficulty = req.query.difficulty;
+    if (req.query.topic) query.topic = new RegExp(req.query.topic, "i");
+    if (req.query.company) query.company = new RegExp(req.query.company, "i");
+    if (req.query.type) query.type = req.query.type;
+    if (req.query.search) query.title = new RegExp(req.query.search, "i");
+
+    const dbResults = await Question.find(query).sort({ createdAt: -1 }).limit(safeLimit);
+    if (dbResults.length) {
+      return res.json(dbResults);
+    }
+  } catch (error) {
+    console.error("getQuestions error:", error);
+  }
+
+  const fallbackResults = filterQuestionList(softwareSeedQuestions, { ...req.query, field: queryField }).slice(0, safeLimit);
+  return res.json(fallbackResults);
+};
+
+export const evaluateQuestion = async (req, res) => {
+  let question = null;
+
+  try {
+    question = await Question.findById(req.params.id);
+  } catch {
+    question = null;
+  }
+
+  if (!question) {
+    question = getSeedQuestionById(req.params.id);
+  }
+
+  if (!question) {
+    return res.status(404).json({ message: "Question not found" });
+  }
+
+  const { answer, timeSpent = 0 } = req.body;
+  return res.json(evaluateAnswer(question, answer, timeSpent));
 };
