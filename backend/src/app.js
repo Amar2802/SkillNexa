@@ -12,19 +12,42 @@ import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
 const app = express();
 
-const rawClientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-const sanitizedClientUrl = rawClientUrl
-  .split(/[\s,]+/)
-  .map((value) => value.trim().replace(/^['\"]|['\"]$/g, ""))
-  .find(Boolean) || "http://localhost:5173";
+const parseOrigins = (value) => String(value || "")
+  .split(/[,\s]+/)
+  .map((origin) => origin.trim().replace(/^['\"]|['\"]$/g, ""))
+  .filter(Boolean);
 
-app.use(cors({ origin: sanitizedClientUrl, credentials: true }));
+const configuredOrigins = parseOrigins(process.env.CLIENT_URL);
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://skill-nexa-u1x3.vercel.app",
+  ...configuredOrigins
+]);
+
+const primaryClientUrl = configuredOrigins[0] || "https://skill-nexa-u1x3.vercel.app";
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+
+    if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin ${origin}`));
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: "2mb" }));
 app.use(morgan("dev"));
 app.use(passport.initialize());
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, clientUrl: sanitizedClientUrl });
+  res.json({ ok: true, clientUrl: primaryClientUrl, allowedOrigins: [...allowedOrigins] });
 });
 
 app.use("/api/auth", authRoutes);
