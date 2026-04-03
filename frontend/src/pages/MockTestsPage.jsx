@@ -9,23 +9,34 @@ const formatTimer = (seconds) => {
 
 const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistory, questions = [] }) => {
   const [activeTest, setActiveTest] = useState(null);
+  const [pendingTest, setPendingTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const questionCount = useMemo(() => activeTest ? activeTest.sections.flatMap((section) => section.questions).length : 0, [activeTest]);
+  const pendingQuestionCount = useMemo(() => pendingTest ? pendingTest.sections.flatMap((section) => section.questions).length : 0, [pendingTest]);
 
   const generateTest = async () => {
     try {
       setLoading(true);
       const { data } = await api.post("/tests", {});
-      setActiveTest(data);
+      setPendingTest(data);
+      setActiveTest(null);
       setAnswers({});
       setResult(null);
       refreshTests?.();
     } finally {
       setLoading(false);
     }
+  };
+
+  const startPendingTest = () => {
+    if (!pendingTest) return;
+    setActiveTest(pendingTest);
+    setPendingTest(null);
+    setAnswers({});
+    setResult(null);
   };
 
   const submitTest = async () => {
@@ -51,6 +62,32 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
           <button className="btn btn-info" onClick={generateTest} disabled={loading}>{loading ? "Generating..." : "Generate Mock Test"}</button>
         </div>
       </div>
+
+      {pendingTest ? (
+        <div className="glass-card p-4 mock-test-active-card mb-4">
+          <p className="eyebrow mb-2">Generated Test</p>
+          <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+              <h2 className="h3 mb-2">{pendingTest.title}</h2>
+              <p className="text-secondary mb-0">Your software mock is ready. Review the format below and start when you are ready.</p>
+            </div>
+            <div className="mock-test-timer-card">
+              <span>Duration</span>
+              <strong>{formatTimer((pendingTest.duration || 30) * 60)}</strong>
+            </div>
+          </div>
+
+          <div className="mock-test-format-grid mb-4">
+            <div><span>Questions</span><strong>{pendingQuestionCount}</strong></div>
+            <div><span>Duration</span><strong>{pendingTest.duration || 30} minutes</strong></div>
+          </div>
+
+          <div className="d-flex gap-2 flex-wrap">
+            <button className="btn btn-info" onClick={startPendingTest}>Start Test</button>
+            <button className="btn btn-outline-light" onClick={generateTest} disabled={loading}>{loading ? "Generating..." : "Regenerate"}</button>
+          </div>
+        </div>
+      ) : null}
 
       {activeTest ? (
         <div className="glass-card p-4 mock-test-active-card">
@@ -115,7 +152,7 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
         </div>
       ) : null}
 
-      {!activeTest && !result ? (
+      {!activeTest && !pendingTest && !result ? (
         <div className="glass-card p-4 mock-test-empty-state">
           <h2 className="h4 mb-2">Ready for a fresh mock?</h2>
           <p className="text-secondary mb-0">Generate a new software mock test to practice DSA, aptitude, HR, and core subjects in one round.</p>
