@@ -10,6 +10,7 @@ const typeOptions = [
   { id: "Subjective", label: "Descriptive Questions" },
   { id: "MCQ", label: "MCQ Questions" }
 ];
+const softwareCategoryOptions = ["DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
 
 const splitDisplay = (question) => {
   const title = (question.title || "Untitled Question").replace(/\s+Practice Variant\s+\d+$/i, "").trim();
@@ -35,11 +36,28 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
 
   const sourceQuestions = questions.length ? questions : items;
   const filterOptions = useMemo(() => ({
-    category: [...new Set(sourceQuestions.map((question) => question.category).filter(Boolean))].sort(),
+    category: softwareCategoryOptions,
     difficulty: [...new Set(sourceQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
     topic: [...new Set(sourceQuestions.map((question) => question.topic).filter(Boolean))].sort(),
     company: [...new Set(sourceQuestions.map((question) => question.company).filter(Boolean))].sort()
   }), [sourceQuestions]);
+
+  const buildApiFilters = (nextFilters) => {
+    const normalized = { ...nextFilters };
+    if (normalized.category === "Behavioral") {
+      normalized.category = "HR";
+      if (!normalized.topic) normalized.topic = "Behavioral Interviews";
+    }
+    return normalized;
+  };
+
+  const matchesCategory = (question, selectedCategory) => {
+    if (!selectedCategory) return true;
+    if (selectedCategory === "Behavioral") {
+      return question.category === "HR" && /behavioral/i.test(question.topic || "");
+    }
+    return question.category === selectedCategory;
+  };
 
   const fetchQuestions = async (nextPage = page, nextFilters = filters, nextType = type) => {
     setLoading(true);
@@ -49,7 +67,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
         paginated: true,
         page: nextPage,
         limit: PAGE_SIZE,
-        ...nextFilters
+        ...buildApiFilters(nextFilters)
       };
 
       if (!params.category) delete params.category;
@@ -62,8 +80,11 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       setTotalPages(data.totalPages || 1);
       setPage(data.page || nextPage);
     } catch {
-      const fallback = await loadQuestions({ ...nextFilters, limit: PAGE_SIZE, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
-      setItems((fallback || []).filter((question) => nextType === "all" || question.type === nextType).slice(0, PAGE_SIZE));
+      const fallback = await loadQuestions({ ...buildApiFilters(nextFilters), limit: PAGE_SIZE, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
+      setItems((fallback || [])
+        .filter((question) => matchesCategory(question, nextFilters.category))
+        .filter((question) => nextType === "all" || question.type === nextType)
+        .slice(0, PAGE_SIZE));
       setTotalPages(1);
       setPage(1);
     } finally {

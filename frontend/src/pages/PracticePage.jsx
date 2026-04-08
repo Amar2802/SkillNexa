@@ -9,6 +9,7 @@ const typeOptions = [
   { id: "Subjective", label: "Descriptive" },
   { id: "MCQ", label: "MCQ" }
 ];
+const softwareCategoryOptions = ["DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
 
 const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, targetField = "Software", loadQuestions }) => {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -34,9 +35,16 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     };
   }, [questions.length, loadQuestions]);
 
-  const categoryOptions = useMemo(() => [...new Set(questions.map((question) => question.category).filter(Boolean))].sort(), [questions]);
+  const matchesCategory = (question, category) => {
+    if (!category) return true;
+    if (category === "Behavioral") {
+      return question.category === "HR" && /behavioral/i.test(question.topic || "");
+    }
+    return question.category === category;
+  };
+
   const filteredQuestions = useMemo(() => questions.filter((question) => {
-    if (selectedCategory && question.category !== selectedCategory) return false;
+    if (!matchesCategory(question, selectedCategory)) return false;
     if (selectedType !== "all" && question.type !== selectedType) return false;
     return true;
   }), [questions, selectedCategory, selectedType]);
@@ -117,7 +125,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                 <label className="form-label">Category</label>
                 <select className="form-select" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
                   <option value="">All Categories</option>
-                  {categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
+                  {softwareCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
                 </select>
               </div>
               <div className="col-12">
