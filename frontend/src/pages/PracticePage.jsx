@@ -3,24 +3,15 @@ import Editor from "@monaco-editor/react";
 import api from "../api/client";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
-const typeTabs = [
+const typeOptions = [
   { id: "all", label: "All Questions" },
   { id: "Coding", label: "Coding" },
   { id: "Subjective", label: "Descriptive" },
   { id: "MCQ", label: "MCQ" }
 ];
-const sectionTabs = ["All", "DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
-
-const matchesSection = (question, section) => {
-  if (section === "All") return true;
-  if (section === "Behavioral") {
-    return question.category === "HR" && /behavioral/i.test(String(question.topic || ""));
-  }
-  return question.category === section;
-};
 
 const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, targetField = "Software", loadQuestions }) => {
-  const [selectedSection, setSelectedSection] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedId, setSelectedId] = useState("");
   const [answer, setAnswer] = useState("");
@@ -43,11 +34,12 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     };
   }, [questions.length, loadQuestions]);
 
+  const categoryOptions = useMemo(() => [...new Set(questions.map((question) => question.category).filter(Boolean))].sort(), [questions]);
   const filteredQuestions = useMemo(() => questions.filter((question) => {
-    if (!matchesSection(question, selectedSection)) return false;
+    if (selectedCategory && question.category !== selectedCategory) return false;
     if (selectedType !== "all" && question.type !== selectedType) return false;
     return true;
-  }), [questions, selectedSection, selectedType]);
+  }), [questions, selectedCategory, selectedType]);
 
   const question = useMemo(() => filteredQuestions.find((item) => item._id === selectedId), [filteredQuestions, selectedId]);
   const currentIndex = filteredQuestions.findIndex((item) => item._id === selectedId);
@@ -120,16 +112,20 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               <span className="badge text-bg-info">{filteredQuestions.length} questions</span>
             </div>
 
-            <div className="question-bank-tabs selector-grid selector-grid-type mb-3">
-              {typeTabs.map((tab) => (
-                <button key={tab.id} className={`question-bank-tab ${selectedType === tab.id ? "active" : ""}`} onClick={() => setSelectedType((current) => current === tab.id ? "all" : tab.id)}>{tab.label}</button>
-              ))}
-            </div>
-
-            <div className="practice-category-tabs selector-grid selector-grid-section mb-3">
-              {sectionTabs.map((section) => (
-                <button key={section} className={`practice-category-tab ${selectedSection === section ? "active" : ""}`} onClick={() => setSelectedSection((current) => current === section ? "All" : section)}>{section}</button>
-              ))}
+            <div className="row g-3 mb-3">
+              <div className="col-12">
+                <label className="form-label">Category</label>
+                <select className="form-select" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
+                  <option value="">All Categories</option>
+                  {categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
+              </div>
+              <div className="col-12">
+                <label className="form-label">Question Type</label>
+                <select className="form-select" value={selectedType} onChange={(event) => setSelectedType(event.target.value)}>
+                  {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                </select>
+              </div>
             </div>
 
             {loading && !filteredQuestions.length ? <p className="text-secondary mb-0">Loading questions...</p> : (
@@ -172,7 +168,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                 {question.type === "MCQ" ? (
                   <div className="vstack gap-2 mb-4">
                     {(question.options || []).map((option) => (
-                      <button key={option} className={`btn option-btn ${answer === option ? "option-btn-selected" : "btn-outline-light"} text-start`} onClick={() => setAnswer(option)}>{option}</button>
+                      <button key={option} className={`btn option-btn ${answer === option ? "option-btn-selected" : "btn-outline-light"} text-start`} onClick={() => setAnswer((current) => current === option ? "" : option)}>{option}</button>
                     ))}
                   </div>
                 ) : null}
@@ -223,4 +219,3 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 };
 
 export default PracticePage;
-

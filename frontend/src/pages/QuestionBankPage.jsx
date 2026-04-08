@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
 const PAGE_SIZE = 20;
-const typeTabs = [
+const typeOptions = [
   { id: "all", label: "All Questions" },
   { id: "Coding", label: "Coding Questions" },
   { id: "Subjective", label: "Descriptive Questions" },
   { id: "MCQ", label: "MCQ Questions" }
 ];
-const sectionTabs = ["All", "DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
 
 const splitDisplay = (question) => {
   const title = (question.title || "Untitled Question").replace(/\s+Practice Variant\s+\d+$/i, "").trim();
@@ -24,21 +23,10 @@ const splitDisplay = (question) => {
   };
 };
 
-const applySectionFilter = (question, section) => {
-  if (section === "All") return true;
-  if (section === "Behavioral") {
-    return question.category === "HR" && /behavioral/i.test(String(question.topic || ""));
-  }
-  return question.category === section;
-};
-
 const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software" }) => {
   const location = useLocation();
-  const skipFirstTypeEffect = useRef(true);
-  const skipFirstSectionEffect = useRef(true);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
   const [type, setType] = useState("all");
-  const [section, setSection] = useState("All");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -53,7 +41,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
     company: [...new Set(sourceQuestions.map((question) => question.company).filter(Boolean))].sort()
   }), [sourceQuestions]);
 
-  const fetchQuestions = async (nextPage = page, nextFilters = filters, nextType = type, nextSection = section) => {
+  const fetchQuestions = async (nextPage = page, nextFilters = filters, nextType = type) => {
     setLoading(true);
     try {
       const params = {
@@ -63,15 +51,6 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
         limit: PAGE_SIZE,
         ...nextFilters
       };
-
-      if (nextSection !== "All") {
-        if (nextSection === "Behavioral") {
-          params.category = "HR";
-          params.topic = "Behavioral Interviews";
-        } else {
-          params.category = nextSection;
-        }
-      }
 
       if (!params.category) delete params.category;
       if (!params.difficulty) delete params.difficulty;
@@ -83,17 +62,8 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       setTotalPages(data.totalPages || 1);
       setPage(data.page || nextPage);
     } catch {
-      const mergedFilters = { ...nextFilters };
-      if (nextSection !== "All") {
-        if (nextSection === "Behavioral") {
-          mergedFilters.category = "HR";
-          mergedFilters.topic = "Behavioral Interviews";
-        } else {
-          mergedFilters.category = nextSection;
-        }
-      }
-      const fallback = await loadQuestions({ ...mergedFilters, limit: PAGE_SIZE, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
-      setItems((fallback || []).filter((question) => applySectionFilter(question, nextSection) && (nextType === "all" || question.type === nextType)).slice(0, PAGE_SIZE));
+      const fallback = await loadQuestions({ ...nextFilters, limit: PAGE_SIZE, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
+      setItems((fallback || []).filter((question) => nextType === "all" || question.type === nextType).slice(0, PAGE_SIZE));
       setTotalPages(1);
       setPage(1);
     } finally {
@@ -110,25 +80,8 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       company: ""
     };
     setFilters(nextFilters);
-    setSection(nextFilters.category || (nextFilters.topic === "Behavioral Interviews" ? "Behavioral" : "All"));
-    fetchQuestions(1, nextFilters, type, nextFilters.topic === "Behavioral Interviews" ? "Behavioral" : (nextFilters.category || "All")).catch(() => undefined);
+    fetchQuestions(1, nextFilters, type).catch(() => undefined);
   }, [location.search]);
-
-  useEffect(() => {
-    if (skipFirstTypeEffect.current) {
-      skipFirstTypeEffect.current = false;
-      return;
-    }
-    fetchQuestions(1, filters, type, section).catch(() => undefined);
-  }, [type]);
-
-  useEffect(() => {
-    if (skipFirstSectionEffect.current) {
-      skipFirstSectionEffect.current = false;
-      return;
-    }
-    fetchQuestions(1, filters, type, section).catch(() => undefined);
-  }, [section]);
 
   const visibleItems = items;
 
@@ -149,21 +102,14 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
               </select>
             </div>
           ))}
+          <div className="col-md-3">
+            <label className="form-label">Question Type</label>
+            <select className="form-select" value={type} onChange={(event) => setType(event.target.value)}>
+              {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+            </select>
+          </div>
         </div>
-        <button className="btn btn-info mt-3" onClick={() => fetchQuestions(1, filters, type, section)}>Apply Filters</button>
-      </div>
-
-      <div className="glass-card p-4 mb-4">
-        <div className="question-bank-tabs selector-grid selector-grid-type mb-3">
-          {typeTabs.map((tab) => (
-            <button key={tab.id} className={`question-bank-tab ${type === tab.id ? "active" : ""}`} onClick={() => setType((current) => current === tab.id ? "all" : tab.id)}>{tab.label}</button>
-          ))}
-        </div>
-        <div className="question-bank-tabs compact selector-grid selector-grid-section">
-          {sectionTabs.map((tab) => (
-            <button key={tab} className={`question-bank-tab ${section === tab ? "active" : ""}`} onClick={() => setSection((current) => current === tab ? "All" : tab)}>{tab}</button>
-          ))}
-        </div>
+        <button className="btn btn-info mt-3" onClick={() => fetchQuestions(1, filters, type)}>Apply Filters</button>
       </div>
 
       {loading && !visibleItems.length ? <div className="glass-card p-4"><p className="text-secondary mb-0">Loading questions...</p></div> : null}
@@ -228,13 +174,13 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
         })}
       </div>
 
-      {!loading && !visibleItems.length ? <div className="glass-card p-4 mt-4"><p className="text-secondary mb-0">No questions found. Try changing the filters, section, or question type.</p></div> : null}
+      {!loading && !visibleItems.length ? <div className="glass-card p-4 mt-4"><p className="text-secondary mb-0">No questions found. Try changing the filters or question type.</p></div> : null}
 
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
         <p className="text-secondary mb-0">Page {page} of {totalPages}</p>
         <div className="d-flex gap-2">
-          <button className="btn btn-outline-light" disabled={page <= 1 || loading} onClick={() => fetchQuestions(page - 1, filters, type, section)}>Previous Page</button>
-          <button className="btn btn-outline-light" disabled={page >= totalPages || loading} onClick={() => fetchQuestions(page + 1, filters, type, section)}>Next Page</button>
+          <button className="btn btn-outline-light" disabled={page <= 1 || loading} onClick={() => fetchQuestions(page - 1, filters, type)}>Previous Page</button>
+          <button className="btn btn-outline-light" disabled={page >= totalPages || loading} onClick={() => fetchQuestions(page + 1, filters, type)}>Next Page</button>
         </div>
       </div>
     </div>
@@ -242,4 +188,3 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
 };
 
 export default QuestionBankPage;
-
