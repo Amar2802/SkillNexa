@@ -2684,3 +2684,219 @@ body {
     overflow-x: hidden;
   }
 }
+
+/* Mobile and tablet usability improvements */
+.app-sidebar {
+  overflow: hidden;
+}
+
+.sidebar-scroll-area {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.sidebar-top-block {
+  flex: 0 0 auto;
+}
+
+.sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.sidebar-scroll-area::-webkit-scrollbar,
+.sidebar-nav::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-scroll-area::-webkit-scrollbar-thumb,
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(244, 122, 32, 0.24);
+  border-radius: 999px;
+}
+
+@media (max-width: 991px) {
+  .sidebar-scroll-area {
+    padding-bottom: 1rem;
+  }
+
+  .sidebar-nav {
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-topbar {
+    gap: 0.75rem;
+  }
+
+  .topbar-left-group {
+    align-items: flex-start;
+  }
+
+  .topbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profile-chip,
+  .theme-toggle,
+  .theme-toggle-btn {
+    width: 100%;
+  }
+
+  .hero-panel,
+  .glass-card,
+  .mock-test-active-card,
+  .question-card,
+  .practice-panel-card,
+  .profile-hero-surface,
+  .profile-section-card,
+  .profile-aside-card {
+    border-radius: 18px;
+  }
+
+  .question-bank-tabs,
+  .practice-category-tabs,
+  .interest-grid,
+  .profile-hero-pills,
+  .company-prep-track-row,
+  .hero-pill-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+  }
+
+  .question-bank-tab,
+  .practice-category-tab,
+  .interest-chip,
+  .hero-pill,
+  .company-prep-track-item {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .question-bank-stack-item .glass-card,
+  .practice-question-item,
+  .mock-test-question-block,
+  .feedback-detail-card,
+  .answer-reveal-card {
+    padding: 0.95rem;
+  }
+
+  .feedback-detail-grid,
+  .answer-reveal-panel,
+  .profile-metric-grid,
+  .mock-test-result-grid,
+  .mock-test-format-grid,
+  .practice-mini-stats,
+  .practice-focus-strip,
+  .profile-account-meta {
+    grid-template-columns: 1fr !important;
+  }
+
+  .question-bank-stack-item h2,
+  .question-card h2,
+  .hero-panel h1 {
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 560px) {
+  .container,
+  .container-fluid {
+    padding-left: 0.55rem !important;
+    padding-right: 0.55rem !important;
+  }
+
+  .app-content {
+    padding-left: 0.55rem !important;
+    padding-right: 0.55rem !important;
+  }
+
+  .mock-test-timer-card strong {
+    font-size: 1.5rem;
+  }
+
+  .shell-avatar,
+  .profile-photo,
+  .profile-photo-fallback {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+.mobile-scroll-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+@media (max-width: 991px) {
+  .sidebar-scroll-area {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar-footer {
+    position: sticky;
+    bottom: 0;
+    padding-top: 1rem;
+    background: linear-gradient(180deg, rgba(255, 248, 241, 0), rgba(255, 248, 241, 0.92) 28%, rgba(255, 248, 241, 0.98));
+  }
+
+  :root[data-theme="dark"] .sidebar-footer {
+    background: linear-gradient(180deg, rgba(34, 23, 16, 0), rgba(34, 23, 16, 0.92) 28%, rgba(34, 23, 16, 0.98));
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-scroll-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .mobile-scroll-tabs .question-bank-tab,
+  .mobile-scroll-tabs .practice-category-tab {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+  }
+
+  .question-bank-stack-item .glass-card,
+  .practice-panel-card,
+  .question-card,
+  .mock-test-active-card,
+  .hero-panel {
+    padding: 1rem !important;
+  }
+
+  .practice-question-item {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .question-bank-answer,
+  .question-bank-explanation,
+  .answer-reveal-card,
+  .feedback-detail-card {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .topbar-left-group {
+    gap: 0.75rem;
+  }
+
+  .topbar-title {
+    font-size: 0.92rem;
+  }
+}

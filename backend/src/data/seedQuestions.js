@@ -316,6 +316,54 @@ const softwareBaseQuestions = [
     explanation: "Interviewers want ambition with realism, not vague or unstable plans.",
     tags: ["career goals", "future"]
   },
+  {
+    title: "Handling Pressure at Work",
+    category: "HR",
+    topic: "Behavioral Interviews",
+    difficulty: "Medium",
+    company: "General",
+    type: "Subjective",
+    description: "How should you answer a question about working under pressure or tight deadlines?",
+    correctAnswer: "Pick one real situation, explain how you prioritized tasks, communicated clearly, and maintained quality while meeting the deadline.",
+    explanation: "A strong answer shows calm decision-making, ownership, and practical prioritization under pressure.",
+    tags: ["behavioral", "pressure", "prioritization"]
+  },
+  {
+    title: "Teamwork Example",
+    category: "HR",
+    topic: "Behavioral Interviews",
+    difficulty: "Easy",
+    company: "General",
+    type: "Subjective",
+    description: "Describe a good way to answer a teamwork question in an interview.",
+    correctAnswer: "Explain the team goal, your personal contribution, how you collaborated with others, and the final result achieved together.",
+    explanation: "Interviewers want to understand your role in a team, not just the team outcome itself.",
+    tags: ["behavioral", "teamwork", "collaboration"]
+  },
+  {
+    title: "Average Calculation Strategy",
+    category: "Aptitude",
+    topic: "Average",
+    difficulty: "Easy",
+    company: "TCS",
+    type: "Subjective",
+    description: "Explain the fastest method to solve average-based aptitude questions.",
+    correctAnswer: "Use total sum divided by number of terms, and when values are adjusted, update the total first before recomputing the average.",
+    explanation: "The key is to think in totals instead of recalculating each value from scratch.",
+    tags: ["average", "aptitude", "formula"]
+  },
+  {
+    title: "Percentage Increase and Decrease",
+    category: "Aptitude",
+    topic: "Percentages",
+    difficulty: "Medium",
+    company: "Infosys",
+    type: "Subjective",
+    description: "How do you approach aptitude questions involving percentage increase and percentage decrease?",
+    correctAnswer: "Convert the percentage change into a multiplier, apply it step by step, and keep the base value clear throughout the calculation.",
+    explanation: "Candidates often make mistakes by adding percentages directly without checking the changing base value.",
+    tags: ["percentages", "increase", "decrease"]
+  },
 
   {
     title: "Process vs Thread",
@@ -517,3 +565,4 @@ const buildLargeQuestionBank = () => {
 const seedQuestions = buildLargeQuestionBank();
 
 export default seedQuestions;
+

@@ -3,8 +3,25 @@ import Editor from "@monaco-editor/react";
 import api from "../api/client";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
+const typeTabs = [
+  { id: "all", label: "All Questions" },
+  { id: "Coding", label: "Coding" },
+  { id: "Subjective", label: "Descriptive" },
+  { id: "MCQ", label: "MCQ" }
+];
+const sectionTabs = ["All", "DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
+
+const matchesSection = (question, section) => {
+  if (section === "All") return true;
+  if (section === "Behavioral") {
+    return question.category === "HR" && /behavioral/i.test(String(question.topic || ""));
+  }
+  return question.category === section;
+};
+
 const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, targetField = "Software", loadQuestions }) => {
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSection, setSelectedSection] = useState("All");
+  const [selectedType, setSelectedType] = useState("all");
   const [selectedId, setSelectedId] = useState("");
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState(null);
@@ -16,7 +33,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     if (questions.length || !loadQuestions) return;
     let active = true;
     setLoading(true);
-    loadQuestions({ limit: 60 })
+    loadQuestions({ limit: 80 })
       .catch(() => undefined)
       .finally(() => {
         if (active) setLoading(false);
@@ -26,15 +43,15 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     };
   }, [questions.length, loadQuestions]);
 
-  const categories = useMemo(() => [...new Set(questions.map((question) => question.category).filter(Boolean))], [questions]);
-  const filteredQuestions = useMemo(() => questions.filter((question) => !selectedCategory || question.category === selectedCategory), [questions, selectedCategory]);
+  const filteredQuestions = useMemo(() => questions.filter((question) => {
+    if (!matchesSection(question, selectedSection)) return false;
+    if (selectedType !== "all" && question.type !== selectedType) return false;
+    return true;
+  }), [questions, selectedSection, selectedType]);
+
   const question = useMemo(() => filteredQuestions.find((item) => item._id === selectedId), [filteredQuestions, selectedId]);
   const currentIndex = filteredQuestions.findIndex((item) => item._id === selectedId);
   const isBookmarked = bookmarks.some((item) => item._id === selectedId);
-
-  useEffect(() => {
-    if (categories.length && !selectedCategory) setSelectedCategory(categories[0]);
-  }, [categories, selectedCategory]);
 
   useEffect(() => {
     if (!filteredQuestions.length) {
@@ -92,7 +109,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
       <div className="hero-panel mb-4">
         <p className="eyebrow mb-2">Practice Mode</p>
         <h1 className="h2 fw-bold mb-2">Daily software practice</h1>
-        <p className="text-secondary mb-0">Practice one question at a time with instant feedback for {targetField} interviews.</p>
+        <p className="text-secondary mb-0">Practice coding, aptitude, HR, behavioral, and core-subject questions one by one with instant feedback.</p>
       </div>
 
       <div className="row g-4">
@@ -102,11 +119,19 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               <h2 className="h4 mb-0">Question Navigator</h2>
               <span className="badge text-bg-info">{filteredQuestions.length} questions</span>
             </div>
-            <div className="practice-category-tabs mb-3">
-              {categories.map((category) => (
-                <button key={category} className={`practice-category-tab ${selectedCategory === category ? "active" : ""}`} onClick={() => setSelectedCategory(category)}>{category}</button>
+
+            <div className="question-bank-tabs mobile-scroll-tabs mb-3">
+              {typeTabs.map((tab) => (
+                <button key={tab.id} className={`question-bank-tab ${selectedType === tab.id ? "active" : ""}`} onClick={() => setSelectedType(tab.id)}>{tab.label}</button>
               ))}
             </div>
+
+            <div className="practice-category-tabs mobile-scroll-tabs mb-3">
+              {sectionTabs.map((section) => (
+                <button key={section} className={`practice-category-tab ${selectedSection === section ? "active" : ""}`} onClick={() => setSelectedSection(section)}>{section}</button>
+              ))}
+            </div>
+
             {loading && !filteredQuestions.length ? <p className="text-secondary mb-0">Loading questions...</p> : (
               <div className="practice-question-list">
                 {filteredQuestions.map((item, index) => (
