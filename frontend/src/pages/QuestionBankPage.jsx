@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import { buildDetailedSolution } from "../utils/answerHelpers";
@@ -26,6 +26,7 @@ const splitDisplay = (question) => {
 
 const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software" }) => {
   const location = useLocation();
+  const loadMoreRef = useRef(null);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
   const [type, setType] = useState("all");
   const [page, setPage] = useState(1);
@@ -41,6 +42,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
     topic: [...new Set(sourceQuestions.map((question) => question.topic).filter(Boolean))].sort(),
     company: [...new Set(sourceQuestions.map((question) => question.company).filter(Boolean))].sort()
   }), [sourceQuestions]);
+  const hasMore = page < totalPages;
 
   const buildApiFilters = (nextFilters) => {
     const normalized = { ...nextFilters };
@@ -59,7 +61,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
     return question.category === selectedCategory;
   };
 
-  const fetchQuestions = async (nextPage = page, nextFilters = filters, nextType = type) => {
+  const fetchQuestions = async (nextPage = 1, nextFilters = filters, nextType = type, append = false) => {
     setLoading(true);
     try {
       const params = {
@@ -76,17 +78,18 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       if (!params.company) delete params.company;
       if (nextType !== "all") params.type = nextType;
       const { data } = await api.get("/questions", { params, timeout: 25000 });
-      setItems(data.items || []);
+      const nextItems = data.items || [];
+      setItems((current) => append ? [...current, ...nextItems.filter((item) => !current.some((existing) => existing._id === item._id))] : nextItems);
       setTotalPages(data.totalPages || 1);
       setPage(data.page || nextPage);
     } catch {
-      const fallback = await loadQuestions({ ...buildApiFilters(nextFilters), limit: PAGE_SIZE, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
-      setItems((fallback || [])
+      const fallback = await loadQuestions({ ...buildApiFilters(nextFilters), limit: PAGE_SIZE * nextPage, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
+      const fallbackItems = (fallback || [])
         .filter((question) => matchesCategory(question, nextFilters.category))
-        .filter((question) => nextType === "all" || question.type === nextType)
-        .slice(0, PAGE_SIZE));
-      setTotalPages(1);
-      setPage(1);
+        .filter((question) => nextType === "all" || question.type === nextType);
+      setItems(fallbackItems.slice(0, PAGE_SIZE * nextPage));
+      setTotalPages(Math.max(1, Math.ceil(fallbackItems.length / PAGE_SIZE)));
+      setPage(nextPage);
     } finally {
       setLoading(false);
     }
@@ -101,8 +104,24 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       company: ""
     };
     setFilters(nextFilters);
-    fetchQuestions(1, nextFilters, type).catch(() => undefined);
+    setOpenAnswers({});
+    fetchQuestions(1, nextFilters, type, false).catch(() => undefined);
   }, [location.search]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return undefined;
+
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && !loading && hasMore) {
+        fetchQuestions(page + 1, filters, type, true).catch(() => undefined);
+      }
+    }, { rootMargin: "320px" });
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [filters, hasMore, loading, page, type]);
 
   const visibleItems = items;
 
@@ -130,7 +149,10 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
             </select>
           </div>
         </div>
-        <button className="btn btn-info mt-3" onClick={() => fetchQuestions(1, filters, type)}>Apply Filters</button>
+        <button className="btn btn-info mt-3" onClick={() => {
+          setOpenAnswers({});
+          fetchQuestions(1, filters, type, false);
+        }}>Apply Filters</button>
       </div>
 
       {loading && !visibleItems.length ? <div className="glass-card p-4"><p className="text-secondary mb-0">Loading questions...</p></div> : null}
@@ -197,13 +219,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
 
       {!loading && !visibleItems.length ? <div className="glass-card p-4 mt-4"><p className="text-secondary mb-0">No questions found. Try changing the filters or question type.</p></div> : null}
 
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
-        <p className="text-secondary mb-0">Page {page} of {totalPages}</p>
-        <div className="d-flex gap-2">
-          <button className="btn btn-outline-light" disabled={page <= 1 || loading} onClick={() => fetchQuestions(page - 1, filters, type)}>Previous Page</button>
-          <button className="btn btn-outline-light" disabled={page >= totalPages || loading} onClick={() => fetchQuestions(page + 1, filters, type)}>Next Page</button>
-        </div>
-      </div>
+      {visibleItems.length ? <div ref={loadMoreRef} className="py-4 text-center text-secondary">{loading ? "Loading more questions..." : hasMore ? "Scroll to load more questions" : "You have reached the end of this question set."}</div> : null}
     </div>
   );
 };
