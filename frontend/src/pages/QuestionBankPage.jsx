@@ -154,14 +154,14 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       </div>
 
       <div className="glass-card p-4 mb-4">
-        <div className="question-bank-tabs mobile-scroll-tabs mb-3">
+        <div className="question-bank-tabs selector-grid selector-grid-type mb-3">
           {typeTabs.map((tab) => (
-            <button key={tab.id} className={`question-bank-tab ${type === tab.id ? "active" : ""}`} onClick={() => setType(tab.id)}>{tab.label}</button>
+            <button key={tab.id} className={`question-bank-tab ${type === tab.id ? "active" : ""}`} onClick={() => setType((current) => current === tab.id ? "all" : tab.id)}>{tab.label}</button>
           ))}
         </div>
-        <div className="question-bank-tabs compact mobile-scroll-tabs">
+        <div className="question-bank-tabs compact selector-grid selector-grid-section">
           {sectionTabs.map((tab) => (
-            <button key={tab} className={`question-bank-tab ${section === tab ? "active" : ""}`} onClick={() => setSection(tab)}>{tab}</button>
+            <button key={tab} className={`question-bank-tab ${section === tab ? "active" : ""}`} onClick={() => setSection((current) => current === tab ? "All" : tab)}>{tab}</button>
           ))}
         </div>
       </div>
@@ -242,3 +242,4 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
 };
 
 export default QuestionBankPage;
+

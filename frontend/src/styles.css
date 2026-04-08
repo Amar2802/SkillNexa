@@ -2900,3 +2900,52 @@ body {
     font-size: 0.92rem;
   }
 }
+
+.selector-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.selector-grid-type {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.selector-grid-section {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.selector-grid .question-bank-tab,
+.selector-grid .practice-category-tab {
+  width: 100%;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .selector-grid-type {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .selector-grid-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .selector-grid-type,
+  .selector-grid-section {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .selector-grid .question-bank-tab,
+  .selector-grid .practice-category-tab {
+    min-height: 48px;
+    padding: 0.7rem 0.75rem;
+    font-size: 0.95rem;
+  }
+}

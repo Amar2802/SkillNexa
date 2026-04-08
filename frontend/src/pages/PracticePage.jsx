@@ -120,15 +120,15 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               <span className="badge text-bg-info">{filteredQuestions.length} questions</span>
             </div>
 
-            <div className="question-bank-tabs mobile-scroll-tabs mb-3">
+            <div className="question-bank-tabs selector-grid selector-grid-type mb-3">
               {typeTabs.map((tab) => (
-                <button key={tab.id} className={`question-bank-tab ${selectedType === tab.id ? "active" : ""}`} onClick={() => setSelectedType(tab.id)}>{tab.label}</button>
+                <button key={tab.id} className={`question-bank-tab ${selectedType === tab.id ? "active" : ""}`} onClick={() => setSelectedType((current) => current === tab.id ? "all" : tab.id)}>{tab.label}</button>
               ))}
             </div>
 
-            <div className="practice-category-tabs mobile-scroll-tabs mb-3">
+            <div className="practice-category-tabs selector-grid selector-grid-section mb-3">
               {sectionTabs.map((section) => (
-                <button key={section} className={`practice-category-tab ${selectedSection === section ? "active" : ""}`} onClick={() => setSelectedSection(section)}>{section}</button>
+                <button key={section} className={`practice-category-tab ${selectedSection === section ? "active" : ""}`} onClick={() => setSelectedSection((current) => current === section ? "All" : section)}>{section}</button>
               ))}
             </div>
 
@@ -223,3 +223,4 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 };
 
 export default PracticePage;
+
