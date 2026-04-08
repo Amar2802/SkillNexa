@@ -2,126 +2,158 @@ import Question from "../models/Question.js";
 import openai from "../config/openai.js";
 import { heuristicInterviewEvaluation } from "../utils/analytics.js";
 
-const fallbackQuestions = ({ role, focus, count, roundType, experienceLevel, company }) => {
-  const prompts = [
-    {
-      question: `Tell me about yourself and why you are a good fit for a ${role} position.`,
-      category: "Introduction",
-      difficulty: "Easy",
-      intent: "Assess clarity, confidence, and role alignment.",
-      followUpHint: "Mention one project or internship outcome that proves your fit."
-    },
-    {
-      question: `Describe a challenging ${focus} problem you solved and how you approached it.`,
-      category: roundType === "HR" ? "Behavioral" : "Technical",
-      difficulty: "Medium",
-      intent: "Check structured thinking and problem-solving depth.",
-      followUpHint: "Explain trade-offs, constraints, and what you learned."
-    },
-    {
-      question: `How would you prepare for a ${company || "general"} interview over the next 30 days?`,
-      category: "Strategy",
-      difficulty: "Medium",
-      intent: "Evaluate planning ability and prioritization.",
-      followUpHint: "Break the answer into weekly milestones and mock-test practice."
-    },
-    {
-      question: `Describe a time you received tough feedback and what you changed afterward.`,
-      category: "Behavioral",
-      difficulty: experienceLevel === "Experienced" ? "Medium" : "Easy",
-      intent: "Measure self-awareness and coachability.",
-      followUpHint: "Use STAR and emphasize the improvement made."
-    },
-    {
-      question: `What is one core concept in ${focus} that candidates often misunderstand, and how would you explain it clearly?`,
-      category: "Conceptual",
-      difficulty: "Medium",
-      intent: "Test subject clarity and communication skill.",
-      followUpHint: "Use one simple example and one technical detail."
-    },
-    {
-      question: `If you had 10 extra minutes in an interview, what part of your background would you want to highlight and why?`,
-      category: "Personal Pitch",
-      difficulty: "Easy",
-      intent: "Understand strengths and personal branding.",
-      followUpHint: "Tie it to business value or measurable impact."
-    }
-  ];
-
-  return prompts.slice(0, count).map((item, index) => ({
-    id: `fallback-${index + 1}`,
-    ...item
-  }));
+const ROUND_BLUEPRINTS = {
+  "Full Loop": [
+    { round: "Aptitude Screen", category: "Aptitude", focus: "aptitude, speed, and accuracy" },
+    { round: "Technical Coding", category: "DSA", focus: "coding, data structures, and problem solving" },
+    { round: "Core CS", category: "Core Subjects", focus: "DBMS, operating systems, networks, and OOP" },
+    { round: "Project Discussion", category: "HR", focus: "projects, ownership, decisions, and learning" },
+    { round: "HR Final", category: "HR", focus: "behavioral readiness, communication, and company fit" }
+  ],
+  Technical: [
+    { round: "Technical Coding", category: "DSA", focus: "coding, data structures, and problem solving" },
+    { round: "Core CS", category: "Core Subjects", focus: "DBMS, operating systems, networks, and OOP" },
+    { round: "Project Discussion", category: "HR", focus: "projects, ownership, and technical decisions" }
+  ],
+  HR: [
+    { round: "HR Warmup", category: "HR", focus: "communication, self introduction, and motivation" },
+    { round: "Behavioral Round", category: "HR", focus: "conflict, leadership, pressure, and learning" },
+    { round: "Company Fit", category: "HR", focus: "company fit, goals, and role alignment" }
+  ],
+  Mixed: [
+    { round: "Technical Coding", category: "DSA", focus: "coding, data structures, and problem solving" },
+    { round: "Core CS", category: "Core Subjects", focus: "DBMS, operating systems, networks, and OOP" },
+    { round: "HR Final", category: "HR", focus: "behavioral readiness, communication, and company fit" }
+  ]
 };
 
 const normalizeQuestionPayload = (questions = []) => {
   return questions.map((item, index) => ({
     id: item.id || `q-${index + 1}`,
+    round: item.round || "Interview Round",
     question: item.question || item.prompt || item.title || `Interview Question ${index + 1}`,
     category: item.category || "General",
     difficulty: item.difficulty || "Medium",
     intent: item.intent || "Assess interview readiness.",
+    evaluationFocus: item.evaluationFocus || "Clarity, structure, confidence, and relevance.",
     followUpHint: item.followUpHint || item.follow_up_hint || "Support your answer with a concrete example."
   }));
 };
 
-const enrichFallbackEvaluation = (answer = "", question = "") => {
+const buildRoundPlan = (roundType = "Full Loop", count = 5) => {
+  const basePlan = ROUND_BLUEPRINTS[roundType] || ROUND_BLUEPRINTS["Full Loop"];
+  const safeCount = Math.max(3, Math.min(7, Number(count) || basePlan.length));
+  return Array.from({ length: safeCount }, (_, index) => basePlan[index % basePlan.length]);
+};
+
+const buildQuestionFromBank = (question, round, focus, index) => ({
+  id: question._id ? String(question._id) : `fallback-${index + 1}`,
+  round,
+  question: `${String(question.title || "Question").replace(/\s+Practice Variant\s+\d+$/i, "")} - ${String(question.description || "").replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}`.trim(),
+  category: question.topic || question.category || "General",
+  difficulty: question.difficulty || "Medium",
+  intent: `Assess ${focus}.`,
+  evaluationFocus: "Direct answer, structured explanation, confidence, and one concrete example.",
+  followUpHint: `If this round goes well, be ready to extend the answer with one practical example from ${question.topic || question.category || "your preparation"}.`
+});
+
+const fallbackQuestions = async ({ count, roundType }) => {
+  const roundPlan = buildRoundPlan(roundType, count);
+
+  const questions = await Promise.all(roundPlan.map(async (item, index) => {
+    try {
+      const matches = await Question.aggregate([
+        { $match: { field: "Software", category: item.category } },
+        { $sample: { size: 1 } }
+      ]);
+      if (matches[0]) {
+        return buildQuestionFromBank(matches[0], item.round, item.focus, index);
+      }
+    } catch {
+      // fall through to synthetic fallback below
+    }
+
+    return {
+      id: `fallback-${index + 1}`,
+      round: item.round,
+      question: `Explain how you would handle a ${item.focus} question in a real ${item.round.toLowerCase()} for a software role.`,
+      category: item.category,
+      difficulty: index % 2 === 0 ? "Medium" : "Easy",
+      intent: `Assess ${item.focus}.`,
+      evaluationFocus: "Clarity, confidence, structure, and practical relevance.",
+      followUpHint: "Give one practical example and one trade-off or lesson learned."
+    };
+  }));
+
+  return questions;
+};
+
+const enrichFallbackEvaluation = (answer = "", question = "", round = "Interview Round") => {
   const base = heuristicInterviewEvaluation(answer);
   const words = answer.trim().split(/\s+/).filter(Boolean).length;
-  const structureScore = Math.min(100, 38 + Math.round(words * 1.2));
-  const technicalScore = Math.min(100, 35 + Math.round(words * 1.1));
+  const structureScore = Math.min(100, 40 + Math.round(words * 1.1));
+  const technicalScore = Math.min(100, 38 + Math.round(words));
 
   return {
     ...base,
     structureScore,
     technicalScore,
-    strengths: words > 50
-      ? ["Good answer depth", "Shows effort to explain clearly"]
-      : ["Direct response", "Good starting point"],
-    improvements: words > 50
-      ? ["Add sharper opening summary", "Include one measurable result"]
-      : ["Add one real example", "Use STAR or problem-solution-impact structure"],
-    followUpQuestion: `Can you support your answer to "${question}" with one specific example?`
+    strengths: words > 60
+      ? ["Good answer depth", "Shows structured thinking", "Uses useful detail"]
+      : ["Clear starting direction", "Relevant to the round"],
+    improvements: words > 60
+      ? ["Sharpen the first 20 seconds", "End with one stronger impact statement"]
+      : ["Add one concrete example", "Use STAR or a step-by-step structure"],
+    followUpQuestion: `In the ${round} round, how would you support your answer to "${question}" with one specific real example?`
   };
 };
 
 export const generateInterviewQuestions = async (req, res) => {
   const {
     role = "Software Engineer",
-    focus = "DSA and behavioral",
+    focus = "DSA, projects, HR, and core subjects",
     count = 5,
-    roundType = "Mixed",
+    roundType = "Full Loop",
     experienceLevel = "Fresher",
-    company = ""
+    company = "General"
   } = req.body;
 
-  const safeCount = Math.min(8, Math.max(3, Number(count) || 5));
+  const safeCount = Math.min(7, Math.max(3, Number(count) || 5));
 
   if (!openai) {
     return res.json({
       source: "fallback",
-      questions: fallbackQuestions({ role, focus, count: safeCount, roundType, experienceLevel, company })
+      questions: await fallbackQuestions({ count: safeCount, roundType })
     });
   }
 
-  const prompt = `You are an expert technical interviewer.
-Generate ${safeCount} interview questions for a candidate with these settings:
+  const roundPlan = buildRoundPlan(roundType, safeCount)
+    .map((item, index) => `${index + 1}. ${item.round} (${item.category}) focusing on ${item.focus}`)
+    .join("\n");
+
+  const prompt = `You are an expert interviewer simulating a realistic software interview loop.
+Generate ${safeCount} interview questions for these settings:
 - Target role: ${role}
 - Focus area: ${focus}
-- Interview round: ${roundType}
+- Interview format: ${roundType}
 - Experience level: ${experienceLevel}
-- Target company: ${company || "General"}
+- Target company: ${company}
+
+Use this round plan:
+${roundPlan}
 
 Return valid JSON only as an array of objects.
 Each object must include these string fields:
 - id
+- round
 - question
 - category
 - difficulty
 - intent
+- evaluationFocus
 - followUpHint
 
-Keep the questions realistic for interviews and vary them across technical, behavioral, and communication dimensions when appropriate.`;
+Make the flow feel like a real hiring process with different rounds and realistic interviewer wording.`;
 
   const completion = await openai.responses.create({
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",
@@ -132,29 +164,22 @@ Keep the questions realistic for interviews and vary them across technical, beha
     const parsed = JSON.parse(completion.output_text);
     res.json({ source: "openai", questions: normalizeQuestionPayload(parsed) });
   } catch {
-    res.json({
-      source: "openai",
-      questions: normalizeQuestionPayload(
-        completion.output_text
-          .split("\n")
-          .map((line, index) => ({ id: `fallback-openai-${index + 1}`, question: line.trim() }))
-          .filter((item) => item.question)
-      )
-    });
+    res.json({ source: "openai", questions: normalizeQuestionPayload(await fallbackQuestions({ count: safeCount, roundType })) });
   }
 };
 
 export const evaluateInterviewAnswer = async (req, res) => {
-  const { question, answer, role = "Software Engineer", roundType = "Mixed" } = req.body;
+  const { question, answer, role = "Software Engineer", roundType = "Full Loop", round = "Interview Round" } = req.body;
   if (!question || !answer) {
     return res.status(400).json({ message: "Question and answer are required" });
   }
 
   if (!openai) {
-    return res.json({ source: "fallback", ...enrichFallbackEvaluation(answer, question) });
+    return res.json({ source: "fallback", ...enrichFallbackEvaluation(answer, question, round) });
   }
 
-  const prompt = `Evaluate this interview answer for a ${role} candidate in a ${roundType} round.
+  const prompt = `Evaluate this interview answer for a ${role} candidate.
+The current interview format is ${roundType} and this question belongs to the ${round}.
 Return valid JSON only with these fields:
 - feedback: string
 - idealAnswer: string
@@ -189,7 +214,7 @@ Answer: ${answer}`;
       followUpQuestion: parsed.followUpQuestion || "Can you back that up with one measurable example?"
     });
   } catch {
-    res.json({ source: "openai", ...enrichFallbackEvaluation(answer, question) });
+    res.json({ source: "openai", ...enrichFallbackEvaluation(answer, question, round) });
   }
 };
 

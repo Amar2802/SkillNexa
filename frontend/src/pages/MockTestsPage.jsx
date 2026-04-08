@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/client";
 
 const formatTimer = (seconds) => {
@@ -13,9 +13,29 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const autoSubmittedRef = useRef(false);
 
   const questionCount = useMemo(() => activeTest ? activeTest.sections.flatMap((section) => section.questions).length : 0, [activeTest]);
   const pendingQuestionCount = useMemo(() => pendingTest ? pendingTest.sections.flatMap((section) => section.questions).length : 0, [pendingTest]);
+
+  useEffect(() => {
+    if (!activeTest || submitting) return undefined;
+    if (remainingSeconds <= 0) {
+      if (!autoSubmittedRef.current) {
+        autoSubmittedRef.current = true;
+        void submitTest(true);
+      }
+      return undefined;
+    }
+
+    const timerId = setInterval(() => {
+      setRemainingSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [activeTest, remainingSeconds, submitting]);
 
   const generateTest = async () => {
     try {
@@ -25,6 +45,8 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
       setActiveTest(null);
       setAnswers({});
       setResult(null);
+      setRemainingSeconds(0);
+      autoSubmittedRef.current = false;
       refreshTests?.();
     } finally {
       setLoading(false);
@@ -37,17 +59,29 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
     setPendingTest(null);
     setAnswers({});
     setResult(null);
+    setRemainingSeconds((pendingTest.duration || 30) * 60);
+    autoSubmittedRef.current = false;
   };
 
-  const submitTest = async () => {
-    if (!activeTest) return;
-    const payload = Object.entries(answers).map(([questionId, submittedAnswer]) => ({ questionId, submittedAnswer, timeSpent: 0 }));
-    const { data } = await api.post(`/tests/${activeTest._id}/submit`, { answers: payload, totalTimeSpent: 1800 });
-    setResult(data);
-    setActiveTest(null);
-    setAnswers({});
-    refreshProfile?.();
-    refreshHistory?.();
+  const submitTest = async (autoSubmit = false) => {
+    if (!activeTest || submitting) return;
+
+    try {
+      setSubmitting(true);
+      const totalDurationSeconds = (activeTest.duration || 30) * 60;
+      const spentSeconds = Math.max(0, totalDurationSeconds - remainingSeconds);
+      const payload = Object.entries(answers).map(([questionId, submittedAnswer]) => ({ questionId, submittedAnswer, timeSpent: 0 }));
+      const { data } = await api.post(`/tests/${activeTest._id}/submit`, { answers: payload, totalTimeSpent: spentSeconds });
+      setResult({ ...data, autoSubmitted });
+      setActiveTest(null);
+      setPendingTest(null);
+      setAnswers({});
+      setRemainingSeconds(0);
+      refreshProfile?.();
+      refreshHistory?.();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -56,7 +90,7 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
         <div>
           <p className="eyebrow mb-2">Mock Tests</p>
           <h1 className="h2 fw-bold mb-2">30-question software mock test</h1>
-          <p className="text-secondary mb-0">Each generated test contains 30 software interview questions and a 30-minute timer.</p>
+          <p className="text-secondary mb-0">Each generated test is balanced across DSA, aptitude, HR, and core subjects, with time set from the question count.</p>
         </div>
         <div className="mock-tests-hero-actions">
           <button className="btn btn-info" onClick={generateTest} disabled={loading}>{loading ? "Generating..." : "Generate Mock Test"}</button>
@@ -94,11 +128,11 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
           <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
             <div>
               <h2 className="h3 mb-2">{activeTest.title}</h2>
-              <p className="text-secondary mb-0">Answer each question and submit when ready.</p>
+              <p className="text-secondary mb-0">Answer each question and submit manually anytime, or let the test auto-submit when the timer reaches zero.</p>
             </div>
             <div className="mock-test-timer-card">
-              <span>Duration</span>
-              <strong>{formatTimer((activeTest.duration || 30) * 60)}</strong>
+              <span>Time Left</span>
+              <strong>{formatTimer(remainingSeconds)}</strong>
             </div>
           </div>
 
@@ -135,14 +169,14 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
             ))}
           </div>
 
-          <button className="btn btn-info mt-4" onClick={submitTest}>Submit Test</button>
+          <button className="btn btn-info mt-4" onClick={() => submitTest(false)} disabled={submitting}>{submitting ? "Submitting..." : "Submit Test"}</button>
         </div>
       ) : null}
 
       {result ? (
         <div className="glass-card p-4 mt-4">
           <p className="eyebrow mb-2">Latest Result</p>
-          <h2 className="h4 mb-3">Mock test submitted successfully</h2>
+          <h2 className="h4 mb-3">{result.autoSubmitted ? "Mock test auto-submitted when time ended" : "Mock test submitted successfully"}</h2>
           <div className="mock-test-result-grid mb-4">
             <div><span>Score</span><strong>{result.score}</strong></div>
             <div><span>Accuracy</span><strong>{result.accuracy}%</strong></div>

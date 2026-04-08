@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
 import api from "../api/client";
+import { buildDetailedSolution } from "../utils/answerHelpers";
 
 const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, targetField = "Software", loadQuestions }) => {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -83,6 +84,8 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     const nextIndex = currentIndex > 0 ? currentIndex - 1 : filteredQuestions.length - 1;
     setSelectedId(filteredQuestions[nextIndex]._id);
   };
+
+  const detailedSolution = question ? buildDetailedSolution(question, feedback?.correctAnswer || question.correctAnswer, feedback?.explanation || question.explanation) : "";
 
   return (
     <div className="container py-4 practice-pro-page">
@@ -178,6 +181,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                   <div className="mt-4 vstack gap-3">
                     <div className="answer-reveal-card"><span className="feedback-label">Your Answer</span><p className="mb-0">{String(answer || "No answer submitted")}</p></div>
                     <div className="answer-reveal-card"><span className="feedback-label">Correct Answer</span><p className="mb-0">{String(feedback.correctAnswer)}</p></div>
+                    <div className="answer-reveal-card"><span className="feedback-label">Detailed Solution</span><p className="mb-0">{detailedSolution}</p></div>
                     <div className="answer-reveal-card"><span className="feedback-label">Explanation</span><p className="mb-0">{feedback.explanation}</p></div>
                     {feedback.codeOutput ? <div className="terminal-panel"><p className="mb-2"><strong>Status:</strong> {feedback.codeStatus}</p><pre className="mb-0">{feedback.codeOutput}</pre></div> : null}
                   </div>

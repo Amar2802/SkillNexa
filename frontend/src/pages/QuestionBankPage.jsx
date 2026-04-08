@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
+import { buildDetailedSolution } from "../utils/answerHelpers";
 
 const PAGE_SIZE = 20;
 const typeTabs = [
@@ -127,6 +128,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
           const display = splitDisplay(question);
           const show = !!openAnswers[question._id];
           const codeEntries = Object.entries(question.starterCode || {}).filter(([, code]) => code);
+          const detailedSolution = buildDetailedSolution(question, question.correctAnswer, display.explanation);
 
           return (
             <div className="question-bank-stack-item" key={question._id}>
@@ -148,6 +150,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
                 {show ? (
                   <>
                     <div className="question-bank-answer mb-3"><strong>Suggested Answer:</strong> {String(question.correctAnswer)}</div>
+                    <div className="question-bank-explanation mb-3"><strong>Detailed Solution:</strong> {detailedSolution}</div>
                     {codeEntries.length ? (
                       <div className="mb-3">
                         <p className="fw-semibold mb-2">Starter Code</p>

@@ -5,7 +5,6 @@ import seedQuestions from "../data/seedQuestions.js";
 
 const SOFTWARE_FIELD = "Software";
 const DEFAULT_TOTAL_QUESTIONS = 30;
-const DEFAULT_DURATION = 30;
 const DEFAULT_CATEGORIES = ["DSA", "Aptitude", "HR", "Core Subjects"];
 
 const ensureSeededQuestions = async () => {
@@ -24,6 +23,11 @@ const buildDistribution = (categories, totalQuestions) => {
     category,
     count: baseCount + (index < remainder ? 1 : 0)
   }));
+};
+
+const computeDurationMinutes = (questionCount) => {
+  const safeCount = Math.max(1, Number(questionCount) || DEFAULT_TOTAL_QUESTIONS);
+  return Math.max(15, Math.ceil(safeCount));
 };
 
 const evaluateSubmission = (question, submittedAnswer) => {
@@ -50,29 +54,31 @@ export const getTests = async (req, res) => {
 export const createTest = async (req, res) => {
   await ensureSeededQuestions();
 
+  const requestedTotal = Math.max(Number(req.body.totalQuestions) || DEFAULT_TOTAL_QUESTIONS, DEFAULT_CATEGORIES.length);
   const categories = Array.isArray(req.body.categories) && req.body.categories.length ? req.body.categories : DEFAULT_CATEGORIES;
-  const distribution = buildDistribution(categories, req.body.totalQuestions || DEFAULT_TOTAL_QUESTIONS);
-  const sections = [];
+  const distribution = buildDistribution(categories, requestedTotal);
 
-  for (const item of distribution) {
+  const sectionRecords = await Promise.all(distribution.map(async (item) => {
     const questions = await Question.aggregate([
       { $match: { field: SOFTWARE_FIELD, category: item.category } },
       { $sample: { size: item.count } }
     ]);
 
-    sections.push({
+    return {
       name: `${item.category} Section`,
       category: item.category,
       questions: questions.map((question) => question._id)
-    });
-  }
+    };
+  }));
+
+  const duration = computeDurationMinutes(requestedTotal);
 
   const test = await Test.create({
     title: "Software Interview Mock Test",
     description: "A balanced mock test covering DSA, aptitude, HR, and core subjects.",
-    duration: DEFAULT_DURATION,
+    duration,
     targetField: SOFTWARE_FIELD,
-    sections,
+    sections: sectionRecords,
     createdBy: req.user._id
   });
 
