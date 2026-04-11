@@ -24,7 +24,7 @@ const splitDisplay = (question) => {
   };
 };
 
-const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software" }) => {
+const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software", bookmarks = [], refreshBookmarks }) => {
   const location = useLocation();
   const loadMoreRef = useRef(null);
   const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
@@ -34,8 +34,10 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [openAnswers, setOpenAnswers] = useState({});
+  const [bookmarkLoadingId, setBookmarkLoadingId] = useState("");
 
   const sourceQuestions = questions.length ? questions : items;
+  const bookmarkedIds = useMemo(() => new Set((bookmarks || []).map((item) => item._id)), [bookmarks]);
   const filterOptions = useMemo(() => ({
     category: softwareCategoryOptions,
     difficulty: [...new Set(sourceQuestions.map((question) => question.difficulty).filter(Boolean))].sort(),
@@ -92,6 +94,16 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       setPage(nextPage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleBookmark = async (questionId) => {
+    try {
+      setBookmarkLoadingId(questionId);
+      await api.post(`/users/bookmarks/${questionId}`, {}, { timeout: 25000 });
+      await refreshBookmarks?.();
+    } finally {
+      setBookmarkLoadingId("");
     }
   };
 
@@ -163,6 +175,8 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
           const show = !!openAnswers[question._id];
           const codeEntries = Object.entries(question.starterCode || {}).filter(([, code]) => code);
           const detailedSolution = buildDetailedSolution(question, question.correctAnswer, display.explanation);
+          const isBookmarked = bookmarkedIds.has(question._id);
+          const isSavingBookmark = bookmarkLoadingId === question._id;
 
           return (
             <div className="question-bank-stack-item" key={question._id}>
@@ -180,7 +194,10 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
                   <span className="badge text-bg-dark">{question.company}</span>
                   <span className="badge text-bg-info">{question.type}</span>
                 </div>
-                <button className="btn btn-outline-light mb-3" onClick={() => setOpenAnswers((current) => ({ ...current, [question._id]: !current[question._id] }))}>{show ? "Hide Answers" : "Show Answers"}</button>
+                <div className="d-flex gap-2 flex-wrap mb-3">
+                  <button className="btn btn-outline-light" onClick={() => setOpenAnswers((current) => ({ ...current, [question._id]: !current[question._id] }))}>{show ? "Hide Answers" : "Show Answers"}</button>
+                  <button className={`btn ${isBookmarked ? "btn-info" : "btn-outline-light"}`} disabled={isSavingBookmark} onClick={() => toggleBookmark(question._id)}>{isSavingBookmark ? "Saving..." : isBookmarked ? "Bookmarked" : "Add to Bookmarks"}</button>
+                </div>
                 {show ? (
                   <>
                     <div className="question-bank-answer mb-3"><strong>Suggested Answer:</strong> {String(question.correctAnswer)}</div>

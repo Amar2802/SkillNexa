@@ -110,6 +110,7 @@ export default function App() {
       try {
         setLoadingApp(true);
         await refreshProfile();
+        await refreshBookmarks();
       } finally {
         if (active) setLoadingApp(false);
       }
@@ -138,7 +139,7 @@ export default function App() {
         <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="login" onAuth={applyAuth} />} />
         <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="signup" onAuth={applyAuth} />} />
         <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user} questions={questions} recommendations={dashboardRecommendations} history={history} loading={loadingApp} /></ProtectedRoute>} />
-        <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} loadQuestions={loadQuestions} defaultField={SOFTWARE_FIELD} /></ProtectedRoute>} />
+        <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} loadQuestions={loadQuestions} defaultField={SOFTWARE_FIELD} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} /></ProtectedRoute>} />
         <Route path="/practice" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} /></ProtectedRoute>} />
         <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} refreshTests={refreshTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} questions={questions} /></ProtectedRoute>} />
         <Route path="/review-mistakes" element={<ProtectedRoute user={user}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
@@ -157,7 +158,7 @@ export default function App() {
         <div className="app-shell-orb orb-two" />
         <div className="app-shell-grid" />
       </div>
-      {user && <Navbar user={user} profile={profile} logout={logout} theme={theme} setTheme={setTheme} />}
+      {user && <Navbar user={user} profile={profile} theme={theme} setTheme={setTheme} />}
       <main className={user ? "app-content" : "auth-content"}>{shell}</main>
     </div>
   );
