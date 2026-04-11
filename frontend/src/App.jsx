@@ -151,7 +151,12 @@ export default function App() {
   );
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${user ? "app-shell-user" : "app-shell-auth"}`}>
+      <div className="app-shell-backdrop">
+        <div className="app-shell-orb orb-one" />
+        <div className="app-shell-orb orb-two" />
+        <div className="app-shell-grid" />
+      </div>
       {user && <Navbar user={user} profile={profile} logout={logout} theme={theme} setTheme={setTheme} />}
       <main className={user ? "app-content" : "auth-content"}>{shell}</main>
     </div>
