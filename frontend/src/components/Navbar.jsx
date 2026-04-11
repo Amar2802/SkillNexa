@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { NavLink, Link, useLocation } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 
 const AvatarChip = ({ user }) => {
@@ -27,82 +26,32 @@ const Brand = () => (
   </span>
 );
 
-const Navbar = ({ user, profile, logout, theme, setTheme }) => {
-  const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname]);
-
+const Navbar = ({ user, profile, theme, setTheme }) => {
   if (!user) {
     return null;
   }
 
   const currentUser = profile || user;
   const navItems = [
-    { label: "Dashboard", path: "/dashboard", hint: "Overview and progress" },
-    { label: "Question Bank", path: "/questions", hint: "Scroll through software questions" },
-    { label: "Practice", path: "/practice", hint: "One-by-one focused training" },
-    { label: "Mock Tests", path: "/mock-tests", hint: "Timed placement-style rounds" },
-    { label: "Review Mistakes", path: "/review-mistakes", hint: "Turn errors into revision" },
-    { label: "AI Interviewer", path: "/ai-interviewer", hint: "Round-based interview simulation" },
-    { label: "Bookmarks", path: "/bookmarks", hint: "Saved questions to revisit" },
-    { label: "History", path: "/history", hint: "Past attempts and results" },
-    { label: "Profile", path: "/profile", hint: "Manage your preparation profile" }
+    { label: "Dashboard", path: "/dashboard" },
+    { label: "Question Bank", path: "/questions" },
+    { label: "Practice", path: "/practice" },
+    { label: "Mock Tests", path: "/mock-tests" },
+    { label: "Review Mistakes", path: "/review-mistakes" },
+    { label: "AI Interviewer", path: "/ai-interviewer" },
+    { label: "Bookmarks", path: "/bookmarks" },
+    { label: "History", path: "/history" },
+    { label: "Profile", path: "/profile" }
   ];
 
   return (
-    <>
-      <div
-        className={`sidebar-overlay ${sidebarOpen ? "active" : ""}`}
-        onClick={() => setSidebarOpen(false)}
-        aria-hidden={!sidebarOpen}
-      />
-      <aside className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`}>
-        <div className="sidebar-scroll-area">
-          <div className="sidebar-top-block shell-panel">
-            <Link className="sidebar-brand" to="/dashboard"><Brand /></Link>
-            <p className="sidebar-subtitle">Prepare smarter with coding rounds, mock tests, analytics, and AI-guided practice.</p>
-            <div className="sidebar-status-pill">
-              <span className="status-dot" />
-              Software Prep Active
-            </div>
-          </div>
-          <nav className="sidebar-nav">
-            {navItems.map((item) => (
-              <NavLink key={item.path} className="sidebar-link" to={item.path} onClick={() => setSidebarOpen(false)}>
-                <span className="sidebar-link-copy">
-                  <strong>{item.label}</strong>
-                  <small>{item.hint}</small>
-                </span>
-              </NavLink>
-            ))}
-          </nav>
-          <div className="sidebar-footer">
-            <button className="btn btn-info w-100 shell-logout-btn" onClick={logout}>Logout</button>
-          </div>
-        </div>
-      </aside>
-      <header className="app-topbar">
-        <div className="topbar-left-group">
-          <button
-            type="button"
-            className="sidebar-toggle"
-            onClick={() => setSidebarOpen((current) => !current)}
-            aria-label="Toggle navigation"
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-          <div className="topbar-intro shell-panel">
+    <header className="app-topbar topbar-horizontal-shell">
+      <div className="topbar-main-row">
+        <div className="topbar-brand-row shell-panel">
+          <Link className="sidebar-brand topbar-brand-link" to="/dashboard"><Brand /></Link>
+          <div className="topbar-title-block">
             <p className="eyebrow mb-1">Interview Command Center</p>
-            <h2 className="topbar-title mb-1">Build interview confidence with structured daily momentum.</h2>
-            <div className="topbar-meta-row">
-              <span className="topbar-meta-pill">Software placement prep</span>
-              <span className="topbar-meta-pill">Responsive workspace</span>
-            </div>
+            <h2 className="topbar-title mb-0">Build interview confidence with structured daily momentum.</h2>
           </div>
         </div>
         <div className="topbar-actions">
@@ -116,8 +65,17 @@ const Navbar = ({ user, profile, logout, theme, setTheme }) => {
             <AvatarChip user={currentUser} />
           </Link>
         </div>
-      </header>
-    </>
+      </div>
+      <nav className="topbar-nav-shell shell-panel">
+        <div className="topbar-nav-scroll">
+          {navItems.map((item) => (
+            <NavLink key={item.path} className="topbar-nav-link" to={item.path}>
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    </header>
   );
 };
 
