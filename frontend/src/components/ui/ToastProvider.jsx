@@ -3,12 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const ToastContext = createContext(null);
 
-const palette = {
-  success: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  error: "border-rose-200 bg-rose-50 text-rose-900",
-  info: "border-brand-200 bg-brand-50 text-brand-900"
-};
-
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
@@ -19,7 +13,7 @@ export const ToastProvider = ({ children }) => {
   const showToast = useCallback((message, tone = "info") => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setToasts((current) => [...current, { id, message, tone }]);
-    window.setTimeout(() => dismissToast(id), 3500);
+    window.setTimeout(() => dismissToast(id), 3200);
   }, [dismissToast]);
 
   const value = useMemo(() => ({ showToast, dismissToast }), [dismissToast, showToast]);
@@ -27,24 +21,19 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[1200] flex w-full max-w-sm flex-col gap-3">
+      <div className="snx-toast-stack">
         <AnimatePresence>
           {toasts.map((toast) => (
             <motion.div
               key={toast.id}
-              initial={{ opacity: 0, y: -14, scale: 0.96 }}
+              initial={{ opacity: 0, y: -12, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.96 }}
-              className={`pointer-events-auto rounded-2xl border px-4 py-3 shadow-xl ${palette[toast.tone] || palette.info}`}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              className={`snx-toast snx-toast-${toast.tone}`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-medium leading-6">{toast.message}</p>
-                <button
-                  type="button"
-                  onClick={() => dismissToast(toast.id)}
-                  className="rounded-full p-1 text-current/70 transition hover:bg-black/5 hover:text-current"
-                  aria-label="Dismiss notification"
-                >
+              <div className="d-flex justify-content-between align-items-start gap-3">
+                <p className="mb-0">{toast.message}</p>
+                <button type="button" className="snx-toast-close" onClick={() => dismissToast(toast.id)} aria-label="Dismiss notification">
                   x
                 </button>
               </div>

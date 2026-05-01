@@ -1,16 +1,16 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import api from "../api/client";
 import { useToast } from "../components/ui/ToastProvider";
 
 const featureCards = [
-  { title: "AI mock interviews", copy: "Generate realistic, role-based interview rounds with smart follow-up prompts." },
-  { title: "Progress analytics", copy: "Track scores, consistency, and topic readiness in one placement-ready dashboard." },
-  { title: "Question workflow", copy: "Move from discovery to practice to review without losing momentum." }
+  { title: "AI mock interviews", copy: "Generate realistic rounds tailored to the role and skill set you want to target." },
+  { title: "Progress analytics", copy: "Track your scores, consistency, topic health, and readiness from one dashboard." },
+  { title: "Practice workflows", copy: "Move from questions to practice to review without losing your flow." }
 ];
 
 const ForgotPasswordPanel = ({ onBack }) => {
+  const { showToast } = useToast();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -18,7 +18,6 @@ const ForgotPasswordPanel = ({ onBack }) => {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { showToast } = useToast();
 
   const sendOtpRequest = async () => {
     try {
@@ -37,11 +36,6 @@ const ForgotPasswordPanel = ({ onBack }) => {
     }
   };
 
-  const requestOtp = async (event) => {
-    event.preventDefault();
-    await sendOtpRequest();
-  };
-
   const resetPassword = async (event) => {
     event.preventDefault();
     try {
@@ -50,7 +44,7 @@ const ForgotPasswordPanel = ({ onBack }) => {
       const { data } = await api.post("/auth/reset-password", { email, otp, password });
       setStatus(data.message || "Password reset successful.");
       setStep(3);
-      showToast("Password reset successful. You can sign in now.", "success");
+      showToast("Password updated successfully.", "success");
     } catch (err) {
       const message = err.response?.data?.message || "Unable to reset password.";
       setError(message);
@@ -61,61 +55,48 @@ const ForgotPasswordPanel = ({ onBack }) => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 12 }}
-      className="snx-panel-strong mt-6 p-6"
-    >
-      <div className="mb-5 flex items-start justify-between gap-3">
+    <div className="snx-surface-card mt-4">
+      <div className="snx-section-head">
         <div>
-          <span className="snx-badge">Password Recovery</span>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Recover your account securely</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Use email OTP verification to set a new password and get back into your workspace.</p>
+          <span className="snx-kicker">Password Recovery</span>
+          <h2>Reset your password securely</h2>
         </div>
-        <button type="button" className="snx-button-secondary px-4 py-2 text-xs" onClick={onBack}>Back</button>
+        <button type="button" className="btn snx-btn-secondary" onClick={onBack}>Back</button>
       </div>
 
       {step === 1 ? (
-        <form onSubmit={requestOtp} className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Registered email</label>
-            <input type="email" className="snx-input" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-          {status ? <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-700">{status}</div> : null}
-          <button className="snx-button-primary w-full" disabled={loading}>{loading ? "Sending OTP..." : "Send OTP"}</button>
-        </form>
+        <div>
+          <label className="form-label">Registered Email</label>
+          <input type="email" className="form-control mb-3" value={email} onChange={(e) => setEmail(e.target.value)} />
+          {error ? <div className="alert alert-danger py-2">{error}</div> : null}
+          <button className="btn snx-btn-primary w-100" onClick={sendOtpRequest} disabled={loading}>
+            {loading ? "Sending OTP..." : "Send OTP"}
+          </button>
+        </div>
       ) : null}
 
       {step === 2 ? (
-        <form onSubmit={resetPassword} className="space-y-4">
-          <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-700">
-            {status || "OTP sent to your email address."}
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">OTP</label>
-            <input type="text" className="snx-input" value={otp} maxLength={6} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} required />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">New password</label>
-            <input type="password" className="snx-input" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
-          </div>
-          {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button className="snx-button-primary flex-1" disabled={loading}>{loading ? "Resetting..." : "Reset password"}</button>
-            <button type="button" className="snx-button-secondary flex-1" disabled={loading} onClick={sendOtpRequest}>Resend OTP</button>
+        <form onSubmit={resetPassword}>
+          <div className="alert alert-info py-2">{status}</div>
+          <label className="form-label">OTP</label>
+          <input type="text" className="form-control mb-3" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} maxLength={6} required />
+          <label className="form-label">New Password</label>
+          <input type="password" className="form-control mb-3" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
+          {error ? <div className="alert alert-danger py-2">{error}</div> : null}
+          <div className="d-flex flex-wrap gap-2">
+            <button className="btn snx-btn-primary flex-grow-1" disabled={loading}>{loading ? "Resetting..." : "Reset Password"}</button>
+            <button type="button" className="btn snx-btn-secondary" onClick={sendOtpRequest} disabled={loading}>Resend</button>
           </div>
         </form>
       ) : null}
 
       {step === 3 ? (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{status}</div>
-          <button type="button" className="snx-button-primary w-full" onClick={onBack}>Return to login</button>
+        <div>
+          <div className="alert alert-success py-2">{status}</div>
+          <button type="button" className="btn snx-btn-primary w-100" onClick={onBack}>Return to Login</button>
         </div>
       ) : null}
-    </motion.div>
+    </div>
   );
 };
 
@@ -128,12 +109,6 @@ const AuthPage = ({ mode, onAuth }) => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const isLogin = mode === "login";
 
-  const stats = useMemo(() => [
-    { label: "Interview paths", value: "12+" },
-    { label: "AI evaluations", value: "Instant" },
-    { label: "Practice loops", value: "Unlimited" }
-  ], []);
-
   const submit = async (event) => {
     event.preventDefault();
     try {
@@ -143,11 +118,7 @@ const AuthPage = ({ mode, onAuth }) => {
         isLogin ? "/auth/login" : "/auth/signup",
         isLogin
           ? { email: form.email, password: form.password }
-          : {
-              name: form.name,
-              email: form.email,
-              password: form.password
-            }
+          : { name: form.name, email: form.email, password: form.password }
       );
       onAuth(data);
       showToast(isLogin ? "Welcome back to SkillNexa." : "Account created successfully.", "success");
@@ -162,130 +133,99 @@ const AuthPage = ({ mode, onAuth }) => {
   };
 
   return (
-    <div className="min-h-screen px-4 py-6 md:px-6">
-      <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-7xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <motion.section
-          initial={{ opacity: 0, x: -18 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="snx-panel-strong relative overflow-hidden p-8 md:p-10"
-        >
-          <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-brand-200/30 blur-3xl" />
-          <div className="absolute bottom-0 left-10 h-56 w-56 rounded-full bg-emerald-200/30 blur-3xl" />
-          <div className="relative z-10 flex h-full flex-col">
-            <span className="snx-badge mb-6 w-fit">AI Interview Preparation Platform</span>
-            <h1 className="snx-title max-w-2xl">
-              Turn interview preparation into a guided, AI-powered workflow employers will notice.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
-              SkillNexa helps you generate interview rounds, practice company-style questions, review mistakes, and build confidence with fast feedback and a clean placement-ready experience.
+    <div className="container-fluid py-4 snx-page-shell">
+      <div className="row g-4 align-items-stretch">
+        <div className="col-xl-7">
+          <div className="snx-hero-card h-100">
+            <span className="snx-kicker">AI Interview Preparation Platform</span>
+            <h1 className="snx-page-title mt-3">Prepare for interviews with a cleaner, smarter workflow.</h1>
+            <p className="snx-page-subtitle">
+              SkillNexa helps you practice questions, run mock tests, and generate AI interview rounds from one product-style dashboard.
             </p>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {stats.map((item) => (
-                <div key={item.label} className="snx-stat-card">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{item.label}</p>
-                  <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{item.value}</p>
+            <div className="row g-3 mt-2">
+              {featureCards.map((card) => (
+                <div className="col-md-4" key={card.title}>
+                  <div className="snx-feature-card h-100">
+                    <h3>{card.title}</h3>
+                    <p>{card.copy}</p>
+                  </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {featureCards.map((card, index) => (
-                <motion.div
-                  key={card.title}
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.08 * index }}
-                  whileHover={{ y: -4 }}
-                  className="snx-panel p-5"
-                >
-                  <h3 className="text-base font-semibold text-slate-950">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{card.copy}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="mt-auto pt-8">
-              <div className="snx-panel flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-950">Built for portfolio, placement, and interview confidence</p>
-                  <p className="mt-1 text-sm text-slate-500">A modern practice environment that feels like a real AI product, not just a form screen.</p>
+            <div className="row g-3 mt-3">
+              <div className="col-sm-4">
+                <div className="snx-stat-card compact">
+                  <span>Interview Paths</span>
+                  <strong>12+</strong>
                 </div>
-                <span className="snx-badge">Modern SaaS UX</span>
+              </div>
+              <div className="col-sm-4">
+                <div className="snx-stat-card compact">
+                  <span>AI Feedback</span>
+                  <strong>Instant</strong>
+                </div>
+              </div>
+              <div className="col-sm-4">
+                <div className="snx-stat-card compact">
+                  <span>Practice Loops</span>
+                  <strong>Unlimited</strong>
+                </div>
               </div>
             </div>
           </div>
-        </motion.section>
+        </div>
 
-        <motion.section
-          initial={{ opacity: 0, x: 18 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
-          className="flex flex-col justify-center"
-        >
-          <div className="snx-panel-strong p-6 md:p-8">
-            <div className="mb-6">
-              <span className="snx-badge">{isLogin ? "Welcome Back" : "Create Account"}</span>
-              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-                {isLogin ? "Sign in to continue your interview prep" : "Start your AI-powered prep journey"}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                {isLogin
-                  ? "Access your dashboard, mock tests, saved questions, and AI interviewer."
-                  : "Create your workspace and unlock guided practice, analytics, and interview generation."}
-              </p>
+        <div className="col-xl-5">
+          <div className="snx-surface-card h-100">
+            <div className="snx-section-head">
+              <div>
+                <span className="snx-kicker">{isLogin ? "Welcome Back" : "Create Account"}</span>
+                <h2>{isLogin ? "Sign in to continue your prep" : "Start your interview practice journey"}</h2>
+              </div>
             </div>
 
-            <form onSubmit={submit} className="space-y-4">
+            <form onSubmit={submit}>
               {!isLogin ? (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Full name</label>
-                  <input className="snx-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-                </div>
+                <>
+                  <label className="form-label">Full Name</label>
+                  <input className="form-control mb-3" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </>
               ) : null}
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Email address</label>
-                <input type="email" className="snx-input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+
+              <label className="form-label">Email</label>
+              <input type="email" className="form-control mb-3" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+
+              <div className="d-flex justify-content-between align-items-center gap-2 mb-2">
+                <label className="form-label mb-0">Password</label>
+                {isLogin ? (
+                  <button type="button" className="btn btn-link p-0 snx-inline-link" onClick={() => setShowForgotPassword((current) => !current)}>
+                    Forgot password?
+                  </button>
+                ) : null}
               </div>
-              <div>
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <label className="block text-sm font-medium text-slate-700">Password</label>
-                  {isLogin ? (
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-brand-600 transition hover:text-brand-700"
-                      onClick={() => {
-                        setShowForgotPassword((current) => !current);
-                        setError("");
-                      }}
-                    >
-                      Forgot password?
-                    </button>
-                  ) : null}
-                </div>
-                <input type="password" className="snx-input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-              </div>
-              {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-              <button className="snx-button-primary w-full" disabled={loading}>
-                {loading ? (isLogin ? "Signing in..." : "Creating account...") : (isLogin ? "Sign in" : "Create account")}
+              <input type="password" className="form-control mb-3" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+
+              {error ? <div className="alert alert-danger py-2">{error}</div> : null}
+
+              <button className="btn snx-btn-primary w-100" disabled={loading}>
+                {loading ? (isLogin ? "Signing in..." : "Creating account...") : (isLogin ? "Sign In" : "Create Account")}
               </button>
             </form>
 
-            <p className="mt-5 text-sm text-slate-500">
+            <p className="mt-4 mb-0 text-secondary">
               {isLogin ? "New to SkillNexa?" : "Already have an account?"}{" "}
-              <Link to={isLogin ? "/signup" : "/login"} className="font-semibold text-brand-600 no-underline hover:text-brand-700">
+              <Link to={isLogin ? "/signup" : "/login"} className="snx-inline-link text-decoration-none">
                 {isLogin ? "Create an account" : "Sign in"}
               </Link>
             </p>
 
-            <AnimatePresence>
-              {isLogin && showForgotPassword ? (
-                <ForgotPasswordPanel onBack={() => setShowForgotPassword(false)} />
-              ) : null}
-            </AnimatePresence>
+            {isLogin && showForgotPassword ? (
+              <ForgotPasswordPanel onBack={() => setShowForgotPassword(false)} />
+            ) : null}
           </div>
-        </motion.section>
+        </div>
       </div>
     </div>
   );

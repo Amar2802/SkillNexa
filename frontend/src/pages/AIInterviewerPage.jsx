@@ -1,8 +1,5 @@
 import { useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import api from "../api/client";
-import InterviewStepPill from "../components/interview/InterviewStepPill";
-import TypingPulse from "../components/interview/TypingPulse";
 import { useToast } from "../components/ui/ToastProvider";
 
 const roundOptions = ["Full Loop", "Technical", "HR", "Mixed"];
@@ -17,13 +14,6 @@ const steps = [
   { id: 3, title: "Skills" },
   { id: 4, title: "Generate interview" }
 ];
-
-const metricCard = (label, value) => (
-  <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4">
-    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{label}</p>
-    <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
-  </div>
-);
 
 const AIInterviewerPage = () => {
   const { showToast } = useToast();
@@ -98,286 +88,327 @@ const AIInterviewerPage = () => {
     }
   };
 
-  const strengths = evaluation?.strengths || [];
-  const improvements = evaluation?.improvements || [];
-
   return (
-    <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="px-4 py-6 md:px-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="snx-panel-strong p-6 md:p-8">
-          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <span className="snx-badge">AI Interview Generator</span>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 md:text-5xl">
-                Build a realistic interview loop in four guided steps.
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-500">
-                Set your role, define your experience level, choose the right skill focus, and generate an AI-powered interview flow that feels production-ready.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-              {metricCard("Role", config.role)}
-              {metricCard("Experience", config.experienceLevel)}
-              {metricCard("Skill Focus", config.skills.length)}
-            </div>
+    <div className="container-fluid py-4 snx-page-shell">
+      <div className="snx-hero-card mb-4">
+        <div className="row g-4 align-items-center">
+          <div className="col-xl-8">
+            <span className="snx-kicker">AI Interview Generator</span>
+            <h1 className="snx-page-title mt-3">Create your interview loop in four guided steps</h1>
+            <p className="snx-page-subtitle mb-0">
+              Set your role, experience, and skill focus, then generate a realistic AI interview round with structured feedback.
+            </p>
           </div>
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-          <div className="space-y-6">
-            <div className="snx-panel-strong p-6">
-              <span className="snx-badge">Step-Based Flow</span>
-              <div className="mt-5 space-y-3">
-                {steps.map((item) => (
-                  <InterviewStepPill key={item.id} index={item.id} title={item.title} active={step === item.id} complete={step > item.id} />
-                ))}
-              </div>
-            </div>
-
-            <div className="snx-panel-strong p-6">
-              <span className="snx-badge">Interview Blueprint</span>
-              <div className="mt-5 space-y-3 text-sm text-slate-500">
-                <p><span className="font-semibold text-slate-900">Company:</span> {config.company}</p>
-                <p><span className="font-semibold text-slate-900">Flow:</span> {config.roundType}</p>
-                <p><span className="font-semibold text-slate-900">Questions:</span> {config.count}</p>
-                <p><span className="font-semibold text-slate-900">Skills:</span> {config.skills.join(", ") || "Choose up to 6"}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="snx-panel-strong p-6 md:p-8">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="snx-badge">Conversational Setup</span>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Design your next AI interview round</h2>
-              </div>
-              <div className="text-sm font-medium text-slate-500">Step {step} of 4</div>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {step === 1 ? (
-                <motion.div key="step-1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="space-y-5">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Select your target role</label>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {roleOptions.map((role) => (
-                        <button key={role} type="button" onClick={() => setConfig((current) => ({ ...current, role }))} className={`rounded-3xl border px-4 py-4 text-left transition ${
-                          config.role === role ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-700 hover:border-brand-200"
-                        }`}>
-                          <p className="font-semibold">{role}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button className="snx-button-primary" onClick={() => setStep(2)}>Continue</button>
-                  </div>
-                </motion.div>
-              ) : null}
-
-              {step === 2 ? (
-                <motion.div key="step-2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="space-y-5">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Choose experience level</label>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {experienceOptions.map((level) => (
-                        <button key={level} type="button" onClick={() => setConfig((current) => ({ ...current, experienceLevel: level }))} className={`rounded-3xl border px-4 py-4 text-left transition ${
-                          config.experienceLevel === level ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-700 hover:border-brand-200"
-                        }`}>
-                          <p className="font-semibold">{level}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <button className="snx-button-secondary" onClick={() => setStep(1)}>Back</button>
-                    <button className="snx-button-primary" onClick={() => setStep(3)}>Continue</button>
-                  </div>
-                </motion.div>
-              ) : null}
-
-              {step === 3 ? (
-                <motion.div key="step-3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="space-y-5">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Choose up to 6 skill focus areas</label>
-                    <div className="flex flex-wrap gap-3">
-                      {skillOptions.map((skill) => (
-                        <button key={skill} type="button" onClick={() => toggleSkill(skill)} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                          config.skills.includes(skill) ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-600 hover:border-brand-200"
-                        }`}>
-                          {skill}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <button className="snx-button-secondary" onClick={() => setStep(2)}>Back</button>
-                    <button className="snx-button-primary" onClick={() => setStep(4)}>Continue</button>
-                  </div>
-                </motion.div>
-              ) : null}
-
-              {step === 4 ? (
-                <motion.div key="step-4" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="space-y-5">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">Target company</label>
-                      <select className="snx-select" value={config.company} onChange={(event) => setConfig((current) => ({ ...current, company: event.target.value }))}>
-                        {companyOptions.map((company) => <option key={company} value={company}>{company}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">Interview flow</label>
-                      <select className="snx-select" value={config.roundType} onChange={(event) => setConfig((current) => ({ ...current, roundType: event.target.value }))}>
-                        {roundOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">Question count</label>
-                      <select className="snx-select" value={config.count} onChange={(event) => setConfig((current) => ({ ...current, count: Number(event.target.value) }))}>
-                        {[3, 4, 5, 6, 7].map((count) => <option key={count} value={count}>{count}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  {loading ? <TypingPulse text="Generating your interview..." /> : null}
-
-                  <div className="flex justify-between">
-                    <button className="snx-button-secondary" onClick={() => setStep(3)}>Back</button>
-                    <button className="snx-button-primary" onClick={generateInterview} disabled={loading}>
-                      {loading ? "Generating..." : "Generate Interview"}
-                    </button>
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>
-        </section>
-
-        {interviewQuestions.length ? (
-          <section className="snx-panel-strong p-6">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="snx-badge">Interview Plan</span>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Your AI-generated round sequence</h2>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {roundSummary.map((round, index) => (
-                  <span key={`${round}-${index}`} className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                    index === currentIndex ? "bg-brand-500 text-white" : "border border-slate-200 bg-white text-slate-600"
-                  }`}>
-                    {index + 1}. {round}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {currentQuestion ? (
-              <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                <div className="space-y-5">
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
-                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">Question {currentIndex + 1} of {interviewQuestions.length}</p>
-                        <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{currentQuestion.round}</h3>
-                        <p className="mt-1 text-sm text-slate-500">{currentQuestion.category}</p>
-                      </div>
-                      <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600">{currentQuestion.difficulty}</span>
-                    </div>
-                    <p className="text-base leading-7 text-slate-700">{currentQuestion.question}</p>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Intent</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{currentQuestion.intent}</p>
-                    </div>
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Evaluation Focus</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{currentQuestion.evaluationFocus}</p>
-                    </div>
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Follow-Up Hint</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{currentQuestion.followUpHint}</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Your response</label>
-                    <textarea className="snx-input min-h-[220px] resize-none" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Write your answer here as if you are speaking to a real interviewer..." />
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    <button className="snx-button-primary" onClick={evaluateAnswer} disabled={evaluating}>
-                      {evaluating ? "Evaluating..." : "Evaluate Answer"}
-                    </button>
-                    <button className="snx-button-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); setEvaluation(null); }} disabled={currentIndex <= 0}>
-                      Previous Question
-                    </button>
-                    <button className="snx-button-secondary" onClick={() => { setCurrentIndex((index) => Math.min(index + 1, interviewQuestions.length - 1)); setAnswer(""); setEvaluation(null); }} disabled={currentIndex >= interviewQuestions.length - 1}>
-                      Next Question
-                    </button>
-                  </div>
+          <div className="col-xl-4">
+            <div className="row g-3">
+              <div className="col-sm-4 col-xl-12">
+                <div className="snx-highlight-card primary">
+                  <span>Role</span>
+                  <strong>{config.role}</strong>
+                  <small>Selected interview target</small>
                 </div>
+              </div>
+              <div className="col-sm-4 col-xl-12">
+                <div className="snx-highlight-card success">
+                  <span>Experience</span>
+                  <strong>{config.experienceLevel}</strong>
+                  <small>Current answer style baseline</small>
+                </div>
+              </div>
+              <div className="col-sm-4 col-xl-12">
+                <div className="snx-highlight-card neutral">
+                  <span>Skills</span>
+                  <strong>{config.skills.length}</strong>
+                  <small>Chosen focus areas</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                <div className="space-y-4">
-                  <div className="snx-panel p-5">
-                    <span className="snx-badge">AI Feedback</span>
-                    {evaluation ? (
-                      <div className="mt-4 space-y-4">
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          {metricCard("Confidence", evaluation.confidenceScore)}
-                          {metricCard("Communication", evaluation.communicationScore)}
-                        </div>
-                        <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
-                          <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Feedback</p>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">{evaluation.feedback}</p>
-                        </div>
-                        <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
-                          <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Ideal Answer</p>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">{evaluation.idealAnswer}</p>
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
-                            <p className="text-xs uppercase tracking-[0.24em] text-emerald-700">Strengths</p>
-                            <ul className="mt-3 space-y-2 text-sm text-emerald-900">
-                              {strengths.length ? strengths.map((item) => <li key={item}>• {item}</li>) : <li>• Clear response direction</li>}
-                            </ul>
-                          </div>
-                          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4">
-                            <p className="text-xs uppercase tracking-[0.24em] text-amber-700">Improvements</p>
-                            <ul className="mt-3 space-y-2 text-sm text-amber-900">
-                              {improvements.length ? improvements.map((item) => <li key={item}>• {item}</li>) : <li>• Add a stronger example</li>}
-                            </ul>
-                          </div>
-                        </div>
-                        <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                          <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Follow-Up Question</p>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">{evaluation.followUpQuestion}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-4 rounded-3xl border border-dashed border-slate-300 bg-slate-50/60 p-5">
-                        <p className="text-sm font-semibold text-slate-900">No feedback yet</p>
-                        <p className="mt-2 text-sm leading-6 text-slate-500">Submit your answer to see AI scoring, strengths, improvements, and the ideal answer path.</p>
-                      </div>
-                    )}
-                  </div>
+      <div className="row g-4 mb-4">
+        <div className="col-xl-4">
+          <div className="snx-surface-card h-100">
+            <div className="snx-section-head">
+              <div>
+                <span className="snx-kicker">Step Flow</span>
+                <h2>Interview setup</h2>
+              </div>
+            </div>
+            <div className="snx-step-list">
+              {steps.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`snx-step-item ${step === item.id ? "active" : ""} ${step > item.id ? "complete" : ""}`}
+                  onClick={() => setStep(item.id)}
+                >
+                  <span className="snx-step-index">{step > item.id ? "✓" : item.id}</span>
+                  <span>{item.title}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="snx-config-summary mt-4">
+              <div><strong>Company:</strong> {config.company}</div>
+              <div><strong>Flow:</strong> {config.roundType}</div>
+              <div><strong>Questions:</strong> {config.count}</div>
+              <div><strong>Skills:</strong> {config.skills.join(", ")}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xl-8">
+          <div className="snx-surface-card h-100">
+            <div className="snx-section-head">
+              <div>
+                <span className="snx-kicker">Conversational Setup</span>
+                <h2>Step {step} of 4</h2>
+              </div>
+            </div>
+
+            {step === 1 ? (
+              <div>
+                <label className="form-label">Select your target role</label>
+                <div className="row g-3">
+                  {roleOptions.map((role) => (
+                    <div className="col-md-6" key={role}>
+                      <button type="button" className={`snx-select-card ${config.role === role ? "active" : ""}`} onClick={() => setConfig((current) => ({ ...current, role }))}>
+                        {role}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : null}
-          </section>
-        ) : (
-          <section className="snx-panel-strong border-dashed p-10 text-center">
-            <p className="text-lg font-semibold text-slate-950">No interviews yet</p>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              Complete the four-step setup and generate an interview to unlock question flow, AI evaluation, and follow-up guidance.
-            </p>
-            <button className="snx-button-primary mt-6" onClick={() => setStep(1)}>Start Interview Setup</button>
-          </section>
-        )}
+
+            {step === 2 ? (
+              <div>
+                <label className="form-label">Choose experience level</label>
+                <div className="row g-3">
+                  {experienceOptions.map((level) => (
+                    <div className="col-md-6" key={level}>
+                      <button type="button" className={`snx-select-card ${config.experienceLevel === level ? "active" : ""}`} onClick={() => setConfig((current) => ({ ...current, experienceLevel: level }))}>
+                        {level}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div>
+                <label className="form-label">Choose up to 6 skill focus areas</label>
+                <div className="snx-chip-grid">
+                  {skillOptions.map((skill) => (
+                    <button key={skill} type="button" className={`snx-chip-button ${config.skills.includes(skill) ? "active" : ""}`} onClick={() => toggleSkill(skill)}>
+                      {skill}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {step === 4 ? (
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <label className="form-label">Company</label>
+                  <select className="form-select" value={config.company} onChange={(event) => setConfig((current) => ({ ...current, company: event.target.value }))}>
+                    {companyOptions.map((company) => <option key={company} value={company}>{company}</option>)}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label">Interview Flow</label>
+                  <select className="form-select" value={config.roundType} onChange={(event) => setConfig((current) => ({ ...current, roundType: event.target.value }))}>
+                    {roundOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label">Question Count</label>
+                  <select className="form-select" value={config.count} onChange={(event) => setConfig((current) => ({ ...current, count: Number(event.target.value) }))}>
+                    {[3, 4, 5, 6, 7].map((count) => <option key={count} value={count}>{count}</option>)}
+                  </select>
+                </div>
+              </div>
+            ) : null}
+
+            {loading ? (
+              <div className="snx-generating-box mt-4">
+                <div className="snx-generating-dots">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <p className="mb-0">Generating your interview...</p>
+              </div>
+            ) : null}
+
+            <div className="d-flex flex-wrap justify-content-between gap-2 mt-4">
+              <button className="btn snx-btn-secondary" onClick={() => setStep((current) => Math.max(1, current - 1))} disabled={step === 1}>
+                Back
+              </button>
+              <div className="d-flex flex-wrap gap-2">
+                {step < 4 ? (
+                  <button className="btn snx-btn-primary" onClick={() => setStep((current) => Math.min(4, current + 1))}>
+                    Continue
+                  </button>
+                ) : (
+                  <button className="btn snx-btn-primary" onClick={generateInterview} disabled={loading}>
+                    {loading ? "Generating..." : "Generate Interview"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </motion.div>
+
+      {interviewQuestions.length ? (
+        <>
+          <div className="snx-surface-card mb-4">
+            <div className="snx-section-head">
+              <div>
+                <span className="snx-kicker">Interview Plan</span>
+                <h2>Your AI-generated round sequence</h2>
+              </div>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              {roundSummary.map((round, index) => (
+                <span key={`${round}-${index}`} className={`snx-round-pill ${index === currentIndex ? "active" : ""}`}>
+                  {index + 1}. {round}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {currentQuestion ? (
+            <div className="row g-4">
+              <div className="col-xl-7">
+                <div className="snx-surface-card h-100">
+                  <div className="snx-section-head">
+                    <div>
+                      <span className="snx-kicker">Question {currentIndex + 1} of {interviewQuestions.length}</span>
+                      <h2>{currentQuestion.round}</h2>
+                      <p className="text-secondary mb-0">{currentQuestion.category}</p>
+                    </div>
+                    <span className="badge text-bg-secondary">{currentQuestion.difficulty}</span>
+                  </div>
+
+                  <div className="snx-question-prompt mb-4">{currentQuestion.question}</div>
+
+                  <div className="row g-3 mb-4">
+                    <div className="col-md-4">
+                      <div className="snx-mini-detail">
+                        <span>Intent</span>
+                        <p>{currentQuestion.intent}</p>
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="snx-mini-detail">
+                        <span>Evaluation Focus</span>
+                        <p>{currentQuestion.evaluationFocus}</p>
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="snx-mini-detail">
+                        <span>Follow-up Hint</span>
+                        <p>{currentQuestion.followUpHint}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <textarea className="form-control mb-3" rows="8" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Write your answer as if you are speaking to a real interviewer..." />
+
+                  <div className="d-flex flex-wrap gap-2">
+                    <button className="btn snx-btn-primary" onClick={evaluateAnswer} disabled={evaluating}>
+                      {evaluating ? "Evaluating..." : "Evaluate Answer"}
+                    </button>
+                    <button className="btn snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); setEvaluation(null); }} disabled={currentIndex <= 0}>
+                      Previous
+                    </button>
+                    <button className="btn snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.min(index + 1, interviewQuestions.length - 1)); setAnswer(""); setEvaluation(null); }} disabled={currentIndex >= interviewQuestions.length - 1}>
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-xl-5">
+                <div className="snx-surface-card h-100">
+                  <div className="snx-section-head">
+                    <div>
+                      <span className="snx-kicker">AI Feedback</span>
+                      <h2>Evaluation Summary</h2>
+                    </div>
+                  </div>
+
+                  {evaluation ? (
+                    <>
+                      <div className="row g-3 mb-4">
+                        <div className="col-6">
+                          <div className="snx-stat-card compact">
+                            <span>Confidence</span>
+                            <strong>{evaluation.confidenceScore}</strong>
+                          </div>
+                        </div>
+                        <div className="col-6">
+                          <div className="snx-stat-card compact">
+                            <span>Communication</span>
+                            <strong>{evaluation.communicationScore}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="snx-feedback-block">
+                        <span>Feedback</span>
+                        <p>{evaluation.feedback}</p>
+                      </div>
+                      <div className="snx-feedback-block">
+                        <span>Ideal Answer</span>
+                        <p>{evaluation.idealAnswer}</p>
+                      </div>
+                      <div className="row g-3">
+                        <div className="col-md-6">
+                          <div className="snx-feedback-list strengths">
+                            <span>Strengths</span>
+                            <ul>
+                              {(evaluation.strengths || []).length ? evaluation.strengths.map((item) => <li key={item}>{item}</li>) : <li>Clear response direction</li>}
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="col-md-6">
+                          <div className="snx-feedback-list improvements">
+                            <span>Improvements</span>
+                            <ul>
+                              {(evaluation.improvements || []).length ? evaluation.improvements.map((item) => <li key={item}>{item}</li>) : <li>Add stronger examples</li>}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="snx-empty-state left">
+                      <h3>No feedback yet</h3>
+                      <p>Submit your answer to unlock AI scoring, strengths, and ideal answer guidance.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div className="snx-surface-card">
+          <div className="snx-empty-state">
+            <h3>No interviews yet</h3>
+            <p>Complete the 4-step setup and generate an interview to begin your AI practice round.</p>
+            <button className="btn snx-btn-primary" onClick={() => setStep(1)}>Start Setup</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

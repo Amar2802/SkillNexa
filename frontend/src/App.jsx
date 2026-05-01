@@ -24,7 +24,7 @@ ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, Lin
 const SOFTWARE_FIELD = "Software";
 
 const PageLoader = () => (
-  <div className="flex min-h-[50vh] items-center justify-center px-4">
+  <div className="snx-page-loader-wrap">
     <SectionLoader title="Loading SkillNexa..." subtitle="Preparing your software interview workspace" />
   </div>
 );
@@ -155,13 +155,13 @@ export default function App() {
   );
 
   return (
-    <div className={`app-shell snx-shell-bg min-h-screen ${user ? "app-shell-user" : "app-shell-auth"}`}>
+    <div className={`app-shell ${user ? "app-shell-user" : "app-shell-auth"}`}>
       {user && <Navbar user={user} profile={profile} theme={theme} setTheme={setTheme} />}
       <motion.main
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className={user ? "app-content" : "auth-content"}
+        className={user ? "app-content snx-main-shell" : "auth-content snx-main-shell"}
       >
         {shell}
       </motion.main>

@@ -5,7 +5,6 @@ import App from "./App";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { AuthProvider } from "./context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./tailwind.css";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(

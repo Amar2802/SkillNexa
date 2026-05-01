@@ -13,15 +13,13 @@ const MoonIcon = () => (
 
 const ThemeToggle = ({ theme, setTheme }) => (
   <button
-    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand-200 hover:bg-brand-50"
+    className="btn snx-theme-toggle w-100"
     type="button"
     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
     aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
     title={theme === "dark" ? "Light mode" : "Dark mode"}
   >
-    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-      {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-    </span>
+    <span className="snx-theme-toggle-icon">{theme === "dark" ? <SunIcon /> : <MoonIcon />}</span>
     <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
   </button>
 );
