@@ -109,8 +109,13 @@ export default function App() {
     const bootstrap = async () => {
       try {
         setLoadingApp(true);
-        await refreshProfile();
-        await refreshBookmarks();
+        await Promise.allSettled([
+          refreshProfile(),
+          refreshBookmarks(),
+          refreshHistory(),
+          refreshTests(),
+          loadQuestions()
+        ]);
       } finally {
         if (active) setLoadingApp(false);
       }

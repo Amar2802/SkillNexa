@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 18;
 const typeOptions = [
   { id: "all", label: "All Questions" },
-  { id: "Coding", label: "Coding Questions" },
-  { id: "Subjective", label: "Descriptive Questions" },
-  { id: "MCQ", label: "MCQ Questions" }
+  { id: "Coding", label: "Coding" },
+  { id: "Subjective", label: "Descriptive" },
+  { id: "MCQ", label: "MCQ" }
 ];
 const softwareCategoryOptions = ["DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
+const initialFilters = { category: "", difficulty: "", topic: "", company: "", search: "" };
 
 const splitDisplay = (question) => {
   const title = (question.title || "Untitled Question").replace(/\s+Practice Variant\s+\d+$/i, "").trim();
@@ -24,15 +25,42 @@ const splitDisplay = (question) => {
   };
 };
 
+const QuestionCardSkeleton = () => (
+  <div className="question-bank-stack-item">
+    <div className="glass-card p-4 question-skeleton-card">
+      <div className="placeholder-glow mb-3">
+        <span className="placeholder col-7" />
+      </div>
+      <div className="placeholder-glow mb-3">
+        <span className="placeholder col-12" />
+        <span className="placeholder col-10" />
+      </div>
+      <div className="d-flex gap-2 flex-wrap mb-3">
+        <span className="placeholder rounded-pill col-2" />
+        <span className="placeholder rounded-pill col-2" />
+        <span className="placeholder rounded-pill col-2" />
+      </div>
+      <div className="placeholder-glow">
+        <span className="placeholder col-4" />
+      </div>
+    </div>
+  </div>
+);
+
 const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software", bookmarks = [], refreshBookmarks }) => {
   const location = useLocation();
   const loadMoreRef = useRef(null);
-  const [filters, setFilters] = useState({ category: "", difficulty: "", topic: "", company: "" });
+  const requestRef = useRef(0);
+  const [filters, setFilters] = useState(initialFilters);
   const [type, setType] = useState("all");
+  const deferredFilters = useDeferredValue(filters);
+  const deferredType = useDeferredValue(type);
   const [page, setPage] = useState(1);
   const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [openAnswers, setOpenAnswers] = useState({});
   const [bookmarkLoadingId, setBookmarkLoadingId] = useState("");
 
@@ -45,6 +73,11 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
     company: [...new Set(sourceQuestions.map((question) => question.company).filter(Boolean))].sort()
   }), [sourceQuestions]);
   const hasMore = page < totalPages;
+
+  const activeFilterCount = useMemo(
+    () => Object.values(filters).filter(Boolean).length + (type !== "all" ? 1 : 0),
+    [filters, type]
+  );
 
   const buildApiFilters = (nextFilters) => {
     const normalized = { ...nextFilters };
@@ -63,8 +96,15 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
     return question.category === selectedCategory;
   };
 
-  const fetchQuestions = async (nextPage = 1, nextFilters = filters, nextType = type, append = false) => {
-    setLoading(true);
+  const fetchQuestions = async (nextPage = 1, nextFilters = deferredFilters, nextType = deferredType, append = false) => {
+    const requestId = requestRef.current + 1;
+    requestRef.current = requestId;
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
       const params = {
         field: defaultField,
@@ -78,23 +118,63 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       if (!params.difficulty) delete params.difficulty;
       if (!params.topic) delete params.topic;
       if (!params.company) delete params.company;
+      if (!params.search) delete params.search;
       if (nextType !== "all") params.type = nextType;
+
       const { data } = await api.get("/questions", { params, timeout: 25000 });
+      if (requestRef.current !== requestId) return;
+
       const nextItems = data.items || [];
-      setItems((current) => append ? [...current, ...nextItems.filter((item) => !current.some((existing) => existing._id === item._id))] : nextItems);
+      setItems((current) => (
+        append
+          ? [...current, ...nextItems.filter((item) => !current.some((existing) => existing._id === item._id))]
+          : nextItems
+      ));
+      setTotal(data.total || nextItems.length);
       setTotalPages(data.totalPages || 1);
       setPage(data.page || nextPage);
     } catch {
-      const fallback = await loadQuestions({ ...buildApiFilters(nextFilters), limit: PAGE_SIZE * nextPage, type: nextType !== "all" ? nextType : undefined }).catch(() => []);
+      const fallback = await loadQuestions({
+        ...buildApiFilters(nextFilters),
+        limit: PAGE_SIZE * nextPage,
+        type: nextType !== "all" ? nextType : undefined
+      }).catch(() => []);
+
+      if (requestRef.current !== requestId) return;
+
       const fallbackItems = (fallback || [])
         .filter((question) => matchesCategory(question, nextFilters.category))
-        .filter((question) => nextType === "all" || question.type === nextType);
+        .filter((question) => !nextFilters.difficulty || question.difficulty === nextFilters.difficulty)
+        .filter((question) => !nextFilters.topic || String(question.topic || "").toLowerCase().includes(nextFilters.topic.toLowerCase()))
+        .filter((question) => !nextFilters.company || String(question.company || "").toLowerCase().includes(nextFilters.company.toLowerCase()))
+        .filter((question) => nextType === "all" || question.type === nextType)
+        .filter((question) => {
+          if (!nextFilters.search) return true;
+          const haystack = `${question.title} ${question.description} ${question.topic}`.toLowerCase();
+          return haystack.includes(nextFilters.search.toLowerCase());
+        });
+
       setItems(fallbackItems.slice(0, PAGE_SIZE * nextPage));
+      setTotal(fallbackItems.length);
       setTotalPages(Math.max(1, Math.ceil(fallbackItems.length / PAGE_SIZE)));
       setPage(nextPage);
     } finally {
-      setLoading(false);
+      if (requestRef.current === requestId) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
+  };
+
+  const updateFilter = (key, value) => {
+    setFilters((current) => ({ ...current, [key]: value }));
+    setOpenAnswers({});
+  };
+
+  const clearFilters = () => {
+    setFilters(initialFilters);
+    setType("all");
+    setOpenAnswers({});
   };
 
   const toggleBookmark = async (questionId) => {
@@ -113,12 +193,20 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       category: params.get("category") || "",
       difficulty: "",
       topic: params.get("topic") || "",
-      company: ""
+      company: "",
+      search: ""
     };
     setFilters(nextFilters);
     setOpenAnswers({});
-    fetchQuestions(1, nextFilters, type, false).catch(() => undefined);
   }, [location.search]);
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      fetchQuestions(1, deferredFilters, deferredType, false).catch(() => undefined);
+    }, 180);
+
+    return () => clearTimeout(timerId);
+  }, [deferredFilters, deferredType]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -126,48 +214,103 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
 
     const observer = new IntersectionObserver((entries) => {
       const [entry] = entries;
-      if (entry.isIntersecting && !loading && hasMore) {
-        fetchQuestions(page + 1, filters, type, true).catch(() => undefined);
+      if (entry.isIntersecting && !loading && !loadingMore && hasMore) {
+        fetchQuestions(page + 1, deferredFilters, deferredType, true).catch(() => undefined);
       }
-    }, { rootMargin: "320px" });
+    }, { rootMargin: "300px" });
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [filters, hasMore, loading, page, type]);
+  }, [deferredFilters, deferredType, hasMore, loading, loadingMore, page]);
 
   const visibleItems = items;
 
   return (
-    <div className="container py-4">
-      <p className="eyebrow mb-1">Question Bank</p>
-      <h1 className="h2 fw-bold mb-2">Explore software interview questions by subject</h1>
-      <p className="text-secondary mb-4">Browse coding, aptitude, HR, behavioral, and core-subject questions with detailed answers.</p>
+    <div className="container py-4 question-bank-page">
+      <div className="hero-panel mb-4">
+        <div className="row g-4 align-items-end">
+          <div className="col-lg-8">
+            <p className="eyebrow mb-2">Question Bank</p>
+            <h1 className="h2 fw-bold mb-2">Explore software interview questions faster</h1>
+            <p className="text-secondary mb-0">
+              Search, filter, and skim questions quickly with progressive loading, cleaner cards, and mobile-friendly browsing.
+            </p>
+          </div>
+          <div className="col-lg-4">
+            <div className="question-bank-summary-grid">
+              <div className="metric-card compact">
+                <span>Showing</span>
+                <h3>{visibleItems.length}</h3>
+              </div>
+              <div className="metric-card compact">
+                <span>Total Matches</span>
+                <h3>{total}</h3>
+              </div>
+              <div className="metric-card compact">
+                <span>Active Filters</span>
+                <h3>{activeFilterCount}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="glass-card p-4 mb-4">
-        <div className="row g-3">
-          {Object.entries(filters).map(([key, value]) => (
-            <div className="col-md-3" key={key}>
-              <label className="form-label text-capitalize">{key}</label>
-              <select className="form-select" value={value} onChange={(event) => setFilters((current) => ({ ...current, [key]: event.target.value }))}>
-                <option value="">All {key}</option>
-                {(filterOptions[key] || []).map((option) => <option key={option} value={option}>{option}</option>)}
-              </select>
-            </div>
-          ))}
-          <div className="col-md-3">
-            <label className="form-label">Question Type</label>
+        <div className="row g-3 align-items-end">
+          <div className="col-12 col-lg-4">
+            <label className="form-label">Search Questions</label>
+            <input
+              className="form-control"
+              value={filters.search}
+              onChange={(event) => updateFilter("search", event.target.value)}
+              placeholder="Search by title, topic, or concept"
+            />
+          </div>
+          <div className="col-6 col-md-4 col-xl-2">
+            <label className="form-label">Category</label>
+            <select className="form-select" value={filters.category} onChange={(event) => updateFilter("category", event.target.value)}>
+              <option value="">All</option>
+              {filterOptions.category.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </div>
+          <div className="col-6 col-md-4 col-xl-2">
+            <label className="form-label">Difficulty</label>
+            <select className="form-select" value={filters.difficulty} onChange={(event) => updateFilter("difficulty", event.target.value)}>
+              <option value="">All</option>
+              {(filterOptions.difficulty || []).map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </div>
+          <div className="col-6 col-md-4 col-xl-2">
+            <label className="form-label">Topic</label>
+            <select className="form-select" value={filters.topic} onChange={(event) => updateFilter("topic", event.target.value)}>
+              <option value="">All</option>
+              {(filterOptions.topic || []).map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </div>
+          <div className="col-6 col-md-4 col-xl-2">
+            <label className="form-label">Type</label>
             <select className="form-select" value={type} onChange={(event) => setType(event.target.value)}>
               {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
             </select>
           </div>
+          <div className="col-12 col-md-8 col-xl-4">
+            <label className="form-label">Company</label>
+            <select className="form-select" value={filters.company} onChange={(event) => updateFilter("company", event.target.value)}>
+              <option value="">All</option>
+              {(filterOptions.company || []).map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </div>
+          <div className="col-12 col-md-4 col-xl-2">
+            <button className="btn btn-outline-light w-100" onClick={clearFilters}>Clear Filters</button>
+          </div>
         </div>
-        <button className="btn btn-info mt-3" onClick={() => {
-          setOpenAnswers({});
-          fetchQuestions(1, filters, type, false);
-        }}>Apply Filters</button>
       </div>
 
-      {loading && !visibleItems.length ? <div className="glass-card p-4"><p className="text-secondary mb-0">Loading questions...</p></div> : null}
+      {loading && !visibleItems.length ? (
+        <div className="question-bank-stack">
+          {Array.from({ length: 4 }).map((_, index) => <QuestionCardSkeleton key={index} />)}
+        </div>
+      ) : null}
 
       <div className="question-bank-stack">
         {visibleItems.map((question) => {
@@ -180,28 +323,47 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
 
           return (
             <div className="question-bank-stack-item" key={question._id}>
-              <div className="glass-card p-4">
+              <div className="glass-card p-4 question-bank-card">
                 <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
-                  <div>
+                  <div className="question-bank-card-copy">
+                    <div className="d-flex gap-2 flex-wrap mb-2">
+                      <span className="badge text-bg-dark">{question.category}</span>
+                      <span className="badge text-bg-dark">{question.topic}</span>
+                      <span className="badge text-bg-dark">{question.company}</span>
+                      <span className="badge text-bg-info">{question.type}</span>
+                      <span className="badge text-bg-secondary">{question.difficulty}</span>
+                    </div>
                     <h2 className="h4 mb-2">{display.title}</h2>
-                    <p className="text-secondary mb-0">{display.description}{display.advice ? ` (${display.advice})` : ""}</p>
+                    <p className="text-secondary mb-0">
+                      {display.description}
+                      {display.advice ? ` (${display.advice})` : ""}
+                    </p>
                   </div>
-                  <span className="badge text-bg-secondary">{question.difficulty}</span>
+                  <div className="d-flex gap-2 flex-wrap question-bank-actions">
+                    <button
+                      className="btn btn-outline-light"
+                      onClick={() => setOpenAnswers((current) => ({ ...current, [question._id]: !current[question._id] }))}
+                    >
+                      {show ? "Hide Details" : "View Details"}
+                    </button>
+                    <button
+                      className={`btn ${isBookmarked ? "btn-info" : "btn-outline-light"}`}
+                      disabled={isSavingBookmark}
+                      onClick={() => toggleBookmark(question._id)}
+                    >
+                      {isSavingBookmark ? "Saving..." : isBookmarked ? "Saved" : "Save"}
+                    </button>
+                  </div>
                 </div>
-                <div className="d-flex gap-2 flex-wrap mb-3">
-                  <span className="badge text-bg-dark">{question.category}</span>
-                  <span className="badge text-bg-dark">{question.topic}</span>
-                  <span className="badge text-bg-dark">{question.company}</span>
-                  <span className="badge text-bg-info">{question.type}</span>
-                </div>
-                <div className="d-flex gap-2 flex-wrap mb-3">
-                  <button className="btn btn-outline-light" onClick={() => setOpenAnswers((current) => ({ ...current, [question._id]: !current[question._id] }))}>{show ? "Hide Answers" : "Show Answers"}</button>
-                  <button className={`btn ${isBookmarked ? "btn-info" : "btn-outline-light"}`} disabled={isSavingBookmark} onClick={() => toggleBookmark(question._id)}>{isSavingBookmark ? "Saving..." : isBookmarked ? "Bookmarked" : "Add to Bookmarks"}</button>
-                </div>
+
                 {show ? (
                   <>
-                    <div className="question-bank-answer mb-3"><strong>Suggested Answer:</strong> {String(question.correctAnswer)}</div>
-                    <div className="question-bank-explanation mb-3"><strong>Detailed Solution:</strong> {detailedSolution}</div>
+                    <div className="question-bank-answer mb-3">
+                      <strong>Suggested Answer:</strong> {String(question.correctAnswer)}
+                    </div>
+                    <div className="question-bank-explanation mb-3">
+                      <strong>Detailed Solution:</strong> {detailedSolution}
+                    </div>
                     {codeEntries.length ? (
                       <div className="mb-3">
                         <p className="fw-semibold mb-2">Starter Code</p>
@@ -225,7 +387,9 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
                         ))}
                       </div>
                     ) : null}
-                    <div className="question-bank-explanation"><strong>Explanation:</strong> {display.explanation}</div>
+                    <div className="question-bank-explanation">
+                      <strong>Explanation:</strong> {display.explanation}
+                    </div>
                   </>
                 ) : null}
               </div>
@@ -234,9 +398,17 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
         })}
       </div>
 
-      {!loading && !visibleItems.length ? <div className="glass-card p-4 mt-4"><p className="text-secondary mb-0">No questions found. Try changing the filters or question type.</p></div> : null}
+      {!loading && !visibleItems.length ? (
+        <div className="glass-card p-4 mt-4">
+          <p className="text-secondary mb-0">No questions found. Try a broader search or clear a few filters.</p>
+        </div>
+      ) : null}
 
-      {visibleItems.length ? <div ref={loadMoreRef} className="py-4 text-center text-secondary">{loading ? "Loading more questions..." : hasMore ? "Scroll to load more questions" : "You have reached the end of this question set."}</div> : null}
+      {visibleItems.length ? (
+        <div ref={loadMoreRef} className="py-4 text-center text-secondary">
+          {loadingMore ? "Loading more questions..." : hasMore ? "Scroll to load more questions" : "You have reached the end of this question set."}
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -4126,3 +4126,113 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ===== Responsive Workflow Polish ===== */
+.metric-card.compact {
+  min-height: 0;
+  padding: 1rem 1.1rem;
+}
+
+.metric-card.compact h3 {
+  font-size: 1.6rem;
+}
+
+.question-bank-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.question-bank-card,
+.practice-workspace-card {
+  overflow: hidden;
+}
+
+.question-bank-card-copy {
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.question-bank-actions {
+  flex: 0 0 auto;
+}
+
+.question-bank-code-block {
+  border: 1px solid rgba(239, 127, 44, 0.12);
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(40, 28, 22, 0.98), rgba(24, 18, 13, 1));
+}
+
+.question-bank-code-label {
+  display: inline-block;
+  padding: 0.8rem 1rem 0;
+  color: #ffd4b0;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.question-bank-code-pre {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  color: #fff0e2;
+}
+
+.question-skeleton-card .placeholder {
+  min-height: 16px;
+  border-radius: 999px;
+  background-color: rgba(239, 127, 44, 0.16);
+}
+
+.practice-workspace-card .badge,
+.question-bank-card .badge {
+  font-weight: 700;
+}
+
+.practice-answer-box {
+  min-height: 240px;
+}
+
+.practice-editor-shell {
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(239, 127, 44, 0.14);
+  box-shadow: 0 14px 28px rgba(82, 44, 18, 0.1);
+}
+
+.practice-workspace-card .answer-reveal-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.practice-workspace-card .feedback-detail-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 991px) {
+  .question-bank-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .question-bank-actions {
+    width: 100%;
+  }
+
+  .question-bank-actions .btn {
+    flex: 1 1 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .question-bank-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-workspace-card .answer-reveal-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .question-bank-code-pre {
+    font-size: 0.88rem;
+  }
+}
