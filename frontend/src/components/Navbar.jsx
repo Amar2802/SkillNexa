@@ -33,49 +33,62 @@ const Navbar = ({ user, profile, theme, setTheme }) => {
 
   const currentUser = profile || user;
   const navItems = [
-    { label: "Dashboard", path: "/dashboard" },
-    { label: "Question Bank", path: "/questions" },
-    { label: "Practice", path: "/practice" },
-    { label: "Mock Tests", path: "/mock-tests" },
-    { label: "Review Mistakes", path: "/review-mistakes" },
-    { label: "AI Interviewer", path: "/ai-interviewer" },
-    { label: "Bookmarks", path: "/bookmarks" },
-    { label: "History", path: "/history" },
-    { label: "Profile", path: "/profile" }
+    { label: "Dashboard", description: "Overview and progress", path: "/dashboard" },
+    { label: "Question Bank", description: "Browse by topic", path: "/questions" },
+    { label: "Practice", description: "Solve one by one", path: "/practice" },
+    { label: "Mock Tests", description: "Timed test rounds", path: "/mock-tests" },
+    { label: "Review Mistakes", description: "Fix weak areas", path: "/review-mistakes" },
+    { label: "AI Interviewer", description: "Practice interview answers", path: "/ai-interviewer" },
+    { label: "Bookmarks", description: "Saved revision set", path: "/bookmarks" },
+    { label: "History", description: "Past attempts", path: "/history" },
+    { label: "Profile", description: "Account and targets", path: "/profile" }
   ];
 
   return (
-    <header className="app-topbar topbar-horizontal-shell">
-      <div className="topbar-main-row">
-        <div className="topbar-brand-row shell-panel">
-          <Link className="sidebar-brand topbar-brand-link" to="/dashboard"><Brand /></Link>
-          <div className="topbar-title-block">
-            <p className="eyebrow mb-1">Interview Command Center</p>
-            <h2 className="topbar-title mb-0">Build interview confidence with structured daily momentum.</h2>
+    <>
+      <aside className="app-sidebar">
+        <div className="sidebar-scroll-area">
+          <div className="sidebar-top-block">
+            <Link className="sidebar-brand" to="/dashboard">
+              <Brand />
+            </Link>
+            <p className="sidebar-subtitle mb-0">
+              Move through your daily preparation from one focused workspace.
+            </p>
+          </div>
+
+          <nav className="sidebar-nav">
+            {navItems.map((item) => (
+              <NavLink key={item.path} className="sidebar-link" to={item.path}>
+                <span className="sidebar-link-copy">
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="sidebar-footer">
+            <ThemeToggle theme={theme} setTheme={setTheme} />
           </div>
         </div>
-        <div className="topbar-actions">
-          <ThemeToggle theme={theme} setTheme={setTheme} />
-          <Link className="profile-chip shell-panel" to="/profile">
-            <div className="profile-chip-text">
-              <span className="profile-chip-kicker">Profile workspace</span>
-              <strong>{currentUser?.name || "Profile"}</strong>
-              <span>Open profile dashboard</span>
-            </div>
-            <AvatarChip user={currentUser} />
-          </Link>
+      </aside>
+
+      <header className="app-topbar">
+        <div className="topbar-left-group d-flex flex-column">
+          <p className="eyebrow mb-1">Interview Command Center</p>
+          <h2 className="topbar-title mb-0">Build interview confidence with structured daily momentum.</h2>
         </div>
-      </div>
-      <nav className="topbar-nav-shell shell-panel">
-        <div className="topbar-nav-scroll">
-          {navItems.map((item) => (
-            <NavLink key={item.path} className="topbar-nav-link" to={item.path}>
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
-    </header>
+        <Link className="profile-chip shell-panel" to="/profile">
+          <div className="profile-chip-text">
+            <span className="profile-chip-kicker">Profile workspace</span>
+            <strong>{currentUser?.name || "Profile"}</strong>
+            <span>Open profile dashboard</span>
+          </div>
+          <AvatarChip user={currentUser} />
+        </Link>
+      </header>
+    </>
   );
 };
 

@@ -4236,3 +4236,88 @@ body {
     font-size: 0.88rem;
   }
 }
+
+/* ===== Restore Left Sidebar Layout ===== */
+.app-sidebar {
+  display: flex !important;
+  position: fixed !important;
+  inset: 0 auto 0 0 !important;
+  width: var(--sidebar-width) !important;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.sidebar-overlay,
+.sidebar-toggle {
+  display: none !important;
+}
+
+.app-topbar {
+  position: fixed !important;
+  top: 0;
+  left: var(--sidebar-width) !important;
+  right: 0;
+  min-height: var(--topbar-height);
+  height: var(--topbar-height);
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between;
+  padding: 1.1rem 1.5rem !important;
+  z-index: 900;
+}
+
+.app-content {
+  margin-left: var(--sidebar-width) !important;
+  width: auto !important;
+  padding-top: calc(var(--topbar-height) + 1rem) !important;
+}
+
+.topbar-left-group {
+  min-width: 0;
+}
+
+.topbar-left-group .topbar-title {
+  max-width: 760px;
+}
+
+.sidebar-footer .theme-toggle-btn,
+.sidebar-footer .theme-toggle {
+  width: 100%;
+}
+
+.practice-control-card {
+  position: static !important;
+  top: auto !important;
+}
+
+.practice-workspace-card {
+  position: static;
+}
+
+@media (max-width: 991px) {
+  .app-sidebar {
+    position: static !important;
+    inset: auto !important;
+    width: auto !important;
+    height: auto;
+    overflow: visible;
+    margin: 0 0 0.75rem;
+  }
+
+  .app-topbar {
+    position: static !important;
+    left: auto !important;
+    right: auto;
+    height: auto;
+    min-height: 0;
+    padding: 1rem 1.1rem !important;
+  }
+
+  .app-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding-top: 0.5rem !important;
+  }
+}
