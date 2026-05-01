@@ -1,9 +1,11 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { motion } from "framer-motion";
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LineElement, LinearScale, PointElement, Tooltip } from "chart.js";
 import api from "./api/client";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SectionLoader from "./components/ui/SectionLoader";
 import { useAuth } from "./context/AuthContext";
 
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -22,12 +24,8 @@ ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, Lin
 const SOFTWARE_FIELD = "Software";
 
 const PageLoader = () => (
-  <div className="page-loader-shell">
-    <div className="page-loader-card glass-card">
-      <div className="page-loader-spinner" />
-      <strong>Loading SkillNexa...</strong>
-      <span>Preparing your software interview workspace</span>
-    </div>
+  <div className="flex min-h-[50vh] items-center justify-center px-4">
+    <SectionLoader title="Loading SkillNexa..." subtitle="Preparing your software interview workspace" />
   </div>
 );
 
@@ -157,14 +155,16 @@ export default function App() {
   );
 
   return (
-    <div className={`app-shell ${user ? "app-shell-user" : "app-shell-auth"}`}>
-      <div className="app-shell-backdrop">
-        <div className="app-shell-orb orb-one" />
-        <div className="app-shell-orb orb-two" />
-        <div className="app-shell-grid" />
-      </div>
+    <div className={`app-shell snx-shell-bg min-h-screen ${user ? "app-shell-user" : "app-shell-auth"}`}>
       {user && <Navbar user={user} profile={profile} theme={theme} setTheme={setTheme} />}
-      <main className={user ? "app-content" : "auth-content"}>{shell}</main>
+      <motion.main
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className={user ? "app-content" : "auth-content"}
+      >
+        {shell}
+      </motion.main>
     </div>
   );
 }
