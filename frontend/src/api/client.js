@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const LOCAL_API_URL = "http://localhost:5000/api";
-const PROD_API_URL = "https://skillnexa.onrender.com/api";
+const PROD_API_URL = "https://skillnexa-backend.onrender.com/api";
 
 const resolveBaseUrl = () => {
   const envUrl = String(import.meta.env.VITE_API_URL || "").trim();
