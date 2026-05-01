@@ -6,10 +6,14 @@ import { syncSeedQuestions } from "./controllers/userController.js";
 dotenv.config();
 
 const start = async () => {
+  console.log("Connecting to MongoDB...");
   await connectDB();
+  console.log("MongoDB connected");
 
   try {
+    console.log("Syncing seed questions...");
     await syncSeedQuestions();
+    console.log("Seed question sync complete");
   } catch (error) {
     console.error("Startup question sync skipped:", error?.message || error);
   }
@@ -21,6 +25,6 @@ app.listen(PORT, () => {
 });
 };
 start().catch((error) => {
-  console.error(error?.message || error);
+  console.error("Backend startup failed:", error?.message || error);
   process.exit(1);
 });
