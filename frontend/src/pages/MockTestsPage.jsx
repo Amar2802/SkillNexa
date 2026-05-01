@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/client";
+import { useToast } from "../components/ui/ToastProvider";
 
 const formatTimer = (seconds) => {
   const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -8,6 +9,7 @@ const formatTimer = (seconds) => {
 };
 
 const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistory, questions = [] }) => {
+  const { showToast } = useToast();
   const [activeTest, setActiveTest] = useState(null);
   const [pendingTest, setPendingTest] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -47,7 +49,10 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
       setResult(null);
       setRemainingSeconds(0);
       autoSubmittedRef.current = false;
-      refreshTests?.();
+      await refreshTests?.().catch(() => undefined);
+      showToast("Mock test generated successfully.", "success");
+    } catch (error) {
+      showToast(error.response?.data?.message || "Unable to generate a mock test right now.", "error");
     } finally {
       setLoading(false);
     }
@@ -79,6 +84,9 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
       setRemainingSeconds(0);
       refreshProfile?.();
       refreshHistory?.();
+      showToast(autoSubmit ? "Mock test auto-submitted." : "Mock test submitted successfully.", "success");
+    } catch (error) {
+      showToast(error.response?.data?.message || "Unable to submit the mock test right now.", "error");
     } finally {
       setSubmitting(false);
     }

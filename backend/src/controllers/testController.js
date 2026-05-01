@@ -8,9 +8,42 @@ const DEFAULT_TOTAL_QUESTIONS = 30;
 const DEFAULT_CATEGORIES = ["DSA", "Aptitude", "HR", "Core Subjects"];
 
 const ensureSeededQuestions = async () => {
-  const count = await Question.countDocuments({ field: SOFTWARE_FIELD });
-  if (count > 0) return;
-  await Question.insertMany(seedQuestions.map((question) => ({ ...question, field: SOFTWARE_FIELD })), { ordered: false }).catch(() => undefined);
+  const counts = await Question.aggregate([
+    { $match: { field: SOFTWARE_FIELD } },
+    { $group: { _id: "$category", count: { $sum: 1 } } }
+  ]).catch(() => []);
+
+  const countMap = new Map(counts.map((item) => [item._id, item.count]));
+  const missingCategories = DEFAULT_CATEGORIES.filter((category) => !countMap.get(category));
+
+  if (!missingCategories.length) return;
+
+  await Question.insertMany(
+    seedQuestions
+      .filter((question) => missingCategories.includes(question.category))
+      .map((question) => ({ ...question, field: SOFTWARE_FIELD })),
+    { ordered: false }
+  ).catch(() => undefined);
+};
+
+const sampleQuestionsForCategory = async (category, count) => {
+  const sampled = await Question.aggregate([
+    { $match: { field: SOFTWARE_FIELD, category } },
+    { $sample: { size: count } }
+  ]).catch(() => []);
+
+  if (sampled.length >= count) {
+    return sampled;
+  }
+
+  const existingIds = new Set(sampled.map((item) => String(item._id)));
+  const remaining = count - sampled.length;
+  const fallback = await Question.find({ field: SOFTWARE_FIELD, category, _id: { $nin: [...existingIds] } })
+    .limit(remaining)
+    .lean()
+    .catch(() => []);
+
+  return [...sampled, ...fallback];
 };
 
 const buildDistribution = (categories, totalQuestions) => {
@@ -59,10 +92,7 @@ export const createTest = async (req, res) => {
   const distribution = buildDistribution(categories, requestedTotal);
 
   const sectionRecords = await Promise.all(distribution.map(async (item) => {
-    const questions = await Question.aggregate([
-      { $match: { field: SOFTWARE_FIELD, category: item.category } },
-      { $sample: { size: item.count } }
-    ]);
+    const questions = await sampleQuestionsForCategory(item.category, item.count);
 
     return {
       name: `${item.category} Section`,
@@ -71,7 +101,13 @@ export const createTest = async (req, res) => {
     };
   }));
 
-  const duration = computeDurationMinutes(requestedTotal);
+  const totalSelected = sectionRecords.reduce((sum, section) => sum + section.questions.length, 0);
+
+  if (!totalSelected) {
+    return res.status(503).json({ message: "Unable to generate a mock test because no practice questions are available right now." });
+  }
+
+  const duration = computeDurationMinutes(totalSelected);
 
   const test = await Test.create({
     title: "Software Interview Mock Test",

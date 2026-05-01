@@ -144,6 +144,7 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute user={user}><DashboardPage profile={profile || user} questions={questions} recommendations={dashboardRecommendations} history={history} loading={loadingApp} /></ProtectedRoute>} />
         <Route path="/questions" element={<ProtectedRoute user={user}><QuestionBankPage questions={questions} loadQuestions={loadQuestions} defaultField={SOFTWARE_FIELD} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} /></ProtectedRoute>} />
         <Route path="/practice" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} /></ProtectedRoute>} />
+        <Route path="/practice/:questionId" element={<ProtectedRoute user={user}><PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} /></ProtectedRoute>} />
         <Route path="/mock-tests" element={<ProtectedRoute user={user}><MockTestsPage tests={tests} refreshTests={refreshTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} questions={questions} /></ProtectedRoute>} />
         <Route path="/review-mistakes" element={<ProtectedRoute user={user}><ReviewMistakesPage history={history} /></ProtectedRoute>} />
         <Route path="/ai-interviewer" element={<ProtectedRoute user={user}><AIInterviewerPage questions={questions} /></ProtectedRoute>} />
