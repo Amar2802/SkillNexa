@@ -157,7 +157,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 
   if (!questionId) {
     return (
-      <div className="container py-4 practice-pro-page">
+      <div className="container-fluid py-4 practice-pro-page snx-page-shell">
         <div className="hero-panel mb-4">
           <div className="row g-4 align-items-end">
             <div className="col-lg-8">
@@ -230,11 +230,11 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
   }
 
   return (
-    <div className="container py-4 practice-pro-page">
-      <div className="glass-card p-4 question-card practice-workspace-card">
-        {question ? (
+      <div className="container-fluid py-4 practice-pro-page snx-page-shell">
+        <div className="glass-card p-4 question-card practice-workspace-card">
+          {question ? (
           <>
-            <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+            <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3 practice-question-toolbar">
               <div className="flex-grow-1">
                 <button className="btn btn-outline-light mb-3" onClick={goBackToList}>Back to Question List</button>
                 <p className="eyebrow mb-2">Practice Question</p>
@@ -302,7 +302,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               </>
             ) : null}
 
-            <div className="d-flex gap-2 flex-wrap mt-4">
+            <div className="d-flex gap-2 flex-wrap mt-4 practice-question-actions">
               <button className="btn btn-outline-light" onClick={() => moveQuestion("prev")}>Previous</button>
               <button className="btn btn-info" onClick={submit} disabled={submitting}>
                 {submitting ? "Submitting..." : "Submit"}

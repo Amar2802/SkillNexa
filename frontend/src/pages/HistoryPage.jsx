@@ -1,6 +1,6 @@
 const HistoryPage = ({ history = [] }) => {
   return (
-    <div className="container py-4">
+    <div className="container-fluid py-4 snx-page-shell">
       <p className="eyebrow mb-1">History</p>
       <h1 className="h2 fw-bold mb-2">Past mock tests</h1>
       <p className="text-secondary mb-4">Review your earlier software mock tests and see how your scores change over time.</p>

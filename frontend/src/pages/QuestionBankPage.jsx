@@ -226,7 +226,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
   const visibleItems = items;
 
   return (
-    <div className="container py-4 question-bank-page">
+    <div className="container-fluid py-4 question-bank-page snx-page-shell">
       <div className="hero-panel mb-4">
         <div className="row g-4 align-items-end">
           <div className="col-lg-8">

@@ -17,6 +17,7 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [generationError, setGenerationError] = useState("");
   const autoSubmittedRef = useRef(false);
 
   const questionCount = useMemo(() => activeTest ? activeTest.sections.flatMap((section) => section.questions).length : 0, [activeTest]);
@@ -42,7 +43,13 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
   const generateTest = async () => {
     try {
       setLoading(true);
+      setGenerationError("");
+      console.info("[MockTests] Generating software mock test");
       const { data } = await api.post("/tests", {});
+      console.info("[MockTests] Mock test generated", {
+        testId: data?._id,
+        sections: data?.sections?.length || 0
+      });
       setPendingTest(data);
       setActiveTest(null);
       setAnswers({});
@@ -52,6 +59,8 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
       await refreshTests?.().catch(() => undefined);
       showToast("Mock test generated successfully.", "success");
     } catch (error) {
+      console.error("[MockTests] Failed to generate mock test", error?.response?.data || error);
+      setGenerationError(error.response?.data?.message || "Unable to generate a mock test right now.");
       showToast(error.response?.data?.message || "Unable to generate a mock test right now.", "error");
     } finally {
       setLoading(false);
@@ -93,7 +102,7 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
   };
 
   return (
-    <div className="container py-4">
+    <div className="container-fluid py-4 snx-page-shell">
       <div className="hero-panel mb-4 mock-tests-hero">
         <div>
           <p className="eyebrow mb-2">Mock Tests</p>
@@ -104,6 +113,20 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
           <button className="btn btn-info" onClick={generateTest} disabled={loading}>{loading ? "Generating..." : "Generate Mock Test"}</button>
         </div>
       </div>
+
+      {loading && !pendingTest && !activeTest ? (
+        <div className="glass-card p-4 mb-4 mock-test-empty-state">
+          <h2 className="h4 mb-2">Generating your mock test...</h2>
+          <p className="text-secondary mb-0">We are preparing a balanced question set from your software interview bank.</p>
+        </div>
+      ) : null}
+
+      {generationError ? (
+        <div className="glass-card p-4 mb-4 mock-test-empty-state">
+          <h2 className="h4 mb-2">Mock test generation needs attention</h2>
+          <p className="text-secondary mb-0">{generationError}</p>
+        </div>
+      ) : null}
 
       {pendingTest ? (
         <div className="glass-card p-4 mock-test-active-card mb-4">

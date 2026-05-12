@@ -4,7 +4,7 @@ const BookmarksPage = ({ bookmarks = [] }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="container py-4">
+    <div className="container-fluid py-4 snx-page-shell">
       <div className="hero-panel mb-4">
         <p className="eyebrow mb-2">Bookmarks</p>
         <h1 className="h2 fw-bold mb-2">Saved questions</h1>

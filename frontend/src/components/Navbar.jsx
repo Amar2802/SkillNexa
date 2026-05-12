@@ -131,7 +131,7 @@ const Navbar = ({ user, profile, theme, setTheme }) => {
       <header className="app-topbar snx-topbar-shell">
         <div>
           <div className="snx-topbar-label">AI Interview Command Center</div>
-          <h2 className="snx-topbar-title">Practice smarter with a cleaner, focused interview workspace.</h2>
+          <h2 className="snx-topbar-title">Sharpen practice, track growth, and keep every interview workflow easy to navigate.</h2>
         </div>
         <Link to="/profile" className="snx-topbar-profile text-decoration-none">
           <div className="text-end">

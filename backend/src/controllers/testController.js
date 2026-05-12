@@ -85,41 +85,64 @@ export const getTests = async (req, res) => {
 };
 
 export const createTest = async (req, res) => {
-  await ensureSeededQuestions();
+  try {
+    await ensureSeededQuestions();
 
-  const requestedTotal = Math.max(Number(req.body.totalQuestions) || DEFAULT_TOTAL_QUESTIONS, DEFAULT_CATEGORIES.length);
-  const categories = Array.isArray(req.body.categories) && req.body.categories.length ? req.body.categories : DEFAULT_CATEGORIES;
-  const distribution = buildDistribution(categories, requestedTotal);
+    const requestedTotal = Math.max(Number(req.body.totalQuestions) || DEFAULT_TOTAL_QUESTIONS, DEFAULT_CATEGORIES.length);
+    const categories = Array.isArray(req.body.categories) && req.body.categories.length ? req.body.categories : DEFAULT_CATEGORIES;
+    const distribution = buildDistribution(categories, requestedTotal);
 
-  const sectionRecords = await Promise.all(distribution.map(async (item) => {
-    const questions = await sampleQuestionsForCategory(item.category, item.count);
+    console.info("[MockTests] Requested generation", {
+      userId: String(req.user?._id || ""),
+      requestedTotal,
+      categories
+    });
 
-    return {
-      name: `${item.category} Section`,
-      category: item.category,
-      questions: questions.map((question) => question._id)
-    };
-  }));
+    const sectionRecords = await Promise.all(distribution.map(async (item) => {
+      const questions = await sampleQuestionsForCategory(item.category, item.count);
+      console.info("[MockTests] Category sampling", {
+        category: item.category,
+        requested: item.count,
+        selected: questions.length
+      });
 
-  const totalSelected = sectionRecords.reduce((sum, section) => sum + section.questions.length, 0);
+      return {
+        name: `${item.category} Section`,
+        category: item.category,
+        questions: questions.map((question) => question._id)
+      };
+    }));
 
-  if (!totalSelected) {
-    return res.status(503).json({ message: "Unable to generate a mock test because no practice questions are available right now." });
+    const totalSelected = sectionRecords.reduce((sum, section) => sum + section.questions.length, 0);
+
+    if (!totalSelected) {
+      console.warn("[MockTests] No questions available for generation");
+      return res.status(503).json({ message: "Unable to generate a mock test because no practice questions are available right now." });
+    }
+
+    const duration = computeDurationMinutes(totalSelected);
+
+    const test = await Test.create({
+      title: "Software Interview Mock Test",
+      description: "A balanced mock test covering DSA, aptitude, HR, and core subjects.",
+      duration,
+      targetField: SOFTWARE_FIELD,
+      sections: sectionRecords,
+      createdBy: req.user._id
+    });
+
+    console.info("[MockTests] Mock test created", {
+      testId: String(test._id),
+      duration,
+      totalSelected
+    });
+
+    const hydrated = await Test.findById(test._id).populate("sections.questions").lean();
+    res.status(201).json(hydrated);
+  } catch (error) {
+    console.error("[MockTests] createTest failed:", error?.message || error);
+    res.status(500).json({ message: "Unable to generate a mock test right now. Please try again shortly." });
   }
-
-  const duration = computeDurationMinutes(totalSelected);
-
-  const test = await Test.create({
-    title: "Software Interview Mock Test",
-    description: "A balanced mock test covering DSA, aptitude, HR, and core subjects.",
-    duration,
-    targetField: SOFTWARE_FIELD,
-    sections: sectionRecords,
-    createdBy: req.user._id
-  });
-
-  const hydrated = await Test.findById(test._id).populate("sections.questions").lean();
-  res.status(201).json(hydrated);
 };
 
 export const submitTest = async (req, res) => {

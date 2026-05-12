@@ -40,7 +40,7 @@ const ProfilePage = ({ profile = {}, refreshProfile, logout }) => {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container-fluid py-4 snx-page-shell">
       <div className="profile-hero-surface mb-4">
         <div className="profile-hero-main">
           <div className="profile-identity-block profile-identity-block-pro">
