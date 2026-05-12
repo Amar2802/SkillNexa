@@ -117,31 +117,31 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
 
       <div className="row g-4 mb-4">
         <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card">
-            <span>Interviews Taken</span>
-            <strong>{analytics.testsTaken}</strong>
-            <small>Completed mock rounds</small>
+          <div className="snx-stat-card snx-stat-card-clean">
+            <span className="snx-stat-label">Interviews Taken</span>
+            <strong className="snx-stat-value">{analytics.testsTaken}</strong>
+            <small className="snx-stat-meta">Completed mock rounds</small>
           </div>
         </div>
         <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card">
-            <span>Average Score</span>
-            <strong>{analytics.avgScore}</strong>
-            <small>Recent mock average</small>
+          <div className="snx-stat-card snx-stat-card-clean">
+            <span className="snx-stat-label">Average Score</span>
+            <strong className="snx-stat-value">{analytics.avgScore}</strong>
+            <small className="snx-stat-meta">Recent mock average</small>
           </div>
         </div>
         <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card">
-            <span>Overall Accuracy</span>
-            <strong>{analytics.accuracy}%</strong>
-            <small>Across your practice history</small>
+          <div className="snx-stat-card snx-stat-card-clean">
+            <span className="snx-stat-label">Overall Accuracy</span>
+            <strong className="snx-stat-value">{analytics.accuracy}%</strong>
+            <small className="snx-stat-meta">Across your practice history</small>
           </div>
         </div>
         <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card">
-            <span>Consistency</span>
-            <strong>{analytics.consistency}%</strong>
-            <small>Lower score swing is better</small>
+          <div className="snx-stat-card snx-stat-card-clean">
+            <span className="snx-stat-label">Consistency</span>
+            <strong className="snx-stat-value">{analytics.consistency}%</strong>
+            <small className="snx-stat-meta">Lower score swing is better</small>
           </div>
         </div>
       </div>
@@ -262,12 +262,12 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
               {companyPrep.length ? companyPrep.map((question) => (
                 <button
                   key={question._id}
-                  className="snx-company-card"
+                  className="snx-company-card snx-company-card-clean"
                   onClick={() => navigate(`/questions?topic=${encodeURIComponent(question.topic)}&category=${encodeURIComponent(question.category)}`)}
                 >
-                  <span>{question.company}</span>
-                  <strong>{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</strong>
-                  <small>{question.topic} | {question.category}</small>
+                  <span className="snx-company-tag">{question.company}</span>
+                  <strong className="snx-company-title">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</strong>
+                  <small className="snx-company-meta">{question.topic} | {question.category}</small>
                 </button>
               )) : (
                 <div className="snx-empty-inline">
