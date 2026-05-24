@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #5458ee;
+  --color-brand-700: #4338ca;
+  --color-success-500: #22c55e;
+  --color-slate-950: #0f172a;
+}
+
+@layer base {
+  html {
+    font-family: "Inter", sans-serif;
+    background: #f8fafc;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .snx-shell-bg {
+    background:
+      radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 28%),
+      radial-gradient(circle at right center, rgba(34, 197, 94, 0.1), transparent 24%),
+      linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  }
+
+  .snx-panel {
+    @apply rounded-3xl border border-slate-200/70 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl;
+  }
+
+  .snx-panel-strong {
+    @apply rounded-3xl border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)];
+  }
+
+  .snx-badge {
+    @apply inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold tracking-wide text-brand-700;
+  }
+
+  .snx-title {
+    @apply text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl;
+  }
+
+  .snx-subtitle {
+    @apply text-sm leading-6 text-slate-500 md:text-base;
+  }
+
+  .snx-input {
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
+  }
+
+  .snx-select {
+    @apply snx-input appearance-none;
+  }
+
+  .snx-button-primary {
+    @apply inline-flex items-center justify-center rounded-2xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(99,102,241,0.34)] transition hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .snx-button-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand-200 hover:bg-brand-50;
+  }
+
+  .snx-stat-card {
+    @apply rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-[0_16px_44px_rgba(15,23,42,0.08)];
+  }
+}

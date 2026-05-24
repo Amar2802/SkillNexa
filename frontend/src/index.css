@@ -1,0 +1,60 @@
+:root,
+[data-theme="light"] {
+  --theme-background: #fff8f1;
+  --theme-background-soft: #ffffff;
+  --theme-background-elevated: rgba(255, 251, 247, 0.78);
+  --theme-background-elevated-strong: rgba(255, 250, 245, 0.86);
+  --theme-text: #2f1a0f;
+  --theme-text-muted: #8a6655;
+  --theme-card: rgba(255, 255, 255, 0.88);
+  --theme-border: rgba(244, 122, 32, 0.14);
+  --theme-navbar: rgba(255, 251, 247, 0.72);
+  --theme-navbar-border: rgba(244, 122, 32, 0.14);
+  --theme-navbar-text: #2f1a0f;
+  --theme-accent: #f47a20;
+  --theme-accent-2: #ffb347;
+  --theme-accent-3: #fff1df;
+  --theme-shadow: 0 24px 60px rgba(215, 112, 32, 0.16);
+  --theme-body-gradient:
+    radial-gradient(circle at top left, rgba(255, 177, 103, 0.34), transparent 28%),
+    radial-gradient(circle at top right, rgba(244, 122, 32, 0.18), transparent 24%),
+    linear-gradient(180deg, #fff9f3 0%, #fff1e4 100%);
+}
+
+[data-theme="dark"] {
+  --theme-background: #110d0a;
+  --theme-background-soft: #1a1410;
+  --theme-background-elevated: rgba(24, 18, 14, 0.9);
+  --theme-background-elevated-strong: rgba(22, 16, 13, 0.96);
+  --theme-text: #fff7f2;
+  --theme-text-muted: #dec3b1;
+  --theme-card: rgba(30, 23, 18, 0.96);
+  --theme-border: rgba(255, 191, 132, 0.2);
+  --theme-navbar: rgba(18, 14, 11, 0.94);
+  --theme-navbar-border: rgba(255, 191, 132, 0.18);
+  --theme-navbar-text: #fff7f2;
+  --theme-accent: #ffad5c;
+  --theme-accent-2: #ffd59a;
+  --theme-accent-3: #2a1f18;
+  --theme-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  --theme-body-gradient:
+    radial-gradient(circle at top left, rgba(255, 173, 92, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 213, 154, 0.08), transparent 22%),
+    linear-gradient(180deg, #110d0a 0%, #0a0705 100%);
+}
+
+:root {
+  --bg: var(--theme-background);
+  --bg-soft: var(--theme-background-soft);
+  --card: var(--theme-card);
+  --text: var(--theme-text);
+  --muted: var(--theme-text-muted);
+  --accent: var(--theme-accent);
+  --accent-2: var(--theme-accent-2);
+  --accent-3: var(--theme-accent-3);
+  --border: var(--theme-border);
+  --shadow: var(--theme-shadow);
+  --navbar-bg: var(--theme-navbar);
+  --navbar-border: var(--theme-navbar-border);
+  --navbar-text: var(--theme-navbar-text);
+}
