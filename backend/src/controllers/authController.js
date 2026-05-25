@@ -88,9 +88,13 @@ const findUserFromRefreshCookie = async (req) => {
     return { refreshToken: "", user: null, decoded: null };
   }
 
-  const decoded = verifyRefreshToken(refreshToken);
-  const user = await User.findById(decoded.id);
-  return { refreshToken, user, decoded };
+  try {
+    const decoded = verifyRefreshToken(refreshToken);
+    const user = await User.findById(decoded.id);
+    return { refreshToken, user, decoded };
+  } catch {
+    return { refreshToken, user: null, decoded: null };
+  }
 };
 
 const buildOauthFailureRedirect = (message) =>
@@ -203,8 +207,14 @@ export const refreshSession = async (req, res) => {
       return res.status(401).json({ message: "Invalid refresh token", code: "AUTH_REFRESH_INVALID" });
     }
 
-    const session = await issueAuthSession({ res, user, rememberMe: decoded.persistent !== false });
-    return res.json(session);
+    const accessToken = signAccessToken(user);
+    const rememberMe = decoded.persistent !== false;
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, resolveRefreshCookieOptions(rememberMe));
+
+    return res.json({
+      accessToken,
+      user: toSafeUser(user)
+    });
   } catch (error) {
     clearRefreshCookie(res);
     if (error?.name === "TokenExpiredError") {

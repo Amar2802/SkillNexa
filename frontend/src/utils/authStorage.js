@@ -1,17 +1,31 @@
 const USER_KEY = "skillnexa_user";
+const ACCESS_TOKEN_KEY = "skillnexa_access_token";
 const AUTH_NOTICE_KEY = "skillnexa_auth_notice";
 const REMEMBER_ME_KEY = "skillnexa_remember_me";
 
 let inMemoryAccessToken = "";
 
-export const getAccessToken = () => inMemoryAccessToken;
+const readStoredAccessToken = () => {
+  if (typeof window === "undefined") return "";
+  return String(sessionStorage.getItem(ACCESS_TOKEN_KEY) || "").trim();
+};
+
+export const getAccessToken = () => inMemoryAccessToken || readStoredAccessToken();
 
 export const setAccessToken = (token = "") => {
   inMemoryAccessToken = String(token || "").trim();
+  if (typeof window === "undefined") return;
+  if (inMemoryAccessToken) {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, inMemoryAccessToken);
+  } else {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
 };
 
 export const clearAccessToken = () => {
   inMemoryAccessToken = "";
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
 };
 
 export const getStoredUser = () => {

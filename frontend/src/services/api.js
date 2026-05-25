@@ -16,7 +16,7 @@ const resolveBaseUrl = () => {
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return LOCAL_API_URL;
+      return "/api";
     }
   }
 
@@ -78,7 +78,7 @@ const performTokenRefresh = async () => {
       })
       .catch((error) => {
         clearAccessToken();
-        if (authFailureHandler) {
+        if (error?.response?.status === 401 && authFailureHandler) {
           authFailureHandler(error);
         }
         throw error;

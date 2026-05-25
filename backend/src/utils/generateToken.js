@@ -83,7 +83,7 @@ export const resolveRefreshCookieOptions = (rememberMe = true) => {
     httpOnly: true,
     secure,
     sameSite: secure ? "none" : "lax",
-    path: "/api/auth",
+    path: "/",
     ...(rememberMe ? { maxAge: REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000 } : {})
   };
 };

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { authService } from "../services/authService";
 import { clearApiSession, registerAuthHandlers } from "../services/api";
 import {
@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(() => getStoredUser());
   const [authReady, setAuthReady] = useState(() => Boolean(getStoredUser()));
   const [authLoading, setAuthLoading] = useState(false);
-  const bootstrapStartedRef = useRef(false);
 
   const applyAuth = useCallback((session) => {
     const safeUser = session?.user || null;
@@ -107,8 +106,10 @@ export const AuthProvider = ({ children }) => {
           setAuthReady(true);
         }
       },
-      onAuthFailure: () => {
-        clearSessionState();
+      onAuthFailure: (error) => {
+        if (error?.response?.status === 401) {
+          clearSessionState();
+        }
       }
     });
 
@@ -118,9 +119,6 @@ export const AuthProvider = ({ children }) => {
   }, [clearSessionState]);
 
   useEffect(() => {
-    if (bootstrapStartedRef.current) return;
-    bootstrapStartedRef.current = true;
-
     let active = true;
     const bootstrapAuth = async () => {
       try {
