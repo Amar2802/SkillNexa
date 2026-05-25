@@ -8,7 +8,9 @@ const SkillNexaLogo = ({
 }) => {
   const content = (
     <div className={`snx-brand-lockup ${className}`.trim()}>
-      <img src={LOGO_SRC} alt="SkillNexa - AI Interview Platform" className={imageClassName} />
+      <div className="snx-brand-logo-surface">
+        <img src={LOGO_SRC} alt="SkillNexa - AI Interview Platform" className={imageClassName} />
+      </div>
       {showTagline ? <span className="snx-brand-tagline">AI Interview Platform</span> : null}
     </div>
   );

@@ -4526,29 +4526,45 @@ body,
   display: inline-flex;
 }
 
+.snx-brand-logo-surface {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 0.55rem 0.85rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
 .snx-brand-logo-image {
   display: block;
   width: auto;
   height: auto;
   max-width: 100%;
   object-fit: contain;
+  background: #ffffff;
 }
 
 .snx-brand-logo-sidebar {
-  width: min(220px, 100%);
-  max-height: 72px;
+  width: min(200px, 100%);
+  max-height: 64px;
 }
 
 .snx-brand-logo-auth {
-  width: min(320px, 100%);
-  max-height: 96px;
-  margin: 0 auto;
+  width: min(300px, 100%);
+  max-height: 88px;
 }
 
 .snx-brand-logo-loader {
-  width: min(280px, 90vw);
-  max-height: 88px;
-  margin: 0 auto 1.25rem;
+  width: min(260px, 90vw);
+  max-height: 80px;
+}
+
+.snx-brand-logo-sidebar,
+.snx-brand-logo-auth,
+.snx-brand-logo-loader {
+  margin: 0 auto;
 }
 
 .snx-auth-shell-header {
@@ -6136,6 +6152,12 @@ small,
 [data-theme="dark"] .snx-stat-meta,
 [data-theme="dark"] .snx-company-meta,
 [data-theme="dark"] .snx-profile-email,
+[data-theme="dark"] .snx-brand-logo-surface,
+[data-theme="dark"] .snx-brand-logo-image {
+  background: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 [data-theme="dark"] .snx-brand-caption,
 [data-theme="dark"] small,
 [data-theme="dark"] .form-label {
