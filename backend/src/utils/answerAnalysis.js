@@ -14,6 +14,7 @@ const buildFallbackAnalysis = ({ userAnswer, correctAnswer, topic }) => {
   const verdict = normalizeVerdict("", userAnswer, correctAnswer);
   return {
     verdict,
+    suggestedAnswer: String(correctAnswer || "").trim(),
     whyCorrect: `The expected answer reflects the core idea for ${topic || "this topic"}: ${String(correctAnswer).slice(0, 180)}`,
     whyWrong: verdict === "Correct" ? "" : "Your answer missed key points from the expected solution. Compare structure, terms, and reasoning.",
     concept: `Remember the main ${topic || "concept"} pattern behind this question.`
@@ -38,6 +39,7 @@ Return valid JSON only with:
 - verdict: "Correct" or "Incorrect"
 - whyCorrect: 1-2 short lines explaining why the correct answer is right
 - whyWrong: 1-2 short lines explaining why the user's answer was wrong (empty string if correct)
+- suggestedAnswer: a clear, interview-ready model answer the candidate can give (2-4 sentences or concise bullets)
 - concept: 1 short line with the key concept to remember
 
 Topic: ${safeTopic}
@@ -51,11 +53,13 @@ User answer: ${safeUserAnswer}`;
     });
     const parsed = JSON.parse(completion.output_text);
     const verdict = normalizeVerdict(parsed.verdict, safeUserAnswer, safeCorrectAnswer);
+    const fallback = buildFallbackAnalysis({ userAnswer: safeUserAnswer, correctAnswer: safeCorrectAnswer, topic: safeTopic });
     return {
       verdict,
-      whyCorrect: String(parsed.whyCorrect || "").trim() || buildFallbackAnalysis({ userAnswer: safeUserAnswer, correctAnswer: safeCorrectAnswer, topic: safeTopic }).whyCorrect,
-      whyWrong: verdict === "Correct" ? "" : String(parsed.whyWrong || "").trim() || buildFallbackAnalysis({ userAnswer: safeUserAnswer, correctAnswer: safeCorrectAnswer, topic: safeTopic }).whyWrong,
-      concept: String(parsed.concept || "").trim() || buildFallbackAnalysis({ userAnswer: safeUserAnswer, correctAnswer: safeCorrectAnswer, topic: safeTopic }).concept
+      suggestedAnswer: String(parsed.suggestedAnswer || "").trim() || fallback.suggestedAnswer,
+      whyCorrect: String(parsed.whyCorrect || "").trim() || fallback.whyCorrect,
+      whyWrong: verdict === "Correct" ? "" : String(parsed.whyWrong || "").trim() || fallback.whyWrong,
+      concept: String(parsed.concept || "").trim() || fallback.concept
     };
   } catch {
     return buildFallbackAnalysis({ userAnswer: safeUserAnswer, correctAnswer: safeCorrectAnswer, topic: safeTopic });

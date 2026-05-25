@@ -21,6 +21,12 @@ const AnswerAnalysisBlock = ({ analysis, loading }) => {
       <p className="eyebrow mb-2">Answer Analysis</p>
       <p className={`mb-3 fw-semibold ${isCorrect ? "text-success" : "text-danger"}`}>{analysis.verdict}</p>
       <div className="vstack gap-3">
+        {analysis.suggestedAnswer ? (
+          <div>
+            <span className="feedback-label">Suggested answer you can give</span>
+            <p className="mb-0 text-secondary">{analysis.suggestedAnswer}</p>
+          </div>
+        ) : null}
         <div>
           <span className="feedback-label">Why the correct answer is right</span>
           <p className="mb-0 text-secondary">{analysis.whyCorrect}</p>
