@@ -162,13 +162,20 @@ const Navbar = ({ user, profile, logout }) => {
           <div className="snx-topbar-label">AI Interview Command Center</div>
           <h2 className="snx-topbar-title">Sharpen practice, track growth, and keep every interview workflow easy to navigate.</h2>
         </div>
-        <Link to="/profile" className="snx-topbar-profile text-decoration-none">
-          <div className="text-end">
-            <div className="snx-topbar-profile-label">Profile Workspace</div>
-            <div className="snx-topbar-profile-name">{currentUser?.name || "Profile"}</div>
-          </div>
-          <Avatar user={currentUser} />
-        </Link>
+        <div className="snx-topbar-actions d-flex align-items-center gap-3">
+          {logout ? (
+            <button type="button" className="btn snx-btn-secondary" onClick={logout}>
+              Logout
+            </button>
+          ) : null}
+          <Link to="/profile" className="snx-topbar-profile text-decoration-none">
+            <div className="text-end">
+              <div className="snx-topbar-profile-label">Profile Workspace</div>
+              <div className="snx-topbar-profile-name">{currentUser?.name || "Profile"}</div>
+            </div>
+            <Avatar user={currentUser} />
+          </Link>
+        </div>
       </header>
     </>
   );

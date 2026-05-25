@@ -161,7 +161,7 @@ const AppRoutes = () => {
           <Route path="/ai-interviewer" element={<AIInterviewerPage questions={questions} />} />
           <Route path="/bookmarks" element={<BookmarksPage bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} />} />
           <Route path="/history" element={<HistoryPage history={history} refreshHistory={refreshHistory} />} />
-          <Route path="/profile" element={<ProfilePage profile={profile || user} refreshProfile={refreshProfile} logout={logout} />} />
+          <Route path="/profile" element={<ProfilePage profile={profile || user} refreshProfile={refreshProfile} />} />
         </Route>
 
         <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />

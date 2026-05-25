@@ -14,7 +14,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => getStoredUser());
   const [profile, setProfile] = useState(() => getStoredUser());
-  const [authReady, setAuthReady] = useState(false);
+  const [authReady, setAuthReady] = useState(() => Boolean(getStoredUser()));
   const [authLoading, setAuthLoading] = useState(false);
   const bootstrapStartedRef = useRef(false);
 
