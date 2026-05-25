@@ -9,6 +9,7 @@ import questionRoutes from "./routes/questionRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import codeRoutes from "./routes/codeRoutes.js";
+import analysisRoutes from "./routes/analysisRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
 const app = express();
@@ -58,6 +59,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/tests", testRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/code", codeRoutes);
+app.use("/api/analysis", analysisRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

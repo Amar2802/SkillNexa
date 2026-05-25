@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/client";
 import { useToast } from "../components/ui/ToastProvider";
+import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
 
 const formatTimer = (seconds) => {
   const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -19,6 +21,8 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [generationError, setGenerationError] = useState("");
   const autoSubmittedRef = useRef(false);
+  const [analysisByQuestionId, setAnalysisByQuestionId] = useState({});
+  const [analysisLoadingByQuestionId, setAnalysisLoadingByQuestionId] = useState({});
 
   const questionCount = useMemo(() => activeTest ? activeTest.sections.flatMap((section) => section.questions).length : 0, [activeTest]);
   const pendingQuestionCount = useMemo(() => pendingTest ? pendingTest.sections.flatMap((section) => section.questions).length : 0, [pendingTest]);
@@ -54,6 +58,8 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
       setActiveTest(null);
       setAnswers({});
       setResult(null);
+      setAnalysisByQuestionId({});
+      setAnalysisLoadingByQuestionId({});
       setRemainingSeconds(0);
       autoSubmittedRef.current = false;
       await refreshTests?.().catch(() => undefined);
@@ -80,6 +86,26 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
     autoSubmittedRef.current = false;
   };
 
+  const requestQuestionAnalysis = async (question) => {
+    const userAnswer = answers[question._id];
+    if (!String(userAnswer || "").trim()) return;
+
+    setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
+    try {
+      const data = await fetchAnswerAnalysis({
+        questionId: question._id,
+        userAnswer,
+        correctAnswer: question.correctAnswer,
+        topic: question.topic
+      });
+      setAnalysisByQuestionId((current) => ({ ...current, [question._id]: data }));
+    } catch {
+      setAnalysisByQuestionId((current) => ({ ...current, [question._id]: null }));
+    } finally {
+      setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
+    }
+  };
+
   const submitTest = async (autoSubmit = false) => {
     if (!activeTest || submitting) return;
 
@@ -90,6 +116,21 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
       const payload = Object.entries(answers).map(([questionId, submittedAnswer]) => ({ questionId, submittedAnswer, timeSpent: 0 }));
       const { data } = await api.post(`/tests/${activeTest._id}/submit`, { answers: payload, totalTimeSpent: spentSeconds });
       setResult({ ...data, autoSubmitted });
+      (data?.answers || []).forEach((entry) => {
+        const question = entry?.question;
+        if (!question || typeof question !== "object") return;
+        setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
+        void fetchAnswerAnalysis({
+          questionId: question._id,
+          userAnswer: entry.submittedAnswer,
+          correctAnswer: question.correctAnswer,
+          topic: question.topic
+        }).then((analysis) => {
+          setAnalysisByQuestionId((current) => ({ ...current, [question._id]: analysis }));
+        }).catch(() => undefined).finally(() => {
+          setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
+        });
+      });
       setActiveTest(null);
       setPendingTest(null);
       setAnswers({});
@@ -202,6 +243,12 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
                 ) : (
                   <textarea className="form-control" rows="5" value={answers[question._id] || ""} onChange={(event) => setAnswers((current) => ({ ...current, [question._id]: event.target.value }))} placeholder={question.type === "Coding" ? "Write code or approach here..." : "Write your answer here..."} />
                 )}
+                <div className="d-flex gap-2 flex-wrap mt-3">
+                  <button type="button" className="btn btn-outline-light" onClick={() => requestQuestionAnalysis(question)} disabled={!String(answers[question._id] || "").trim() || analysisLoadingByQuestionId[question._id]}>
+                    {analysisLoadingByQuestionId[question._id] ? "Analyzing..." : "Analyze Answer"}
+                  </button>
+                </div>
+                <AnswerAnalysisBlock analysis={analysisByQuestionId[question._id]} loading={analysisLoadingByQuestionId[question._id]} />
               </div>
             ))}
           </div>
@@ -219,6 +266,19 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
             <div><span>Accuracy</span><strong>{result.accuracy}%</strong></div>
             <div><span>Weak Topics</span><strong>{(result.weakTopics || []).join(", ") || "None"}</strong></div>
             <div><span>Strengths</span><strong>{(result.strengths || []).join(", ") || "None"}</strong></div>
+          </div>
+          <div className="vstack gap-4">
+            {(result.answers || []).map((entry, index) => {
+              const question = entry?.question;
+              if (!question || typeof question !== "object") return null;
+              return (
+                <div key={question._id || index} className="mock-test-question-block">
+                  <h3 className="h5 mb-2">{question.title}</h3>
+                  <p className="text-secondary mb-2">{String(entry.submittedAnswer || "No answer submitted")}</p>
+                  <AnswerAnalysisBlock analysis={analysisByQuestionId[question._id]} loading={analysisLoadingByQuestionId[question._id]} />
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : null}

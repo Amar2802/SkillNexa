@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import api from "../api/client";
 import { useToast } from "../components/ui/ToastProvider";
+import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
 
 const roundOptions = ["Full Loop", "Technical", "HR", "Mixed"];
 const companyOptions = ["General", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
@@ -32,6 +34,8 @@ const AIInterviewerPage = () => {
   const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
+  const [answerAnalysis, setAnswerAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   const currentQuestion = interviewQuestions[currentIndex];
   const roundSummary = useMemo(() => interviewQuestions.map((item) => item.round), [interviewQuestions]);
@@ -60,11 +64,25 @@ const AIInterviewerPage = () => {
       setCurrentIndex(0);
       setAnswer("");
       setEvaluation(null);
+      setAnswerAnalysis(null);
+      setAnalysisLoading(false);
       showToast("AI interview generated successfully.", "success");
     } catch (error) {
       showToast(error.response?.data?.message || "Unable to generate interview right now.", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAnswerAnalysis = async (payload) => {
+    setAnalysisLoading(true);
+    try {
+      const data = await fetchAnswerAnalysis(payload);
+      setAnswerAnalysis(data);
+    } catch {
+      setAnswerAnalysis(null);
+    } finally {
+      setAnalysisLoading(false);
     }
   };
 
@@ -81,6 +99,12 @@ const AIInterviewerPage = () => {
       });
       setEvaluation(data);
       showToast("AI feedback is ready.", "success");
+      void loadAnswerAnalysis({
+        questionId: currentQuestion.id,
+        userAnswer: answer,
+        correctAnswer: data.idealAnswer,
+        topic: currentQuestion.category
+      });
     } catch (error) {
       showToast(error.response?.data?.message || "Unable to evaluate the answer right now.", "error");
     } finally {
@@ -325,10 +349,11 @@ const AIInterviewerPage = () => {
                     <button className="btn snx-btn-primary" onClick={evaluateAnswer} disabled={evaluating}>
                       {evaluating ? "Evaluating..." : "Evaluate Answer"}
                     </button>
-                    <button className="btn snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); setEvaluation(null); }} disabled={currentIndex <= 0}>
+                    <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
+                    <button className="btn snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); setEvaluation(null); setAnswerAnalysis(null); setAnalysisLoading(false); }} disabled={currentIndex <= 0}>
                       Previous
                     </button>
-                    <button className="btn snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.min(index + 1, interviewQuestions.length - 1)); setAnswer(""); setEvaluation(null); }} disabled={currentIndex >= interviewQuestions.length - 1}>
+                    <button className="btn snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.min(index + 1, interviewQuestions.length - 1)); setAnswer(""); setEvaluation(null); setAnswerAnalysis(null); setAnalysisLoading(false); }} disabled={currentIndex >= interviewQuestions.length - 1}>
                       Next
                     </button>
                   </div>

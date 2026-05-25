@@ -65,7 +65,9 @@ export const AuthProvider = ({ children }) => {
       applyAuth({ ...session, rememberMe: getRememberMePreference() });
       return session;
     } catch (error) {
-      clearSessionState();
+      if (error?.response?.status === 401) {
+        clearSessionState();
+      }
       throw error;
     } finally {
       setAuthLoading(false);
@@ -126,9 +128,11 @@ export const AuthProvider = ({ children }) => {
         const session = await authService.restoreSession();
         if (!active) return;
         applyAuth({ ...session, rememberMe: getRememberMePreference() });
-      } catch {
+      } catch (error) {
         if (!active) return;
-        clearSessionState();
+        if (error?.response?.status === 401) {
+          clearSessionState();
+        }
       } finally {
         if (active) {
           setAuthLoading(false);

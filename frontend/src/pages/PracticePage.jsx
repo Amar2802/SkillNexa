@@ -4,6 +4,8 @@ import Editor from "@monaco-editor/react";
 import api from "../api/client";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 import { useToast } from "../components/ui/ToastProvider";
+import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
 
 const typeOptions = [
   { id: "all", label: "All Questions" },
@@ -30,6 +32,8 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
   const [submitting, setSubmitting] = useState(false);
   const [runningCode, setRunningCode] = useState(false);
   const [startedAt, setStartedAt] = useState(Date.now());
+  const [answerAnalysis, setAnswerAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   useEffect(() => {
     if (questions.length || !loadQuestions) return;
@@ -87,6 +91,8 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
   useEffect(() => {
     if (!question) return;
     setFeedback(null);
+    setAnswerAnalysis(null);
+    setAnalysisLoading(false);
     setStartedAt(Date.now());
     setAnswer(question.type === "Coding" ? question.starterCode?.[language] || "" : "");
   }, [question, language]);
@@ -99,6 +105,18 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
     navigate(`/practice${location.search}`);
   };
 
+  const loadAnswerAnalysis = async (payload) => {
+    setAnalysisLoading(true);
+    try {
+      const data = await fetchAnswerAnalysis(payload);
+      setAnswerAnalysis(data);
+    } catch {
+      setAnswerAnalysis(null);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
   const submit = async () => {
     if (!question) return;
     try {
@@ -109,6 +127,12 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
       }, { timeout: 25000 });
       setFeedback(data);
       showToast("Answer evaluated successfully.", "success");
+      void loadAnswerAnalysis({
+        questionId: question._id,
+        userAnswer: answer,
+        correctAnswer: data.correctAnswer,
+        topic: question.topic
+      });
     } catch (error) {
       showToast(error.response?.data?.message || "Unable to evaluate your answer right now.", "error");
     } finally {
@@ -343,6 +367,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                     <pre className="mb-0">{feedback.codeOutput}</pre>
                   </div>
                 ) : null}
+                <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
               </div>
             ) : null}
           </>
