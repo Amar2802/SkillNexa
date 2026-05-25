@@ -4532,9 +4532,9 @@ body,
   justify-content: center;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 16px;
-  padding: 0.55rem 0.85rem;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  padding: 0.65rem 0.9rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 .snx-brand-logo-image {
@@ -4543,7 +4543,6 @@ body,
   height: auto;
   max-width: 100%;
   object-fit: contain;
-  background: #ffffff;
 }
 
 .snx-brand-logo-sidebar {
@@ -6152,10 +6151,9 @@ small,
 [data-theme="dark"] .snx-stat-meta,
 [data-theme="dark"] .snx-company-meta,
 [data-theme="dark"] .snx-profile-email,
-[data-theme="dark"] .snx-brand-logo-surface,
-[data-theme="dark"] .snx-brand-logo-image {
-  background: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.12);
+[data-theme="dark"] .snx-brand-logo-surface {
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 [data-theme="dark"] .snx-brand-caption,
