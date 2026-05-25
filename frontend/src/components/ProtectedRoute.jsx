@@ -1,11 +1,17 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import SkillNexaLogo from "./SkillNexaLogo";
 import SectionLoader from "./ui/SectionLoader";
 
 const ProtectedRoute = ({ user, authReady, children }) => {
   const location = useLocation();
 
   if (!authReady) {
-    return <SectionLoader title="Verifying your session..." subtitle="Checking your SkillNexa access" />;
+    return (
+      <div className="snx-page-loader-wrap">
+        <SkillNexaLogo imageClassName="snx-brand-logo-image snx-brand-logo-loader" />
+        <SectionLoader title="Verifying your session..." subtitle="Checking your SkillNexa access" />
+      </div>
+    );
   }
 
   if (!user) {

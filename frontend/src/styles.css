@@ -2245,7 +2245,8 @@ body {
   border: 1px solid var(--border-color);
   background: rgba(255, 255, 255, 0.04);
 }
-:root[data-theme='light'] .profile-field-panel {
+
+:root[data-theme='light'] .profile-field-panel {
   background: rgba(255, 255, 255, 0.74);
 }
 
@@ -4367,9 +4368,11 @@ body,
 .snx-page-loader-wrap {
   min-height: 50vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  gap: 1rem;
+  padding: 2rem 1rem;
 }
 
 .snx-loader-card {
@@ -4517,6 +4520,41 @@ body,
   display: flex;
   align-items: center;
   gap: 0.9rem;
+}
+
+.snx-brand-link {
+  display: inline-flex;
+}
+
+.snx-brand-logo-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.snx-brand-logo-sidebar {
+  width: min(220px, 100%);
+  max-height: 72px;
+}
+
+.snx-brand-logo-auth {
+  width: min(320px, 100%);
+  max-height: 96px;
+  margin: 0 auto;
+}
+
+.snx-brand-logo-loader {
+  width: min(280px, 90vw);
+  max-height: 88px;
+  margin: 0 auto 1.25rem;
+}
+
+.snx-auth-shell-header {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem 0;
 }
 
 .snx-brand-badge {

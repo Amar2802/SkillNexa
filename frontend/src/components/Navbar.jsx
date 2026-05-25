@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
+import SkillNexaLogo from "./SkillNexaLogo";
 
 const navIcons = {
   dashboard: (
@@ -77,17 +78,7 @@ const Avatar = ({ user }) => {
   );
 };
 
-const Brand = () => (
-  <div className="snx-brand-lockup">
-    <div className="snx-brand-badge">
-      <img src="/skillnexa-logo.svg" alt="SkillNexa logo" className="snx-brand-logo" />
-    </div>
-    <div>
-      <div className="snx-brand-wordmark">SkillNexa</div>
-      <div className="snx-brand-caption">AI Interview Preparation</div>
-    </div>
-  </div>
-);
+const Brand = () => <SkillNexaLogo imageClassName="snx-brand-logo-image snx-brand-logo-sidebar" />;
 
 const Navbar = ({ user, profile, logout }) => {
   if (!user) return null;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import SectionLoader from "../components/ui/SectionLoader";
+import SkillNexaLogo from "../components/SkillNexaLogo";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/ui/ToastProvider";
 import { setAccessToken } from "../utils/authStorage";
@@ -50,7 +51,12 @@ const OAuthSuccessPage = () => {
     );
   }
 
-  return <SectionLoader title="Completing Google sign-in..." subtitle="Finalizing your SkillNexa session" />;
+  return (
+    <div className="snx-page-loader-wrap">
+      <SkillNexaLogo imageClassName="snx-brand-logo-image snx-brand-logo-loader" />
+      <SectionLoader title="Completing Google sign-in..." subtitle="Finalizing your SkillNexa session" />
+    </div>
+  );
 };
 
 export default OAuthSuccessPage;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/client";
+import SkillNexaLogo from "../components/SkillNexaLogo";
 import { FIELD_INTEREST_OPTIONS, FIELD_OPTIONS } from "../utils/fieldOptions";
 
 const OnboardingPage = ({ profile, refreshProfile, needsSetup }) => {
@@ -60,6 +61,9 @@ const OnboardingPage = ({ profile, refreshProfile, needsSetup }) => {
           <div className="col-lg-7">
             <div className="card glass-card">
               <div className="card-body p-4 p-lg-5">
+                <div className="mb-4">
+                  <SkillNexaLogo imageClassName="snx-brand-logo-image snx-brand-logo-auth" />
+                </div>
                 <span className="eyebrow">Preparation Setup</span>
                 <h1 className="h2 fw-bold mt-3">Choose your field before entering the platform</h1>
                 <p className="text-secondary mb-4">
