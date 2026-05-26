@@ -5,7 +5,6 @@ import App from "./App";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import "./tailwind.css";
 import "./index.css";
 import "./styles.css";
 
