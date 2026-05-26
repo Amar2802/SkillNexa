@@ -6,6 +6,7 @@ import { ToastProvider } from "./components/ui/ToastProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./tailwind.css";
 import "./index.css";
 import "./styles.css";
 
