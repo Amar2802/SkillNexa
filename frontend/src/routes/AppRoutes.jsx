@@ -8,10 +8,8 @@ import LoadingScreen from "../components/ui/LoadingScreen";
 import { useAuth } from "../context/AuthContext";
 import { useAuthSession } from "../hooks/useAuthSession";
 import api from "../api/client";
+import AuthPage from "../pages/AuthPage";
 
-const LoginPage = lazy(() => import("../pages/LoginPage"));
-const SignupPage = lazy(() => import("../pages/SignupPage"));
-const ForgotPasswordPage = lazy(() => import("../pages/ForgotPasswordPage"));
 const OAuthSuccessPage = lazy(() => import("../pages/OAuthSuccessPage"));
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
 const QuestionBankPage = lazy(() => import("../pages/QuestionBankPage"));
@@ -136,13 +134,12 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<RouteLoader />}>
       <Routes>
-        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
-
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-          <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupPage />} />
-          <Route path="/forgot-password" element={user ? <Navigate to="/dashboard" replace /> : <ForgotPasswordPage />} />
-          <Route path="/oauth-success" element={<OAuthSuccessPage />} />
+          <Route index element={<AuthPage mode="none" />} />
+          <Route path="login" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="login" />} />
+          <Route path="signup" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="signup" />} />
+          <Route path="forgot-password" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="forgot" />} />
+          <Route path="oauth-success" element={<OAuthSuccessPage />} />
         </Route>
 
         <Route
@@ -164,7 +161,7 @@ const AppRoutes = () => {
           <Route path="/profile" element={<ProfilePage profile={profile || user} refreshProfile={refreshProfile} />} />
         </Route>
 
-        <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+        <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
       </Routes>
     </Suspense>
   );

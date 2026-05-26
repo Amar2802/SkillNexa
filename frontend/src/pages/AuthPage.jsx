@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FiArrowRight, FiCheckCircle, FiEye, FiEyeOff, FiGithub, FiMail } from "react-icons/fi";
+import { AnimatePresence, motion } from "framer-motion";
+import { FiArrowRight, FiCheckCircle, FiEye, FiEyeOff, FiGithub, FiMail, FiX } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { authService } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
@@ -184,18 +185,21 @@ const ForgotPasswordPanel = ({ onBack, standalone = false }) => {
   );
 };
 
-const AuthPage = ({ mode }) => {
+const AuthPage = ({ mode = "none" }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
   const { login, signup, authLoading } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", agreeToTerms: false });
   const [error, setError] = useState("");
-  const [showForgotPassword, setShowForgotPassword] = useState(mode === "forgot");
   const [rememberMe, setRememberMe] = useState(getRememberMePreference);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(mode === "forgot");
+  const [authPanelOpen, setAuthPanelOpen] = useState(mode === "login" || mode === "signup" || mode === "forgot");
+
   const isLogin = mode === "login";
+  const isSignup = mode === "signup";
   const isForgot = mode === "forgot";
   const passwordStrength = useMemo(() => getPasswordStrength(form.password), [form.password]);
 
@@ -212,6 +216,11 @@ const AuthPage = ({ mode }) => {
       navigate(location.pathname, { replace: true });
     }
   }, [location.pathname, navigate, showToast]);
+
+  useEffect(() => {
+    setAuthPanelOpen(mode === "login" || mode === "signup" || mode === "forgot");
+    setShowForgotPassword(mode === "forgot");
+  }, [mode]);
 
   const resolveAuthErrorMessage = (err) => {
     if (err?.response?.data?.message) {
@@ -254,6 +263,10 @@ const AuthPage = ({ mode }) => {
     return "";
   };
 
+  const closeModal = () => {
+    navigate("/");
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     const validationError = validateAuthForm();
@@ -285,250 +298,260 @@ const AuthPage = ({ mode }) => {
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <section id="hero" className="grid min-h-[calc(100vh-6rem)] gap-8 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,440px)] xl:items-start">
-        <div className="space-y-8">
-          <div className="snx-gradient-border h-full">
-            <div className="snx-panel relative h-full overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.22),transparent_42%),radial-gradient(circle_at_top_right,rgba(6,182,212,0.18),transparent_28%)]" />
-              <div className="relative space-y-8">
+    <div className="relative overflow-hidden">
+      <section id="hero" className="space-y-10 pb-16 pt-4 md:pb-20">
+        <div className="snx-gradient-border overflow-hidden rounded-[32px] border border-white/80 bg-white/80 shadow-[0_28px_70px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+          <div className="snx-panel relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.16),transparent_38%),radial-gradient(circle_at_top_right,rgba(6,182,212,0.12),transparent_28%)]" />
+            <div className="relative grid gap-10 xl:grid-cols-[minmax(0,0.92fr)_minmax(360px,420px)]">
+              <div className="space-y-8 py-12 px-6 sm:px-10 lg:px-14">
                 <div className="space-y-4">
                   <span className="snx-kicker">Premium AI Interview Platform</span>
-                  <h1 className="snx-display">Crack interviews with an AI-powered preparation workspace.</h1>
-                  <p className="snx-subcopy max-w-2xl">
+                  <h1 className="snx-display max-w-3xl">Crack interviews with an AI-powered preparation workspace.</h1>
+                  <p className="snx-subcopy max-w-3xl">
                     Generate company-quality mock interviews, practice coding and communication, track your performance, and stay ready for top product companies with SkillNexa.
                   </p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
                   {trustMetrics.map((item) => (
-                    <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-[0_20px_44px_rgba(15,23,42,0.08)]">
+                    <div key={item.label} className="rounded-[24px] border border-slate-200/90 bg-white p-5 shadow-[0_18px_38px_rgba(15,23,42,0.08)]">
                       <div className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</div>
                       <div className="mt-1 text-sm text-slate-500">{item.label}</div>
                     </div>
                   ))}
                 </div>
+              </div>
 
-                <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-                  <div id="features" className="rounded-[28px] border border-white/70 bg-slate-950 px-6 py-6 text-white shadow-[0_20px_52px_rgba(15,23,42,0.18)]">
-                    <div className="mb-5 flex items-center justify-between">
-                      <SkillNexaLogo showTagline />
-                      <span className="rounded-full border border-white/15 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/70">AI SaaS</span>
-                    </div>
-                    <div className="space-y-4">
-                      {featureBullets.map((item) => (
-                        <div key={item} className="flex items-start gap-3">
-                          <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-brand-300">
-                            <FiCheckCircle className="h-4 w-4" />
-                          </span>
-                          <p className="text-sm leading-6 text-slate-200">{item}</p>
-                        </div>
-                      ))}
-                    </div>
+              <div className="hidden xl:block py-14 px-10">
+                <div className="rounded-[28px] border border-slate-200/80 bg-slate-950 px-6 py-6 text-white shadow-[0_20px_52px_rgba(15,23,42,0.18)]">
+                  <div className="mb-6 flex items-center justify-between">
+                    <SkillNexaLogo showTagline />
+                    <span className="rounded-full border border-white/15 px-3 py-1 text-xs uppercase tracking-[0.22em] text-white/70">AI SaaS</span>
                   </div>
-
-                  <div id="capabilities" className="grid gap-4">
-                    {showcaseCards.map((card) => (
-                      <div key={card.title} className="rounded-[24px] border border-slate-200/80 bg-white/82 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-                        <div className="mb-3 inline-flex rounded-2xl bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
-                          Feature
-                        </div>
-                        <h3 className="text-lg font-semibold text-slate-950">{card.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">{card.body}</p>
+                  <div className="space-y-4">
+                    {featureBullets.map((item) => (
+                      <div key={item} className="flex items-start gap-3">
+                        <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-brand-300">
+                          <FiCheckCircle className="h-4 w-4" />
+                        </span>
+                        <p className="text-sm leading-6 text-slate-200">{item}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div id="about" className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-5">
-                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Interview coverage</div>
-                    <div className="mt-3 text-sm leading-7 text-slate-600">
-                      Frontend, backend, full stack, DSA, aptitude, behavioral rounds, and AI interviewer practice in a single focused product surface.
+                <div className="mt-6 grid gap-4">
+                  {showcaseCards.map((card) => (
+                    <div key={card.title} className="rounded-[24px] border border-slate-200/70 bg-white/90 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+                      <span className="mb-3 inline-flex rounded-2xl bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Feature</span>
+                      <h3 className="text-lg font-semibold text-slate-950">{card.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{card.body}</p>
                     </div>
-                  </div>
-                  <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-5">
-                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Built for outcomes</div>
-                    <div className="mt-3 text-sm leading-7 text-slate-600">
-                      Designed to feel investor-ready and recruiter-worthy while still preserving your existing MERN workflows and backend integrations.
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <SurfaceCard strong className="relative overflow-hidden h-full">
-          <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(20,184,166,0.15),transparent_55%)]" />
-          <div className="relative space-y-6">
-            <div className="flex items-center justify-between gap-3">
-              <SkillNexaLogo />
-              <span className="snx-kicker">
-                {isForgot ? "Recover" : isLogin ? "Login" : "Signup"}
-              </span>
-            </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-[28px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Interview coverage</div>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Frontend, backend, full stack, DSA, aptitude, behavioral rounds, and AI interviewer practice in a single focused product surface.
+            </p>
+          </div>
+          <div className="rounded-[28px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Built for outcomes</div>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Designed to feel investor-ready and recruiter-worthy while still preserving your existing MERN workflows and backend integrations.
+            </p>
+          </div>
+        </div>
+      </section>
 
-            <div className="space-y-3">
-              <h2 className="snx-heading text-3xl">
-                {isForgot ? "Reset your password securely" : isLogin ? "Sign in to continue your prep" : "Create your SkillNexa account"}
-              </h2>
-              <p className="snx-subcopy">
-                {isForgot
-                  ? "Recover your account and return to your personalized interview workspace."
-                  : isLogin
-                    ? "Access your private dashboard, mock interviews, analytics, and guided practice flows."
-                    : "Get a private AI-powered workspace for interviews, revision, practice, and performance tracking."}
-              </p>
-            </div>
-
-            {isForgot ? (
-              <ForgotPasswordPanel standalone onBack={() => navigate("/login")} />
-            ) : (
-              <form onSubmit={submit} className="space-y-5">
-                {!isLogin ? (
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium text-slate-700">Full name</span>
-                    <input
-                      className="snx-input"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      required
-                    />
-                  </label>
-                ) : null}
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">Email</span>
-                  <div className="relative">
-                    <FiMail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="email"
-                      className="snx-input pl-11"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                </label>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-slate-700">Password</span>
-                    {isLogin ? (
-                      <button type="button" className="text-sm font-semibold text-brand-700 hover:text-brand-500" onClick={() => setShowForgotPassword((current) => !current)}>
-                        Forgot password?
-                      </button>
-                    ) : null}
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className="snx-input pr-14"
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      required
-                    />
-                    <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" onClick={() => setShowPassword((current) => !current)}>
-                      {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+      <AnimatePresence>
+        {(authPanelOpen || isForgot) ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10 sm:px-6"
+          >
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity" onClick={closeModal} />
+            <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/15 bg-white/95 shadow-[0_35px_90px_rgba(15,23,42,0.24)] backdrop-blur-xl">
+              <div className="flex flex-col gap-6 p-6 sm:p-8 lg:p-10">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 rounded-[28px] bg-slate-100 p-1 shadow-sm">
+                    <button
+                      type="button"
+                      className={`inline-flex min-w-[120px] items-center justify-center rounded-[24px] px-4 py-3 text-sm font-semibold transition ${isLogin ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-950"}`}
+                      onClick={() => navigate("/login")}
+                    >
+                      Login
+                    </button>
+                    <button
+                      type="button"
+                      className={`inline-flex min-w-[120px] items-center justify-center rounded-[24px] px-4 py-3 text-sm font-semibold transition ${isSignup ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-950"}`}
+                      onClick={() => navigate("/signup")}
+                    >
+                      Sign Up
                     </button>
                   </div>
+                  <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50" onClick={closeModal}>
+                    <FiX className="h-5 w-5" />
+                  </button>
                 </div>
 
-                {!isLogin ? (
-                  <>
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">Confirm password</span>
-                      <div className="relative">
-                        <input
-                          type={showConfirmPassword ? "text" : "password"}
-                          className="snx-input pr-14"
-                          value={form.confirmPassword}
-                          onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                          required
-                        />
-                        <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" onClick={() => setShowConfirmPassword((current) => !current)}>
-                          {showConfirmPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-                        </button>
+                <div className="grid gap-5 lg:grid-cols-[0.85fr_0.75fr]">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="snx-kicker">{isForgot ? "Recover access" : "Secure sign in"}</span>
+                        <h2 className="snx-heading text-3xl mt-2">{isForgot ? "Reset your password" : isLogin ? "Sign in to continue" : "Create your SkillNexa account"}</h2>
                       </div>
+                      <SkillNexaLogo />
                     </div>
+                    <p className="snx-subcopy max-w-2xl text-slate-600">
+                      {isForgot
+                        ? "Restore access and return to your training dashboard with a secure OTP flow."
+                        : isLogin
+                          ? "Access your private dashboard, mock interviews, analytics, and guided practice flows."
+                          : "Get a premium AI-powered preparation workspace for interviews, revision, and performance tracking."}
+                    </p>
+                  </div>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-700">Password strength</span>
-                        <span className="font-semibold text-slate-500">{passwordStrength.label}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-slate-200">
-                        <div className={`h-2 rounded-full transition-all ${passwordStrength.tone}`} style={{ width: passwordStrength.width }} />
-                      </div>
-                    </div>
-                  </>
-                ) : null}
+                  <div className="rounded-[32px] border border-slate-200/80 bg-slate-50 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.1)] sm:p-6">
+                    {isForgot ? (
+                      <ForgotPasswordPanel onBack={() => navigate("/login")} standalone />
+                    ) : (
+                      <form onSubmit={submit} className="space-y-5">
+                        {!isLogin ? (
+                          <label className="block space-y-2">
+                            <span className="text-sm font-medium text-slate-700">Full name</span>
+                            <input
+                              className="snx-input"
+                              value={form.name}
+                              onChange={(e) => setForm({ ...form, name: e.target.value })}
+                              required
+                            />
+                          </label>
+                        ) : null}
 
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <label className="flex items-center gap-3 text-sm text-slate-600">
-                    <input
-                      id="rememberMe"
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                      checked={rememberMe}
-                      onChange={(event) => setRememberMe(event.target.checked)}
-                    />
-                    <span>Remember me</span>
-                  </label>
+                        <label className="block space-y-2">
+                          <span className="text-sm font-medium text-slate-700">Email</span>
+                          <div className="relative">
+                            <FiMail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="email"
+                              className="snx-input pl-11"
+                              value={form.email}
+                              onChange={(e) => setForm({ ...form, email: e.target.value })}
+                              required
+                            />
+                          </div>
+                        </label>
 
-                  {!isLogin ? (
-                    <label className="flex items-center gap-3 text-sm text-slate-600">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                        checked={form.agreeToTerms}
-                        onChange={(event) => setForm((current) => ({ ...current, agreeToTerms: event.target.checked }))}
-                      />
-                      <span>I agree to the preparation terms</span>
-                    </label>
-                  ) : null}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-medium text-slate-700">Password</span>
+                            {isLogin ? (
+                              <button type="button" className="text-sm font-semibold text-brand-700 hover:text-brand-500" onClick={() => navigate("/forgot-password")}>Forgot?</button>
+                            ) : null}
+                          </div>
+                          <div className="relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              className="snx-input pr-14"
+                              value={form.password}
+                              onChange={(e) => setForm({ ...form, password: e.target.value })}
+                              required
+                            />
+                            <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" onClick={() => setShowPassword((current) => !current)}>
+                              {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {!isLogin ? (
+                          <>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="font-medium text-slate-700">Password strength</span>
+                                <span className="font-semibold text-slate-500">{passwordStrength.label}</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-slate-200">
+                                <div className={`h-2 rounded-full transition-all ${passwordStrength.tone}`} style={{ width: passwordStrength.width }} />
+                              </div>
+                            </div>
+                          </>
+                        ) : null}
+
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <label className="flex items-center gap-3 text-sm text-slate-600">
+                            <input
+                              id="rememberMe"
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                              checked={rememberMe}
+                              onChange={(event) => setRememberMe(event.target.checked)}
+                            />
+                            <span>Remember me</span>
+                          </label>
+
+                          {!isLogin ? (
+                            <label className="flex items-center gap-3 text-sm text-slate-600">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                checked={form.agreeToTerms}
+                                onChange={(event) => setForm((current) => ({ ...current, agreeToTerms: event.target.checked }))}
+                              />
+                              <span>I agree to the preparation terms</span>
+                            </label>
+                          ) : null}
+                        </div>
+
+                        {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div> : null}
+
+                        <div className="grid gap-3">
+                          <button className="snx-btn-accent w-full" disabled={authLoading}>
+                            {authLoading ? (isLogin ? "Signing in..." : "Creating account...") : (isLogin ? "Sign In" : "Create Account")}
+                            <FiArrowRight className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="snx-btn-secondary w-full"
+                            onClick={() => authService.beginGoogleSignIn("Software")}
+                            disabled={authLoading}
+                          >
+                            <FcGoogle className="h-5 w-5" />
+                            Continue with Google
+                          </button>
+
+                          <button type="button" className="snx-btn-secondary w-full opacity-70" disabled title="GitHub login is not connected to the current backend yet.">
+                            <FiGithub className="h-4 w-4" />
+                            GitHub login coming soon
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {!isForgot ? (
+                      <p className="text-sm text-slate-500">
+                        {isLogin ? "Don’t have an account?" : "Already have an account?"} 
+                        <button type="button" className="font-semibold text-brand-700 transition hover:text-brand-500" onClick={() => navigate(isLogin ? "/signup" : "/login")}>{isLogin ? "Sign Up" : "Login"}</button>
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div> : null}
-
-                <div className="grid gap-3">
-                  <button className="snx-btn-accent w-full" disabled={authLoading}>
-                    {authLoading ? (isLogin ? "Signing in..." : "Creating account...") : (isLogin ? "Sign In" : "Create Account")}
-                    <FiArrowRight className="h-4 w-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="snx-btn-secondary w-full"
-                    onClick={() => authService.beginGoogleSignIn("Software")}
-                    disabled={authLoading}
-                  >
-                    <FcGoogle className="h-5 w-5" />
-                    Continue with Google
-                  </button>
-
-                  <button type="button" className="snx-btn-secondary w-full opacity-70" disabled title="GitHub login is not connected to the current backend yet.">
-                    <FiGithub className="h-4 w-4" />
-                    GitHub login coming soon
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {!isForgot ? (
-              <p className="text-sm text-slate-500">
-                {isLogin ? "Donâ€™t have an account?" : "Already have an account?"}{" "}
-                <Link to={isLogin ? "/signup" : "/login"} className="font-semibold text-brand-700 transition hover:text-brand-500">
-                  {isLogin ? "Sign Up" : "Login"}
-                </Link>
-              </p>
-            ) : null}
-
-            {isLogin && showForgotPassword ? <ForgotPasswordPanel onBack={() => setShowForgotPassword(false)} /> : null}
-          </div>
-        </SurfaceCard>
-      </section>
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 };
