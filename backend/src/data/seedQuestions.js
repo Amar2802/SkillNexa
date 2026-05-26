@@ -500,6 +500,446 @@ const softwareBaseQuestions = [
   }
 ];
 
+const professionalInterviewQuestions = [
+  {
+    title: "Longest Substring Without Repeating Characters Discussion",
+    category: "DSA",
+    topic: "Strings",
+    difficulty: "Medium",
+    company: "Google",
+    type: "Coding",
+    description: "Design and explain an efficient approach for finding the length of the longest substring without repeating characters. After solving it, discuss how you would justify the sliding-window approach to an interviewer.",
+    correctAnswer: "Use a sliding window with a hash map or set to track characters, move the left pointer when a duplicate appears, and maintain the best window length in O(n) time.",
+    explanation: "A strong answer should cover sliding-window intuition, duplicate handling, and why the two-pointer approach avoids repeated work.",
+    starterCode: {
+      python: "def length_of_longest_substring(s):\n    pass",
+      cpp: "int lengthOfLongestSubstring(string s) {\n    return 0;\n}",
+      java: "class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        return 0;\n    }\n}"
+    },
+    tags: ["strings", "sliding-window", "hashmap", "interview"]
+  },
+  {
+    title: "First Non-Repeating Element Strategy",
+    category: "DSA",
+    topic: "Arrays",
+    difficulty: "Easy",
+    company: "Adobe",
+    type: "Subjective",
+    description: "Suppose you are asked to find the first non-repeating element in an array. How would you solve it efficiently, and what tradeoffs would you mention if the array were extremely large?",
+    correctAnswer: "Count frequencies with a hash map, then scan the array again to return the first element with count one; this gives O(n) time with O(n) extra space.",
+    explanation: "Interviewers usually expect the two-pass hash map solution plus some mention of memory tradeoffs for very large inputs.",
+    tags: ["arrays", "hashmap", "frequencies", "interview"]
+  },
+  {
+    title: "Kth Largest Element Tradeoff Analysis",
+    category: "DSA",
+    topic: "Searching",
+    difficulty: "Medium",
+    company: "Amazon",
+    type: "Subjective",
+    description: "How would you solve the kth largest element problem, and how would you compare sorting, heap-based, and quickselect-based approaches during an interview?",
+    correctAnswer: "Sorting is simplest but O(n log n), a heap gives O(n log k), and quickselect gives average O(n) with more implementation complexity; the best choice depends on constraints and required clarity.",
+    explanation: "A complete answer compares complexity, implementation difficulty, and when each approach is preferable.",
+    tags: ["searching", "heap", "quickselect", "complexity"]
+  },
+  {
+    title: "Cycle Detection in Linked List",
+    category: "DSA",
+    topic: "Linked List",
+    difficulty: "Easy",
+    company: "Meta",
+    type: "Subjective",
+    description: "Explain how you would detect whether a linked list contains a cycle, and why your chosen approach is considered interview-friendly.",
+    correctAnswer: "Use Floyd's slow and fast pointer technique, where one pointer moves one step and the other moves two; if they ever meet, a cycle exists.",
+    explanation: "The interviewer expects the two-pointer method because it is O(n) time and O(1) space.",
+    tags: ["linked-list", "two-pointers", "cycle-detection"]
+  },
+  {
+    title: "Level Order Traversal Under Depth Constraints",
+    category: "DSA",
+    topic: "Trees",
+    difficulty: "Medium",
+    company: "Microsoft",
+    type: "Subjective",
+    description: "Walk me through how you would return the level order traversal of a binary tree, and tell me what would change if the tree were extremely deep.",
+    correctAnswer: "Use BFS with a queue to process nodes level by level; for an extremely deep tree, iterative traversal is often safer than recursion because it avoids stack overflow risks.",
+    explanation: "The interviewer wants both the traversal pattern and awareness of implementation risks on deep trees.",
+    tags: ["trees", "bfs", "queue", "traversal"]
+  },
+  {
+    title: "Number of Islands Reasoning",
+    category: "DSA",
+    topic: "Graphs",
+    difficulty: "Medium",
+    company: "Uber",
+    type: "Subjective",
+    description: "If I ask you to count the number of islands in a grid, how would you reason about the problem before writing code?",
+    correctAnswer: "Treat each land cell as part of a graph, traverse connected land using DFS or BFS, and increment the island count each time you start from an unvisited land cell.",
+    explanation: "A polished answer frames the grid as a connectivity problem and explains why each island should be explored exactly once.",
+    tags: ["graphs", "dfs", "bfs", "grid"]
+  },
+  {
+    title: "Balanced Brackets Edge Cases",
+    category: "DSA",
+    topic: "Stacks",
+    difficulty: "Easy",
+    company: "Atlassian",
+    type: "Subjective",
+    description: "How would you solve the balanced brackets problem, and what edge cases would you mention before finishing your answer?",
+    correctAnswer: "Use a stack to track opening brackets and match them against closing brackets in order; discuss empty strings, unmatched closings, leftover openings, and invalid ordering.",
+    explanation: "Interviewers want the stack approach plus evidence that you think about correctness beyond the happy path.",
+    tags: ["stacks", "parsing", "edge-cases"]
+  },
+  {
+    title: "LRU Cache Design Discussion",
+    category: "DSA",
+    topic: "Design",
+    difficulty: "Hard",
+    company: "Netflix",
+    type: "Subjective",
+    description: "Describe how you would design an LRU cache that supports O(1) get and put operations, and explain why this combination of data structures works well.",
+    correctAnswer: "Combine a hash map for O(1) lookup with a doubly linked list for O(1) insertion, removal, and recency updates.",
+    explanation: "A strong answer should explain how the map and linked list complement each other to satisfy both lookup and eviction efficiency.",
+    tags: ["design", "cache", "hashmap", "linked-list"]
+  },
+  {
+    title: "Binary Search Production Discussion",
+    category: "DSA",
+    topic: "Searching",
+    difficulty: "Easy",
+    company: "Apple",
+    type: "Subjective",
+    description: "Binary search is a common interview topic. How would you explain the most common implementation mistakes and how to avoid them?",
+    correctAnswer: "Clarify the invariant, use a safe mid calculation, update bounds consistently, and define whether the search is for exact match or first or last valid position.",
+    explanation: "Interviewers value candidates who understand boundary handling and not just the template.",
+    tags: ["binary-search", "boundaries", "correctness"]
+  },
+  {
+    title: "Dynamic Programming Recognition Patterns",
+    category: "DSA",
+    topic: "Dynamic Programming",
+    difficulty: "Medium",
+    company: "Google",
+    type: "Subjective",
+    description: "When you see a new problem, what signals tell you that dynamic programming may be the right direction?",
+    correctAnswer: "Look for overlapping subproblems, repeated states, and optimal substructure, then decide whether memoization or tabulation expresses the state transitions more clearly.",
+    explanation: "A polished answer focuses on problem-recognition patterns rather than only giving a memorized definition.",
+    tags: ["dynamic-programming", "patterns", "state"]
+  },
+  {
+    title: "React Rendering Model Discussion",
+    category: "Core Subjects",
+    topic: "React",
+    difficulty: "Medium",
+    company: "Meta",
+    type: "Subjective",
+    description: "How would you explain React's rendering model to an interviewer, especially around what causes components to render again?",
+    correctAnswer: "React re-renders components when state, props, or relevant context values change, and then reconciles the virtual tree to update only the necessary DOM parts.",
+    explanation: "A strong answer should distinguish re-rendering from actual DOM updates and explain the role of reconciliation.",
+    tags: ["react", "rendering", "reconciliation", "frontend"]
+  },
+  {
+    title: "React Unnecessary Re-renders",
+    category: "Core Subjects",
+    topic: "React",
+    difficulty: "Medium",
+    company: "Adobe",
+    type: "Subjective",
+    description: "What are some common reasons a React component re-renders unnecessarily, and how would you investigate that in a real project?",
+    correctAnswer: "Frequent parent updates, unstable object or function references, broad context usage, and poor state placement are common causes; investigate with React DevTools and component profiling.",
+    explanation: "Interviewers are looking for both technical reasons and a practical debugging method.",
+    tags: ["react", "performance", "profiling", "frontend"]
+  },
+  {
+    title: "Frontend Authentication Architecture",
+    category: "Core Subjects",
+    topic: "Frontend Security",
+    difficulty: "Medium",
+    company: "Atlassian",
+    type: "Subjective",
+    description: "If you had to build authentication for a React application, how would you prevent inconsistent UI states and route flicker on refresh?",
+    correctAnswer: "Use a centralized auth provider, block protected content until auth bootstrap completes, restore the session from the server, and protect routes based on verified auth state instead of optimistic client assumptions.",
+    explanation: "A strong answer should connect auth state, route protection, and page-refresh behavior in a realistic frontend architecture.",
+    tags: ["auth", "react", "protected-routes", "security"]
+  },
+  {
+    title: "Accessibility in Interactive UI",
+    category: "Core Subjects",
+    topic: "Accessibility",
+    difficulty: "Easy",
+    company: "Microsoft",
+    type: "Subjective",
+    description: "What practical steps would you take to make a frontend application accessible beyond just adding alt text?",
+    correctAnswer: "Use semantic HTML, keyboard-friendly interactions, clear focus states, proper labels, ARIA only where necessary, and sufficient color contrast.",
+    explanation: "Interviewers want practical accessibility engineering habits, not a purely theoretical answer.",
+    tags: ["accessibility", "frontend", "ux", "standards"]
+  },
+  {
+    title: "Frontend Performance Diagnosis",
+    category: "Core Subjects",
+    topic: "Performance",
+    difficulty: "Medium",
+    company: "Netflix",
+    type: "Subjective",
+    description: "Suppose a page feels slow even though the API responds quickly. How would you diagnose whether the bottleneck is rendering, bundle size, or client-side logic?",
+    correctAnswer: "Use browser performance tools, network waterfall analysis, Lighthouse or similar audits, and React profiling to separate data latency from rendering cost, JavaScript execution, and bundle loading.",
+    explanation: "A production-style answer should show a structured diagnosis rather than jumping to one assumed fix.",
+    tags: ["performance", "rendering", "profiling", "frontend"]
+  },
+  {
+    title: "API Design For Interview Platforms",
+    category: "Core Subjects",
+    topic: "Backend",
+    difficulty: "Medium",
+    company: "Amazon",
+    type: "Subjective",
+    description: "How would you design clean backend APIs for login, question retrieval, mock test generation, and result submission in an interview preparation platform?",
+    correctAnswer: "Use resource-oriented routes, clear request and response contracts, proper status codes, server-side validation, and consistent authentication boundaries across endpoints.",
+    explanation: "The interviewer wants you to connect API structure, security, and maintainability rather than listing endpoints loosely.",
+    tags: ["backend", "api", "rest", "design"]
+  },
+  {
+    title: "JWT vs Session-Based Authentication",
+    category: "Core Subjects",
+    topic: "Authentication",
+    difficulty: "Medium",
+    company: "Uber",
+    type: "Subjective",
+    description: "Compare JWT-based authentication and session-based authentication. In what situations would you lean toward one over the other?",
+    correctAnswer: "JWTs are useful for stateless distributed setups, while sessions can simplify revocation and server-controlled auth state; the right choice depends on scaling needs, security posture, and client behavior.",
+    explanation: "A strong answer avoids calling one universally better and instead explains the tradeoffs clearly.",
+    tags: ["auth", "jwt", "sessions", "security"]
+  },
+  {
+    title: "Refresh Token Security Discussion",
+    category: "Core Subjects",
+    topic: "Authentication",
+    difficulty: "Hard",
+    company: "Google",
+    type: "Subjective",
+    description: "If your system uses access tokens and refresh tokens, how would you design the flow to reduce token theft and random logout issues in production?",
+    correctAnswer: "Keep refresh tokens in HttpOnly secure cookies, issue short-lived access tokens, rotate or validate refresh sessions on the server, and centralize refresh handling in the client.",
+    explanation: "Interviewers expect both security thinking and operational stability, especially around session persistence and token expiry.",
+    tags: ["auth", "refresh-token", "cookies", "security"]
+  },
+  {
+    title: "Preventing Duplicate Registration Under Concurrency",
+    category: "Core Subjects",
+    topic: "Backend",
+    difficulty: "Medium",
+    company: "Microsoft",
+    type: "Subjective",
+    description: "How would you prevent duplicate registrations for the same email if two requests arrive almost at the same time?",
+    correctAnswer: "Enforce a unique index at the database level, validate early in the API, and handle duplicate-key errors gracefully in the controller.",
+    explanation: "The right answer combines application validation with database-level guarantees instead of trusting only one layer.",
+    tags: ["backend", "database", "validation", "concurrency"]
+  },
+  {
+    title: "Database Indexing For User and Question Systems",
+    category: "Core Subjects",
+    topic: "DBMS",
+    difficulty: "Medium",
+    company: "Oracle",
+    type: "Subjective",
+    description: "What indexes would you consider for a platform that stores users, interview questions, bookmarks, and test results, and how would you justify them?",
+    correctAnswer: "Index fields used frequently in lookup and filtering, such as email, question category, topic, company, and user-linked result records, while avoiding unnecessary indexes that slow writes.",
+    explanation: "A good answer balances query speed with index maintenance costs.",
+    tags: ["dbms", "indexing", "queries", "performance"]
+  },
+  {
+    title: "MongoDB Embedding vs Referencing",
+    category: "Core Subjects",
+    topic: "DBMS",
+    difficulty: "Medium",
+    company: "Adobe",
+    type: "Subjective",
+    description: "When designing MongoDB data structures, how do you decide between embedding related data and referencing it?",
+    correctAnswer: "Embed when related data is small, tightly coupled, and retrieved together; reference when data grows independently, is reused, or would become too large or frequently updated in one document.",
+    explanation: "Interviewers want to see that you understand data access patterns rather than repeating generic rules.",
+    tags: ["mongodb", "schema-design", "dbms"]
+  },
+  {
+    title: "System Design for a Practice Platform",
+    category: "Core Subjects",
+    topic: "System Design",
+    difficulty: "Medium",
+    company: "Meta",
+    type: "Subjective",
+    description: "Design a simple interview practice platform where users can sign up, access questions, generate mock tests, and view analytics. What major components would you identify first?",
+    correctAnswer: "Identify user management, question management, test generation, result evaluation, analytics, and deployment infrastructure, then describe how data flows across these modules.",
+    explanation: "For junior candidates, interviewers usually look for clean decomposition and practical tradeoff thinking rather than ultra-deep distributed systems detail.",
+    tags: ["system-design", "architecture", "backend", "frontend"]
+  },
+  {
+    title: "Caching Strategy for Frequently Accessed Questions",
+    category: "Core Subjects",
+    topic: "Scalability",
+    difficulty: "Medium",
+    company: "Netflix",
+    type: "Subjective",
+    description: "If the question bank becomes very popular and read-heavy, what data would you cache first and why?",
+    correctAnswer: "Cache frequently requested question lists, category-filtered results, and possibly metadata used on dashboards, because those are read-heavy and relatively stable compared with user-specific writes.",
+    explanation: "A thoughtful answer identifies high-read, low-volatility data and explains the benefit clearly.",
+    tags: ["caching", "scalability", "performance"]
+  },
+  {
+    title: "Backend Debugging Checklist for Intermittent Auth Failures",
+    category: "Core Subjects",
+    topic: "Debugging",
+    difficulty: "Hard",
+    company: "Uber",
+    type: "Subjective",
+    description: "Users report intermittent authentication failures only in production. What exact areas would you inspect before making changes?",
+    correctAnswer: "Check token expiry and refresh flow, cookie settings, environment variable consistency, CORS policy, clock drift, reverse proxy behavior, deployment domains, and structured backend logs around auth middleware.",
+    explanation: "This question tests whether you can debug real production auth issues systematically instead of guessing.",
+    tags: ["debugging", "authentication", "production", "deployment"]
+  },
+  {
+    title: "Rate Limiting Design for Login and OTP Endpoints",
+    category: "Core Subjects",
+    topic: "Security",
+    difficulty: "Medium",
+    company: "Amazon",
+    type: "Subjective",
+    description: "Why should login and password-reset endpoints be rate limited, and how would you explain a sensible implementation approach?",
+    correctAnswer: "Rate limiting reduces brute-force and abuse risk by restricting repeated attempts per IP or account over time while still allowing normal users to authenticate successfully.",
+    explanation: "A strong answer should cover both security intent and practical control boundaries.",
+    tags: ["security", "rate-limiting", "auth", "backend"]
+  },
+  {
+    title: "Cloud Deployment Reliability Basics",
+    category: "Core Subjects",
+    topic: "Deployment",
+    difficulty: "Easy",
+    company: "Google",
+    type: "Subjective",
+    description: "What are the minimum things you would verify before calling a deployed full-stack application stable in production?",
+    correctAnswer: "Verify environment variables, database connectivity, auth flow, HTTPS configuration, CORS or cookie behavior, health checks, logging, and core user journeys like signup, login, and protected page access.",
+    explanation: "Interviewers want a practical pre-production checklist, not a vague statement about testing.",
+    tags: ["deployment", "production", "monitoring", "stability"]
+  },
+  {
+    title: "Tell Me About Yourself for a Product Company",
+    category: "HR",
+    topic: "Self Introduction",
+    difficulty: "Easy",
+    company: "General",
+    type: "Subjective",
+    description: "How would you answer 'Tell me about yourself' in a way that feels relevant for a software engineering role at a product company?",
+    correctAnswer: "Give a concise present-past-future summary that highlights your current focus, relevant projects or internships, and why your background aligns with the role you are applying for.",
+    explanation: "The strongest answers feel professional, role-focused, and structured rather than overly personal or scattered.",
+    tags: ["hr", "introduction", "communication"]
+  },
+  {
+    title: "Project Ownership Example",
+    category: "HR",
+    topic: "Ownership",
+    difficulty: "Medium",
+    company: "Amazon",
+    type: "Subjective",
+    description: "Tell me about a time you took ownership of a technical problem beyond what was formally assigned to you. How would you structure that answer?",
+    correctAnswer: "Use a clear situation-task-action-result format, explain the gap you noticed, the extra responsibility you took, and the measurable outcome of your initiative.",
+    explanation: "Interviewers are evaluating whether you step up proactively and communicate impact clearly.",
+    tags: ["behavioral", "ownership", "star"]
+  },
+  {
+    title: "Receiving Difficult Feedback",
+    category: "HR",
+    topic: "Self Awareness",
+    difficulty: "Medium",
+    company: "Microsoft",
+    type: "Subjective",
+    description: "How would you answer a question about receiving difficult feedback from a senior or teammate?",
+    correctAnswer: "Describe the feedback honestly, show that you listened without defensiveness, explain what you changed, and highlight the improvement that followed.",
+    explanation: "The key quality here is maturity and growth, not perfection.",
+    tags: ["behavioral", "feedback", "growth"]
+  },
+  {
+    title: "Disagreement on a Technical Decision",
+    category: "HR",
+    topic: "Teamwork",
+    difficulty: "Medium",
+    company: "Atlassian",
+    type: "Subjective",
+    description: "If you disagreed with a teammate on a technical design decision, how would you describe a healthy resolution approach?",
+    correctAnswer: "Focus on understanding the tradeoffs, align on requirements, evaluate options with evidence, and support the final team decision once a direction is chosen.",
+    explanation: "Interviewers want to hear collaborative problem-solving, not ego-driven conflict.",
+    tags: ["behavioral", "teamwork", "decision-making"]
+  },
+  {
+    title: "Handling Pressure Without Losing Quality",
+    category: "HR",
+    topic: "Behavioral Interviews",
+    difficulty: "Medium",
+    company: "Adobe",
+    type: "Subjective",
+    description: "Describe how you would answer a question about working under pressure while still maintaining code quality.",
+    correctAnswer: "Choose a real situation, explain how you prioritized tasks, communicated risks early, reduced scope where needed, and still protected the most important quality checks.",
+    explanation: "The best answers show judgment, communication, and calm execution under constraints.",
+    tags: ["behavioral", "pressure", "prioritization"]
+  },
+  {
+    title: "Why This Company With Real Motivation",
+    category: "HR",
+    topic: "Company Fit",
+    difficulty: "Easy",
+    company: "Google",
+    type: "Subjective",
+    description: "What makes a 'Why this company?' answer feel authentic instead of generic in a top-company interview?",
+    correctAnswer: "Connect the company's product, engineering culture, scale, or domain with your interests and growth goals, and reference specifics that show real research.",
+    explanation: "A convincing answer sounds informed and role-specific rather than like a copied template.",
+    tags: ["company-fit", "motivation", "research"]
+  },
+  {
+    title: "Leadership at an Early Career Stage",
+    category: "HR",
+    topic: "Leadership",
+    difficulty: "Medium",
+    company: "Meta",
+    type: "Subjective",
+    description: "Even as a fresher or early-career engineer, what does leadership mean to you, and how would you answer that in an interview?",
+    correctAnswer: "Leadership at an early stage means taking responsibility, improving clarity, helping the team move forward, and positively influencing outcomes without waiting for a formal title.",
+    explanation: "This kind of answer shows maturity and initiative without overstating seniority.",
+    tags: ["leadership", "behavioral", "ownership"]
+  },
+  {
+    title: "Learning a New Technology Quickly",
+    category: "HR",
+    topic: "Learning Ability",
+    difficulty: "Easy",
+    company: "Netflix",
+    type: "Subjective",
+    description: "How would you answer a behavioral question about learning a new technology quickly to deliver a project or assignment?",
+    correctAnswer: "Describe the context, explain how you broke the learning into essentials, applied it in a real deliverable, and reflected on what helped you ramp up effectively.",
+    explanation: "Interviewers want to hear evidence of adaptability, not just that you are 'a fast learner.'",
+    tags: ["behavioral", "learning", "adaptability"]
+  },
+  {
+    title: "Decision Making Under Ambiguity",
+    category: "HR",
+    topic: "Problem Solving",
+    difficulty: "Medium",
+    company: "Uber",
+    type: "Subjective",
+    description: "Tell me how you would approach a situation where requirements are incomplete but you still need to move the work forward.",
+    correctAnswer: "Clarify what is known, identify the highest-risk assumptions, align quickly with stakeholders, and move ahead with a reversible or low-risk implementation plan.",
+    explanation: "A good answer shows structured thinking and comfort with ambiguity rather than waiting passively for perfect clarity.",
+    tags: ["problem-solving", "ambiguity", "communication"]
+  },
+  {
+    title: "Why Should We Hire You for This Role",
+    category: "HR",
+    topic: "Self Awareness",
+    difficulty: "Medium",
+    company: "General",
+    type: "Subjective",
+    description: "What makes a strong answer to 'Why should we hire you?' for a fresher or 1-2 year candidate?",
+    correctAnswer: "Connect your technical foundation, project evidence, work ethic, learning speed, and role alignment to the value you can bring to the team.",
+    explanation: "The answer should be confident and specific, with proof points rather than broad self-praise.",
+    tags: ["hr", "self-awareness", "role-fit"]
+  }
+];
+
 const TARGET_VISIBLE_PER_CATEGORY = 1000;
 const SOFTWARE_CATEGORIES = ["DSA", "Aptitude", "HR", "Core Subjects"];
 const practiceAngles = [
@@ -536,7 +976,7 @@ const createVariant = (question, variantIndex) => {
 };
 
 const buildLargeQuestionBank = () => {
-  const normalizedBase = softwareBaseQuestions.map((question) => ({
+  const normalizedBase = [...softwareBaseQuestions, ...professionalInterviewQuestions].map((question) => ({
     ...question,
     field: "Software",
     starterCode: question.starterCode || {}
