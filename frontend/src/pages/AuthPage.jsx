@@ -286,10 +286,10 @@ const AuthPage = ({ mode }) => {
 
   return (
     <div className="space-y-8 pb-10">
-      <section id="hero" className="grid gap-8 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,440px)]">
+      <section id="hero" className="grid min-h-[calc(100vh-6rem)] gap-8 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,440px)] xl:items-start">
         <div className="space-y-8">
-          <div className="snx-gradient-border">
-            <div className="snx-panel relative overflow-hidden">
+          <div className="snx-gradient-border h-full">
+            <div className="snx-panel relative h-full overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.22),transparent_42%),radial-gradient(circle_at_top_right,rgba(6,182,212,0.18),transparent_28%)]" />
               <div className="relative space-y-8">
                 <div className="space-y-4">
@@ -359,7 +359,7 @@ const AuthPage = ({ mode }) => {
           </div>
         </div>
 
-        <SurfaceCard strong className="relative overflow-hidden">
+        <SurfaceCard strong className="relative overflow-hidden h-full">
           <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(20,184,166,0.15),transparent_55%)]" />
           <div className="relative space-y-6">
             <div className="flex items-center justify-between gap-3">
