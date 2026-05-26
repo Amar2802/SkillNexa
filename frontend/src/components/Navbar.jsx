@@ -139,11 +139,6 @@ const Navbar = ({ user, profile, logout }) => {
 
           <div className="snx-sidebar-card mt-auto">
             <ThemeToggle />
-            {logout ? (
-              <button type="button" className="btn snx-btn-secondary w-100 mt-3" onClick={logout}>
-                Logout
-              </button>
-            ) : null}
           </div>
         </div>
       </aside>
