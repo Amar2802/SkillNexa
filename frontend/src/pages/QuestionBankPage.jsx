@@ -1,6 +1,10 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { FiBookmark, FiFilter, FiSearch } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
 import api from "../api/client";
+import EmptyState from "../components/ui/EmptyState";
+import PageHeader from "../components/ui/PageHeader";
+import SurfaceCard from "../components/ui/SurfaceCard";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
 const PAGE_SIZE = 18;
@@ -25,26 +29,15 @@ const splitDisplay = (question) => {
   };
 };
 
-const QuestionCardSkeleton = () => (
-  <div className="question-bank-stack-item">
-    <div className="glass-card p-4 question-skeleton-card">
-      <div className="placeholder-glow mb-3">
-        <span className="placeholder col-7" />
-      </div>
-      <div className="placeholder-glow mb-3">
-        <span className="placeholder col-12" />
-        <span className="placeholder col-10" />
-      </div>
-      <div className="d-flex gap-2 flex-wrap mb-3">
-        <span className="placeholder rounded-pill col-2" />
-        <span className="placeholder rounded-pill col-2" />
-        <span className="placeholder rounded-pill col-2" />
-      </div>
-      <div className="placeholder-glow">
-        <span className="placeholder col-4" />
-      </div>
+const SkeletonCard = () => (
+  <SurfaceCard className="animate-pulse space-y-4">
+    <div className="h-3 w-28 rounded-full bg-slate-200" />
+    <div className="h-6 w-2/3 rounded-full bg-slate-200" />
+    <div className="space-y-2">
+      <div className="h-4 w-full rounded-full bg-slate-200" />
+      <div className="h-4 w-5/6 rounded-full bg-slate-200" />
     </div>
-  </div>
+  </SurfaceCard>
 );
 
 const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software", bookmarks = [], refreshBookmarks }) => {
@@ -99,11 +92,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
   const fetchQuestions = async (nextPage = 1, nextFilters = deferredFilters, nextType = deferredType, append = false) => {
     const requestId = requestRef.current + 1;
     requestRef.current = requestId;
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
+    append ? setLoadingMore(true) : setLoading(true);
 
     try {
       const params = {
@@ -194,7 +183,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       difficulty: "",
       topic: params.get("topic") || "",
       company: "",
-      search: ""
+      search: params.get("search") || ""
     };
     setFilters(nextFilters);
     setOpenAnswers({});
@@ -217,7 +206,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       if (entry.isIntersecting && !loading && !loadingMore && hasMore) {
         fetchQuestions(page + 1, deferredFilters, deferredType, true).catch(() => undefined);
       }
-    }, { rootMargin: "300px" });
+    }, { rootMargin: "240px" });
 
     observer.observe(node);
     return () => observer.disconnect();
@@ -226,186 +215,178 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
   const visibleItems = items;
 
   return (
-    <div className="container-fluid py-4 question-bank-page snx-page-shell">
-      <div className="hero-panel mb-4">
-        <div className="row g-4 align-items-end">
-          <div className="col-lg-8">
-            <p className="eyebrow mb-2">Question Bank</p>
-            <h1 className="h2 fw-bold mb-2">Explore software interview questions faster</h1>
-            <p className="text-secondary mb-0">
-              Search, filter, and skim questions quickly with progressive loading, cleaner cards, and mobile-friendly browsing.
-            </p>
+    <div className="space-y-6">
+      <PageHeader
+        kicker="Question bank"
+        title="Explore premium interview questions with cleaner filtering and faster scanning."
+        description="Search by company, topic, difficulty, and question type while keeping detailed solutions and starter code one click away."
+        aside={(
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            {[
+              { label: "Showing", value: visibleItems.length },
+              { label: "Total Matches", value: total },
+              { label: "Active Filters", value: activeFilterCount }
+            ].map((item) => (
+              <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
+                <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</div>
+              </div>
+            ))}
           </div>
-          <div className="col-lg-4">
-            <div className="question-bank-summary-grid">
-              <div className="metric-card compact">
-                <span>Showing</span>
-                <h3>{visibleItems.length}</h3>
-              </div>
-              <div className="metric-card compact">
-                <span>Total Matches</span>
-                <h3>{total}</h3>
-              </div>
-              <div className="metric-card compact">
-                <span>Active Filters</span>
-                <h3>{activeFilterCount}</h3>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        )}
+      />
 
-      <div className="glass-card p-4 mb-4">
-        <div className="row g-3 align-items-end">
-          <div className="col-12 col-lg-4">
-            <label className="form-label">Search Questions</label>
-            <input
-              className="form-control"
-              value={filters.search}
-              onChange={(event) => updateFilter("search", event.target.value)}
-              placeholder="Search by title, topic, or concept"
-            />
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <label className="form-label">Category</label>
-            <select className="form-select" value={filters.category} onChange={(event) => updateFilter("category", event.target.value)}>
-              <option value="">All</option>
-              {filterOptions.category.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <label className="form-label">Difficulty</label>
-            <select className="form-select" value={filters.difficulty} onChange={(event) => updateFilter("difficulty", event.target.value)}>
-              <option value="">All</option>
-              {(filterOptions.difficulty || []).map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <label className="form-label">Topic</label>
-            <select className="form-select" value={filters.topic} onChange={(event) => updateFilter("topic", event.target.value)}>
-              <option value="">All</option>
-              {(filterOptions.topic || []).map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <label className="form-label">Type</label>
-            <select className="form-select" value={type} onChange={(event) => setType(event.target.value)}>
-              {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-            </select>
-          </div>
-          <div className="col-12 col-md-8 col-xl-4">
-            <label className="form-label">Company</label>
-            <select className="form-select" value={filters.company} onChange={(event) => updateFilter("company", event.target.value)}>
-              <option value="">All</option>
-              {(filterOptions.company || []).map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </div>
-          <div className="col-12 col-md-4 col-xl-2">
-            <button className="btn btn-outline-light w-100" onClick={clearFilters}>Clear Filters</button>
-          </div>
+      <SurfaceCard strong>
+        <div className="grid gap-4 lg:grid-cols-12">
+          <label className="lg:col-span-4 block space-y-2">
+            <span className="text-sm font-medium text-slate-700">Search questions</span>
+            <div className="relative">
+              <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                className="snx-input pl-11"
+                value={filters.search}
+                onChange={(event) => updateFilter("search", event.target.value)}
+                placeholder="Search by title, topic, or concept"
+              />
+            </div>
+          </label>
+
+          {[
+            { label: "Category", key: "category", options: filterOptions.category, col: "lg:col-span-2" },
+            { label: "Difficulty", key: "difficulty", options: filterOptions.difficulty, col: "lg:col-span-2" },
+            { label: "Topic", key: "topic", options: filterOptions.topic, col: "lg:col-span-2" },
+            { label: "Type", key: "type", options: typeOptions.map((option) => option.label), col: "lg:col-span-2" },
+            { label: "Company", key: "company", options: filterOptions.company, col: "lg:col-span-4" }
+          ].map((filter) => (
+            <label key={filter.key} className={`${filter.col} block space-y-2`}>
+              <span className="text-sm font-medium text-slate-700">{filter.label}</span>
+              {filter.key === "type" ? (
+                <select className="snx-select" value={type} onChange={(event) => setType(event.target.value)}>
+                  {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                </select>
+              ) : (
+                <select className="snx-select" value={filters[filter.key]} onChange={(event) => updateFilter(filter.key, event.target.value)}>
+                  <option value="">All</option>
+                  {(filter.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              )}
+            </label>
+          ))}
         </div>
-      </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <FiFilter className="h-4 w-4 text-brand-600" />
+            {activeFilterCount} filters active
+          </div>
+          <button className="snx-btn-secondary" onClick={clearFilters}>Clear Filters</button>
+        </div>
+      </SurfaceCard>
 
       {loading && !visibleItems.length ? (
-        <div className="question-bank-stack">
-          {Array.from({ length: 4 }).map((_, index) => <QuestionCardSkeleton key={index} />)}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)}
         </div>
       ) : null}
 
-      <div className="question-bank-stack">
-        {visibleItems.map((question) => {
-          const display = splitDisplay(question);
-          const show = !!openAnswers[question._id];
-          const codeEntries = Object.entries(question.starterCode || {}).filter(([, code]) => code);
-          const detailedSolution = buildDetailedSolution(question, question.correctAnswer, display.explanation);
-          const isBookmarked = bookmarkedIds.has(question._id);
-          const isSavingBookmark = bookmarkLoadingId === question._id;
+      {visibleItems.length ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {visibleItems.map((question) => {
+            const display = splitDisplay(question);
+            const show = !!openAnswers[question._id];
+            const codeEntries = Object.entries(question.starterCode || {}).filter(([, code]) => code);
+            const detailedSolution = buildDetailedSolution(question, question.correctAnswer, display.explanation);
+            const isBookmarked = bookmarkedIds.has(question._id);
+            const isSavingBookmark = bookmarkLoadingId === question._id;
 
-          return (
-            <div className="question-bank-stack-item" key={question._id}>
-              <div className="glass-card p-4 question-bank-card">
-                <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
-                  <div className="question-bank-card-copy">
-                    <div className="d-flex gap-2 flex-wrap mb-2">
-                      <span className="badge text-bg-dark">{question.category}</span>
-                      <span className="badge text-bg-dark">{question.topic}</span>
-                      <span className="badge text-bg-dark">{question.company}</span>
-                      <span className="badge text-bg-info">{question.type}</span>
-                      <span className="badge text-bg-secondary">{question.difficulty}</span>
-                    </div>
-                    <h2 className="h4 mb-2">{display.title}</h2>
-                    <p className="text-secondary mb-0">
-                      {display.description}
-                      {display.advice ? ` (${display.advice})` : ""}
-                    </p>
-                  </div>
-                  <div className="d-flex gap-2 flex-wrap question-bank-actions">
-                    <button
-                      className="btn btn-outline-light"
-                      onClick={() => setOpenAnswers((current) => ({ ...current, [question._id]: !current[question._id] }))}
-                    >
-                      {show ? "Hide Details" : "View Details"}
-                    </button>
-                    <button
-                      className={`btn ${isBookmarked ? "btn-info" : "btn-outline-light"}`}
-                      disabled={isSavingBookmark}
-                      onClick={() => toggleBookmark(question._id)}
-                    >
-                      {isSavingBookmark ? "Saving..." : isBookmarked ? "Saved" : "Save"}
-                    </button>
-                  </div>
+            return (
+              <SurfaceCard key={question._id} className="space-y-5">
+                <div className="flex flex-wrap gap-2">
+                  <span className="snx-badge">{question.category}</span>
+                  <span className="snx-badge">{question.topic}</span>
+                  <span className="snx-badge">{question.company}</span>
+                  <span className="snx-badge">{question.type}</span>
+                  <span className="snx-badge">{question.difficulty}</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-950">{display.title}</h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    {display.description}
+                    {display.advice ? ` (${display.advice})` : ""}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    className="snx-btn-secondary"
+                    onClick={() => setOpenAnswers((current) => ({ ...current, [question._id]: !current[question._id] }))}
+                  >
+                    {show ? "Hide Details" : "View Details"}
+                  </button>
+                  <button
+                    className={isBookmarked ? "snx-btn-accent" : "snx-btn-secondary"}
+                    disabled={isSavingBookmark}
+                    onClick={() => toggleBookmark(question._id)}
+                  >
+                    <FiBookmark className="h-4 w-4" />
+                    {isSavingBookmark ? "Saving..." : isBookmarked ? "Saved" : "Save"}
+                  </button>
                 </div>
 
                 {show ? (
-                  <>
-                    <div className="question-bank-answer mb-3">
-                      <strong>Suggested Answer:</strong> {String(question.correctAnswer)}
+                  <div className="space-y-4 rounded-[24px] border border-slate-200/70 bg-slate-50/70 p-5">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Suggested answer</div>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">{String(question.correctAnswer)}</p>
                     </div>
-                    <div className="question-bank-explanation mb-3">
-                      <strong>Detailed Solution:</strong> {detailedSolution}
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Detailed solution</div>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">{detailedSolution}</p>
                     </div>
                     {codeEntries.length ? (
-                      <div className="mb-3">
-                        <p className="fw-semibold mb-2">Starter Code</p>
-                        <div className="vstack gap-3">
-                          {codeEntries.map(([language, code]) => (
-                            <div key={`${question._id}-${language}`} className="question-bank-code-block">
-                              <span className="question-bank-code-label text-uppercase">{language}</span>
-                              <pre className="question-bank-code-pre mb-0"><code>{code}</code></pre>
-                            </div>
-                          ))}
-                        </div>
+                      <div className="space-y-3">
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Starter code</div>
+                        {codeEntries.map(([language, code]) => (
+                          <div key={`${question._id}-${language}`} className="overflow-hidden rounded-[20px] border border-slate-200 bg-slate-950">
+                            <div className="border-b border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">{language}</div>
+                            <pre className="snx-scrollbar overflow-x-auto px-4 py-4 text-sm text-slate-100"><code>{code}</code></pre>
+                          </div>
+                        ))}
                       </div>
                     ) : null}
                     {question.options?.length ? (
-                      <div className="vstack gap-2 mb-3">
+                      <div className="space-y-2">
                         {question.options.map((option) => (
-                          <div key={`${question._id}-${option}`} className={`question-bank-option ${option === question.correctAnswer ? "correct" : ""}`}>
+                          <div key={`${question._id}-${option}`} className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm ${
+                            option === question.correctAnswer ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600"
+                          }`}>
                             <span>{option}</span>
                             {option === question.correctAnswer ? <strong>Correct</strong> : null}
                           </div>
                         ))}
                       </div>
                     ) : null}
-                    <div className="question-bank-explanation">
-                      <strong>Explanation:</strong> {display.explanation}
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Explanation</div>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">{display.explanation}</p>
                     </div>
-                  </>
+                  </div>
                 ) : null}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {!loading && !visibleItems.length ? (
-        <div className="glass-card p-4 mt-4">
-          <p className="text-secondary mb-0">No questions found. Try a broader search or clear a few filters.</p>
+              </SurfaceCard>
+            );
+          })}
         </div>
       ) : null}
 
+      {!loading && !visibleItems.length ? (
+        <EmptyState
+          title="No questions found"
+          description="Try broadening your filters, switching the question type, or clearing the current search to explore more interview prompts."
+        />
+      ) : null}
+
       {visibleItems.length ? (
-        <div ref={loadMoreRef} className="py-4 text-center text-secondary">
+        <div ref={loadMoreRef} className="pb-4 text-center text-sm text-slate-500">
           {loadingMore ? "Loading more questions..." : hasMore ? "Scroll to load more questions" : "You have reached the end of this question set."}
         </div>
       ) : null}

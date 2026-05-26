@@ -1,38 +1,41 @@
 import { useNavigate } from "react-router-dom";
+import EmptyState from "../components/ui/EmptyState";
+import PageHeader from "../components/ui/PageHeader";
+import SurfaceCard from "../components/ui/SurfaceCard";
 
 const BookmarksPage = ({ bookmarks = [] }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="container-fluid py-4 snx-page-shell">
-      <div className="hero-panel mb-4">
-        <p className="eyebrow mb-2">Bookmarks</p>
-        <h1 className="h2 fw-bold mb-2">Saved questions</h1>
-        <p className="text-secondary mb-0">Revisit the interview questions you marked for revision and jump back into practice faster.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        kicker="Bookmarks"
+        title="Saved questions for focused revision."
+        description="Revisit the interview questions you marked for review and jump back into related practice faster."
+      />
       {bookmarks.length ? (
-        <div className="row g-4">
+        <div className="grid gap-4 lg:grid-cols-2">
           {bookmarks.map((question) => (
-            <div className="col-12 col-lg-6" key={question._id}>
-              <div className="glass-card p-4 h-100">
-                <div className="d-flex gap-2 flex-wrap mb-3">
-                  <span className="badge text-bg-dark">{question.category}</span>
-                  <span className="badge text-bg-dark">{question.topic}</span>
-                  <span className="badge text-bg-info">{question.type}</span>
-                </div>
-                <h2 className="h4 mb-2">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h2>
-                <p className="text-secondary mb-3">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
-                <button
-                  className="btn btn-outline-light"
-                  onClick={() => navigate(`/questions?topic=${encodeURIComponent(question.topic || "")}`)}
-                >
-                  Open Related Questions
-                </button>
+            <SurfaceCard key={question._id} className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <span className="snx-badge">{question.category}</span>
+                <span className="snx-badge">{question.topic}</span>
+                <span className="snx-badge">{question.type}</span>
               </div>
-            </div>
+              <h2 className="text-xl font-semibold text-slate-950">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h2>
+              <p className="text-sm leading-7 text-slate-600">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
+              <button className="snx-btn-secondary" onClick={() => navigate(`/questions?topic=${encodeURIComponent(question.topic || "")}`)}>
+                Open Related Questions
+              </button>
+            </SurfaceCard>
           ))}
         </div>
-      ) : <div className="glass-card p-4"><p className="text-secondary mb-0">You have not bookmarked any questions yet.</p></div>}
+      ) : (
+        <EmptyState
+          title="No bookmarks yet"
+          description="Save interview questions from the question bank to build a personal revision shortlist."
+        />
+      )}
     </div>
   );
 };

@@ -1,24 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FiCamera } from "react-icons/fi";
 import api from "../api/client";
+import PageHeader from "../components/ui/PageHeader";
+import SurfaceCard from "../components/ui/SurfaceCard";
 import { useToast } from "../components/ui/ToastProvider";
 
 const INTEREST_OPTIONS = [
-  "Arrays",
-  "Strings",
-  "Linked List",
-  "Trees",
-  "Graphs",
-  "Dynamic Programming",
-  "Probability",
-  "Time and Work",
-  "DBMS",
-  "SQL",
-  "Operating Systems",
-  "Computer Networks",
-  "OOP",
-  "Java",
-  "Python",
-  "HR"
+  "Arrays", "Strings", "Linked List", "Trees", "Graphs", "Dynamic Programming", "Probability", "Time and Work",
+  "DBMS", "SQL", "Operating Systems", "Computer Networks", "OOP", "Java", "Python", "HR"
 ];
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
@@ -91,69 +80,95 @@ const ProfilePage = ({ profile = {}, refreshProfile }) => {
   };
 
   return (
-    <div className="container-fluid py-4 snx-page-shell">
-      <div className="profile-hero-surface mb-4">
-        <div className="profile-hero-main">
-          <div className="profile-identity-block profile-identity-block-pro">
-            <div className="profile-photo-wrap">
-              <button
-                type="button"
-                className="border-0 bg-transparent p-0 profile-photo-trigger"
-                disabled={isUploading}
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-              >
-                {profile?.avatar ? <img src={profile.avatar} alt={profile.name} className="profile-photo" /> : <div className="profile-photo profile-photo-fallback">{initials}</div>}
-                <span className="profile-photo-overlay" aria-hidden="true">
-                  {isUploading ? <span className="profile-photo-overlay-spinner" /> : <span className="profile-photo-overlay-icon">📷</span>}
-                </span>
-              </button>
-            </div>
-            <input ref={fileInputRef} type="file" accept="image/*" className="d-none" onChange={(event) => { const file = event.target.files?.[0]; if (file) updateAvatar(file); }} />
-            <div className="profile-identity-copy">
-              <p className="eyebrow mb-2">Member since {memberSince}</p>
-              <h1 className="h2 fw-bold mb-2">{profile?.name || "SkillNexa User"}</h1>
-              <p className="text-secondary mb-0">{profile?.email}</p>
-            </div>
-          </div>
-          <div className="profile-hero-aside">
-            <div className="profile-aside-card">
-              <p className="eyebrow mb-1">Member Profile</p>
-              <h2 className="h5 mb-2">Joined {memberSince}</h2>
-              <p className="text-secondary mb-2">Profile completion</p>
-              <div className="progress mb-2" role="progressbar" aria-valuenow={profileCompletion} aria-valuemin="0" aria-valuemax="100">
-                <div className="progress-bar" style={{ width: `${profileCompletion}%` }} />
+    <div className="space-y-6">
+      <PageHeader
+        kicker={`Member since ${memberSince}`}
+        title={profile?.name || "SkillNexa User"}
+        description={profile?.email || "AI interview workspace"}
+        aside={(
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            {[
+              { label: "Profile completion", value: `${profileCompletion}%` },
+              { label: "Tests taken", value: profile?.progress?.testsTaken || 0 },
+              { label: "Accuracy", value: `${profile?.progress?.accuracy || 0}%` }
+            ].map((item) => (
+              <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
+                <div className="mt-2 text-3xl font-semibold text-slate-950">{item.value}</div>
               </div>
-              <p className="text-secondary mb-0">{profileCompletion}% complete</p>
+            ))}
+          </div>
+        )}
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <SurfaceCard strong className="space-y-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <button
+              type="button"
+              className="group relative h-32 w-32 overflow-hidden rounded-[32px] border border-white/70 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
+              disabled={isUploading}
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+            >
+              {profile?.avatar ? (
+                <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-500 to-accent-500 text-4xl font-semibold text-white">
+                  {initials}
+                </div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/40 opacity-0 transition group-hover:opacity-100">
+                <FiCamera className="h-6 w-6 text-white" />
+              </div>
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) updateAvatar(file); }} />
+            <div>
+              <h2 className="text-xl font-semibold text-slate-950">{profile?.name || "Learner"}</h2>
+              <p className="mt-1 text-sm text-slate-500">{profile?.email}</p>
+              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-400">Joined {memberSince}</p>
+            </div>
+            <div className="w-full rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+              <div className="flex items-center justify-between text-sm font-medium text-slate-600">
+                <span>Profile completion</span>
+                <span>{profileCompletion}%</span>
+              </div>
+              <div className="mt-3 h-2 rounded-full bg-slate-100">
+                <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500" style={{ width: `${profileCompletion}%` }} />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </SurfaceCard>
 
-      <div className="row g-4 mb-4">
-        <div className="col-md-4"><div className="metric-card profile-metric-card-pro"><span>Tests Taken</span><h3>{profile?.progress?.testsTaken || 0}</h3></div></div>
-        <div className="col-md-4"><div className="metric-card profile-metric-card-pro"><span>Accuracy</span><h3>{profile?.progress?.accuracy || 0}%</h3></div></div>
-        <div className="col-md-4"><div className="metric-card profile-metric-card-pro"><span>Weak Topics</span><h3>{(profile?.progress?.weakTopics || []).length}</h3></div></div>
-      </div>
-
-      <div className="glass-card p-4 mb-4">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-          <div>
-            <p className="eyebrow mb-1">Interested Topics</p>
-            <h2 className="h4 mb-0">Choose what you want to focus on</h2>
+        <SurfaceCard strong className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span className="snx-kicker">Interested topics</span>
+              <h2 className="snx-heading mt-4">Choose what you want to focus on</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              {hasUnsavedInterests ? <span className="text-sm font-medium text-amber-700">Unsaved changes</span> : null}
+              <button className="snx-btn-accent" onClick={saveInterests}>Save Interests</button>
+            </div>
           </div>
-          <div className="profile-section-actions">
-            {hasUnsavedInterests ? <small className="text-warning">Unsaved changes</small> : null}
-            <button className="btn btn-info" onClick={saveInterests}>Save Interests</button>
+          <div className="flex flex-wrap gap-3">
+            {INTEREST_OPTIONS.map((item) => {
+              const active = selectedInterests.includes(item);
+              return (
+                <button
+                  key={item}
+                  className={`rounded-2xl border px-4 py-2.5 text-sm font-medium transition ${
+                    active
+                      ? "border-brand-500 bg-brand-500 text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"
+                  }`}
+                  onClick={() => setSelectedInterests((current) => active ? current.filter((value) => value !== item) : [...current, item])}
+                >
+                  {item}
+                </button>
+              );
+            })}
           </div>
-        </div>
-        <div className="interest-grid">
-          {INTEREST_OPTIONS.map((item) => {
-            const active = selectedInterests.includes(item);
-            return (
-              <button key={item} className={`interest-chip ${active ? "active" : ""}`} onClick={() => setSelectedInterests((current) => active ? current.filter((value) => value !== item) : [...current, item])}>{item}</button>
-            );
-          })}
-        </div>
+        </SurfaceCard>
       </div>
     </div>
   );

@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Editor from "@monaco-editor/react";
+import { FiArrowLeft, FiArrowRight, FiBookmark, FiCode, FiPlay, FiSend } from "react-icons/fi";
 import api from "../api/client";
-import { buildDetailedSolution } from "../utils/answerHelpers";
-import { useToast } from "../components/ui/ToastProvider";
 import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import EmptyState from "../components/ui/EmptyState";
+import PageHeader from "../components/ui/PageHeader";
+import SurfaceCard from "../components/ui/SurfaceCard";
+import { useToast } from "../components/ui/ToastProvider";
 import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
+import { buildDetailedSolution } from "../utils/answerHelpers";
 
 const typeOptions = [
   { id: "all", label: "All Questions" },
@@ -181,109 +185,122 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 
   if (!questionId) {
     return (
-      <div className="container-fluid py-4 practice-pro-page snx-page-shell">
-        <div className="hero-panel mb-4">
-          <div className="row g-4 align-items-end">
-            <div className="col-lg-8">
-              <p className="eyebrow mb-2">Practice Mode</p>
-              <h1 className="h2 fw-bold mb-2">Choose a question to start practice</h1>
-              <p className="text-secondary mb-0">
-                Filter your question list and open a dedicated practice screen with next, previous, and bookmark controls.
-              </p>
-            </div>
-            <div className="col-lg-4">
-              <div className="question-bank-summary-grid">
-                <div className="metric-card compact">
-                  <span>Filtered</span>
-                  <h3>{filteredQuestions.length}</h3>
-                </div>
-                <div className="metric-card compact">
-                  <span>Mode</span>
-                  <h3>{selectedType === "all" ? "Mix" : selectedType}</h3>
-                </div>
-                <div className="metric-card compact">
-                  <span>Field</span>
-                  <h3>{targetField}</h3>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-4 practice-panel-card">
-          <div className="row g-3 mb-3">
-            <div className="col-12 col-lg-4">
-              <label className="form-label">Search</label>
-              <input className="form-control" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by topic or title" />
-            </div>
-            <div className="col-sm-6 col-lg-4">
-              <label className="form-label">Category</label>
-              <select className="form-select" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
-                <option value="">All Categories</option>
-                {softwareCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
-              </select>
-            </div>
-            <div className="col-sm-6 col-lg-4">
-              <label className="form-label">Question Type</label>
-              <select className="form-select" value={selectedType} onChange={(event) => setSelectedType(event.target.value)}>
-                {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {loading && !filteredQuestions.length ? <p className="text-secondary mb-0">Loading questions...</p> : (
-            <div className="row g-3">
-              {filteredQuestions.map((item, index) => (
-                <div className="col-12 col-lg-6" key={item._id}>
-                  <button className="practice-question-card-btn" onClick={() => openQuestion(item._id)}>
-                    <div className="d-flex align-items-start gap-3">
-                      <span className="practice-question-index">{index + 1}</span>
-                      <div className="text-start">
-                        <strong>{item.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</strong>
-                        <small className="d-block mt-1">{item.topic} | {item.type} | {item.difficulty}</small>
-                      </div>
-                    </div>
-                  </button>
+      <div className="space-y-6">
+        <PageHeader
+          kicker="Practice workspace"
+          title="Choose a question and move through practice with a focused workflow."
+          description="Filter by category, search by topic, then open a dedicated practice screen with bookmark, previous, and next controls."
+          aside={(
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              {[
+                { label: "Filtered", value: filteredQuestions.length },
+                { label: "Mode", value: selectedType === "all" ? "Mixed" : selectedType },
+                { label: "Field", value: targetField }
+              ].map((item) => (
+                <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
+                  <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        />
+
+        <SurfaceCard strong>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Search</span>
+              <input className="snx-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by topic or title" />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Category</span>
+              <select className="snx-select" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
+                <option value="">All Categories</option>
+                {softwareCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Question Type</span>
+              <select className="snx-select" value={selectedType} onChange={(event) => setSelectedType(event.target.value)}>
+                {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+              </select>
+            </label>
+          </div>
+        </SurfaceCard>
+
+        {loading && !filteredQuestions.length ? (
+          <SurfaceCard><p className="text-sm text-slate-500">Loading questions...</p></SurfaceCard>
+        ) : filteredQuestions.length ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {filteredQuestions.map((item, index) => (
+              <button
+                key={item._id}
+                className="rounded-[28px] border border-slate-200/70 bg-white/80 p-5 text-left shadow-[0_18px_44px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_50px_rgba(20,184,166,0.12)]"
+                onClick={() => openQuestion(item._id)}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-slate-950">{item.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</div>
+                    <p className="mt-2 text-sm text-slate-500">{item.topic} • {item.type} • {item.difficulty}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No questions match this filter set"
+            description="Try widening the topic or switching back to a mixed mode so you can continue practicing without friction."
+          />
+        )}
       </div>
     );
   }
 
   return (
-      <div className="container-fluid py-4 practice-pro-page snx-page-shell">
-        <div className="glass-card p-4 question-card practice-workspace-card">
-          {question ? (
+    <div className="space-y-6">
+      <SurfaceCard strong className="space-y-6">
+        {question ? (
           <>
-            <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3 practice-question-toolbar">
-              <div className="flex-grow-1">
-                <button className="btn btn-outline-light mb-3" onClick={goBackToList}>Back to Question List</button>
-                <p className="eyebrow mb-2">Practice Question</p>
-                <h2 className="h3 fw-bold mb-2">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h2>
-                <p className="text-secondary mb-0">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-3">
+                <button className="snx-btn-secondary" onClick={goBackToList}>
+                  <FiArrowLeft className="h-4 w-4" />
+                  Back to Question List
+                </button>
+                <div>
+                  <span className="snx-kicker">Practice question</span>
+                  <h1 className="snx-heading mt-4">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h1>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
+                </div>
               </div>
-              <button className={`btn ${isBookmarked ? "btn-info" : "btn-outline-light"}`} onClick={toggleBookmark}>
+              <button className={isBookmarked ? "snx-btn-accent" : "snx-btn-secondary"} onClick={toggleBookmark}>
+                <FiBookmark className="h-4 w-4" />
                 {isBookmarked ? "Bookmarked" : "Bookmark"}
               </button>
             </div>
 
-            <div className="d-flex gap-2 flex-wrap mb-4">
-              <span className="badge text-bg-dark">{question.category}</span>
-              <span className="badge text-bg-dark">{question.topic}</span>
-              <span className="badge text-bg-dark">{question.company}</span>
-              <span className="badge text-bg-info">{question.type}</span>
-              <span className="badge text-bg-secondary">{question.difficulty}</span>
+            <div className="flex flex-wrap gap-2">
+              <span className="snx-badge">{question.category}</span>
+              <span className="snx-badge">{question.topic}</span>
+              <span className="snx-badge">{question.company}</span>
+              <span className="snx-badge">{question.type}</span>
+              <span className="snx-badge">{question.difficulty}</span>
             </div>
 
             {question.type === "MCQ" ? (
-              <div className="vstack gap-2 mb-4">
+              <div className="grid gap-3">
                 {(question.options || []).map((option) => (
                   <button
                     key={option}
-                    className={`btn option-btn ${answer === option ? "option-btn-selected" : "btn-outline-light"} text-start`}
+                    className={`rounded-[22px] border px-4 py-4 text-left text-sm font-medium transition ${
+                      answer === option
+                        ? "border-brand-500 bg-brand-500 text-white shadow-[0_18px_36px_rgba(20,184,166,0.22)]"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"
+                    }`}
                     onClick={() => setAnswer((current) => (current === option ? "" : option))}
                   >
                     {option}
@@ -294,8 +311,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 
             {question.type === "Subjective" ? (
               <textarea
-                className="form-control mb-4 practice-answer-box"
-                rows="9"
+                className="snx-textarea min-h-[220px]"
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
                 placeholder="Write your answer here..."
@@ -303,81 +319,93 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
             ) : null}
 
             {question.type === "Coding" ? (
-              <>
-                <div className="row g-3 mb-3">
-                  <div className="col-sm-4">
-                    <label className="form-label">Language</label>
-                    <select className="form-select" value={language} onChange={(event) => setLanguage(event.target.value)}>
-                      <option value="python">Python</option>
-                      <option value="cpp">C++</option>
-                      <option value="java">Java</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="practice-editor-shell">
+              <div className="space-y-4">
+                <label className="block max-w-xs space-y-2">
+                  <span className="text-sm font-medium text-slate-700">Language</span>
+                  <select className="snx-select" value={language} onChange={(event) => setLanguage(event.target.value)}>
+                    <option value="python">Python</option>
+                    <option value="cpp">C++</option>
+                    <option value="java">Java</option>
+                  </select>
+                </label>
+                <div className="overflow-hidden rounded-[28px] border border-slate-200/70 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
                   <Editor
-                    height="360px"
+                    height="420px"
                     theme="vs-dark"
                     language={language === "cpp" ? "cpp" : language}
                     value={answer}
                     onChange={(value) => setAnswer(value || "")}
                   />
                 </div>
-              </>
+              </div>
             ) : null}
 
-            <div className="d-flex gap-2 flex-wrap mt-4 practice-question-actions">
-              <button className="btn btn-outline-light" onClick={() => moveQuestion("prev")}>Previous</button>
-              <button className="btn btn-info" onClick={submit} disabled={submitting}>
+            <div className="flex flex-wrap gap-3">
+              <button className="snx-btn-secondary" onClick={() => moveQuestion("prev")}>
+                <FiArrowLeft className="h-4 w-4" />
+                Previous
+              </button>
+              <button className="snx-btn-accent" onClick={submit} disabled={submitting}>
+                <FiSend className="h-4 w-4" />
                 {submitting ? "Submitting..." : "Submit"}
               </button>
               {question.type === "Coding" ? (
-                <button className="btn btn-outline-light" onClick={runCode} disabled={runningCode}>
+                <button className="snx-btn-secondary" onClick={runCode} disabled={runningCode}>
+                  <FiPlay className="h-4 w-4" />
                   {runningCode ? "Running..." : "Run Code"}
                 </button>
               ) : null}
-              <button className="btn btn-outline-light" onClick={() => moveQuestion("next")}>Next</button>
+              <button className="snx-btn-secondary" onClick={() => moveQuestion("next")}>
+                Next
+                <FiArrowRight className="h-4 w-4" />
+              </button>
             </div>
-
-            {feedback ? (
-              <div className="mt-4 vstack gap-3">
-                <div className="answer-reveal-panel">
-                  <div className="answer-reveal-card">
-                    <span className="feedback-label">Your Answer</span>
-                    <p className="mb-0">{String(answer || "No answer submitted")}</p>
-                  </div>
-                  <div className="answer-reveal-card">
-                    <span className="feedback-label">Correct Answer</span>
-                    <p className="mb-0">{String(feedback.correctAnswer)}</p>
-                  </div>
-                </div>
-                <div className="feedback-detail-grid">
-                  <div className="feedback-detail-card feedback-detail-card-wide">
-                    <span className="feedback-label">Detailed Solution</span>
-                    <p className="mb-0">{detailedSolution}</p>
-                  </div>
-                  <div className="feedback-detail-card feedback-detail-card-wide">
-                    <span className="feedback-label">Explanation</span>
-                    <p className="mb-0">{feedback.explanation}</p>
-                  </div>
-                </div>
-                {feedback.codeOutput ? (
-                  <div className="terminal-panel">
-                    <p className="mb-2"><strong>Status:</strong> {feedback.codeStatus}</p>
-                    <pre className="mb-0">{feedback.codeOutput}</pre>
-                  </div>
-                ) : null}
-                <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
-              </div>
-            ) : null}
           </>
         ) : (
-          <div className="text-center py-4">
-            <p className="text-secondary mb-3">This question is not available in the current filter set.</p>
-            <button className="btn btn-info" onClick={goBackToList}>Back to Question List</button>
-          </div>
+          <EmptyState
+            title="This question is not available in the current filter set"
+            description="Go back to the practice list and reopen another question from the filtered collection."
+            action={<button className="snx-btn-accent" onClick={goBackToList}>Back to Question List</button>}
+          />
         )}
-      </div>
+      </SurfaceCard>
+
+      {feedback && question ? (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <SurfaceCard strong className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Your answer</div>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{String(answer || "No answer submitted")}</p>
+              </div>
+              <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/70 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Correct answer</div>
+                <p className="mt-3 text-sm leading-7 text-emerald-900">{String(feedback.correctAnswer)}</p>
+              </div>
+            </div>
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Detailed solution</div>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{detailedSolution}</p>
+            </div>
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Explanation</div>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{feedback.explanation}</p>
+            </div>
+            {feedback.codeOutput ? (
+              <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950">
+                <div className="border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+                  <span className="inline-flex items-center gap-2"><FiCode className="h-4 w-4" /> {feedback.codeStatus}</span>
+                </div>
+                <pre className="snx-scrollbar overflow-x-auto px-4 py-4 text-sm text-slate-100"><code>{feedback.codeOutput}</code></pre>
+              </div>
+            ) : null}
+          </SurfaceCard>
+
+          <div className="space-y-6">
+            <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

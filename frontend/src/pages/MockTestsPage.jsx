@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FiClock, FiRefreshCw, FiZap } from "react-icons/fi";
 import api from "../api/client";
-import { useToast } from "../components/ui/ToastProvider";
 import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import EmptyState from "../components/ui/EmptyState";
+import PageHeader from "../components/ui/PageHeader";
+import SurfaceCard from "../components/ui/SurfaceCard";
+import { useToast } from "../components/ui/ToastProvider";
 import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
 
 const formatTimer = (seconds) => {
@@ -10,7 +14,7 @@ const formatTimer = (seconds) => {
   return `${mins}:${secs}`;
 };
 
-const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistory, questions = [] }) => {
+const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
   const { showToast } = useToast();
   const [activeTest, setActiveTest] = useState(null);
   const [pendingTest, setPendingTest] = useState(null);
@@ -48,12 +52,7 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
     try {
       setLoading(true);
       setGenerationError("");
-      console.info("[MockTests] Generating software mock test");
       const { data } = await api.post("/tests", {});
-      console.info("[MockTests] Mock test generated", {
-        testId: data?._id,
-        sections: data?.sections?.length || 0
-      });
       setPendingTest(data);
       setActiveTest(null);
       setAnswers({});
@@ -68,7 +67,6 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
       if (error?.response?.status === 401) {
         return;
       }
-      console.error("[MockTests] Failed to generate mock test", error?.response?.data || error);
       setGenerationError(error.response?.data?.message || "Unable to generate a mock test right now.");
       showToast(error.response?.data?.message || "Unable to generate a mock test right now.", "error");
     } finally {
@@ -149,102 +147,156 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
   };
 
   return (
-    <div className="container-fluid py-4 snx-page-shell">
-      <div className="hero-panel mb-4 mock-tests-hero">
-        <div>
-          <p className="eyebrow mb-2">Mock Tests</p>
-          <h1 className="h2 fw-bold mb-2">30-question software mock test</h1>
-          <p className="text-secondary mb-0">Each generated test is balanced across DSA, aptitude, HR, and core subjects, with time set from the question count.</p>
-        </div>
-        <div className="mock-tests-hero-actions">
-          <button className="btn btn-info" onClick={generateTest} disabled={loading}>{loading ? "Generating..." : "Generate Mock Test"}</button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        kicker="Mock interview tests"
+        title="Run timed software mock tests with clean pacing and production-style review."
+        description="Generate a balanced software round across DSA, aptitude, HR, and core subjects, then review your answer quality with structured post-test analysis."
+        actions={(
+          <button className="snx-btn-accent" onClick={generateTest} disabled={loading}>
+            {loading ? "Generating..." : "Generate Mock Test"}
+          </button>
+        )}
+        aside={(
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            {[
+              { label: "Format", value: "30 Q mix" },
+              { label: "Timer", value: activeTest ? formatTimer(remainingSeconds) : "Adaptive" },
+              { label: "Mode", value: activeTest ? "Live" : pendingTest ? "Ready" : "Idle" }
+            ].map((item) => (
+              <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
+                <div className="mt-2 text-2xl font-semibold text-slate-950">{item.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      />
 
       {loading && !pendingTest && !activeTest ? (
-        <div className="glass-card p-4 mb-4 mock-test-empty-state">
-          <h2 className="h4 mb-2">Generating your mock test...</h2>
-          <p className="text-secondary mb-0">We are preparing a balanced question set from your software interview bank.</p>
-        </div>
+        <SurfaceCard strong>
+          <div className="flex items-center gap-3 text-slate-700">
+            <FiZap className="h-5 w-5 text-brand-600" />
+            <div>
+              <div className="font-semibold">Generating your mock test...</div>
+              <div className="mt-1 text-sm text-slate-500">Preparing a balanced question set from your software interview bank.</div>
+            </div>
+          </div>
+        </SurfaceCard>
       ) : null}
 
       {generationError ? (
-        <div className="glass-card p-4 mb-4 mock-test-empty-state">
-          <h2 className="h4 mb-2">Mock test generation needs attention</h2>
-          <p className="text-secondary mb-0">{generationError}</p>
-        </div>
+        <SurfaceCard strong>
+          <div className="text-sm font-medium text-rose-700">{generationError}</div>
+        </SurfaceCard>
       ) : null}
 
       {pendingTest ? (
-        <div className="glass-card p-4 mock-test-active-card mb-4">
-          <p className="eyebrow mb-2">Generated Test</p>
-          <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <SurfaceCard strong className="space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="h3 mb-2">{pendingTest.title}</h2>
-              <p className="text-secondary mb-0">Your software mock is ready. Review the format below and start when you are ready.</p>
+              <span className="snx-kicker">Generated test</span>
+              <h2 className="snx-heading mt-4">{pendingTest.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">Your software mock is ready. Review the format and start when you are ready.</p>
             </div>
-            <div className="mock-test-timer-card">
-              <span>Duration</span>
-              <strong>{formatTimer((pendingTest.duration || 30) * 60)}</strong>
+            <div className="rounded-[24px] border border-slate-200/70 bg-slate-950 px-5 py-4 text-white">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/60">Duration</div>
+              <div className="mt-2 text-2xl font-semibold">{formatTimer((pendingTest.duration || 30) * 60)}</div>
             </div>
           </div>
-
-          <div className="mock-test-format-grid mb-4">
-            <div><span>Questions</span><strong>{pendingQuestionCount}</strong></div>
-            <div><span>Duration</span><strong>{pendingTest.duration || 30} minutes</strong></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Questions</div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">{pendingQuestionCount}</div>
+            </div>
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Duration</div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">{pendingTest.duration || 30} mins</div>
+            </div>
           </div>
-
-          <div className="d-flex gap-2 flex-wrap">
-            <button className="btn btn-info" onClick={startPendingTest}>Start Test</button>
-            <button className="btn btn-outline-light" onClick={generateTest} disabled={loading}>{loading ? "Generating..." : "Regenerate"}</button>
+          <div className="flex flex-wrap gap-3">
+            <button className="snx-btn-accent" onClick={startPendingTest}>Start Test</button>
+            <button className="snx-btn-secondary" onClick={generateTest} disabled={loading}>
+              <FiRefreshCw className="h-4 w-4" />
+              {loading ? "Generating..." : "Regenerate"}
+            </button>
           </div>
-        </div>
+        </SurfaceCard>
       ) : null}
 
       {activeTest ? (
-        <div className="glass-card p-4 mock-test-active-card">
-          <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <SurfaceCard strong className="space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="h3 mb-2">{activeTest.title}</h2>
-              <p className="text-secondary mb-0">Answer each question and submit manually anytime, or let the test auto-submit when the timer reaches zero.</p>
+              <h2 className="snx-heading">{activeTest.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Answer each question and submit any time, or let the test auto-submit when the timer reaches zero.
+              </p>
             </div>
-            <div className="mock-test-timer-card">
-              <span>Time Left</span>
-              <strong>{formatTimer(remainingSeconds)}</strong>
+            <div className="rounded-[24px] border border-slate-200/70 bg-slate-950 px-5 py-4 text-white">
+              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-white/60">
+                <FiClock className="h-4 w-4" />
+                Time left
+              </div>
+              <div className="mt-2 text-2xl font-semibold">{formatTimer(remainingSeconds)}</div>
             </div>
           </div>
 
-          <div className="mock-test-format-grid mb-4">
-            <div><span>Questions</span><strong>{questionCount}</strong></div>
-            <div><span>Duration</span><strong>{activeTest.duration || 30} minutes</strong></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Questions</div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">{questionCount}</div>
+            </div>
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Duration</div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">{activeTest.duration || 30} mins</div>
+            </div>
           </div>
 
-          <div className="vstack gap-4">
+          <div className="space-y-4">
             {activeTest.sections.flatMap((section) => section.questions).map((question, index) => (
-              <div key={question._id} className="mock-test-question-block">
-                <div className="mock-test-question-head mb-3">
-                  <span className="mock-test-question-number">{index + 1}</span>
-                  <div>
-                    <h3 className="h5 mb-2">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h3>
-                    <p className="text-secondary mb-2">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
-                    <div className="d-flex gap-2 flex-wrap">
-                      <span className="badge text-bg-dark">{question.category}</span>
-                      <span className="badge text-bg-dark">{question.topic}</span>
-                      <span className="badge text-bg-info">{question.type}</span>
+              <div key={question._id} className="rounded-[28px] border border-slate-200/70 bg-white/80 p-5">
+                <div className="mb-4 flex items-start gap-4">
+                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
+                    {index + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-slate-950">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h3>
+                    <p className="mt-2 text-sm text-slate-500">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="snx-badge">{question.category}</span>
+                      <span className="snx-badge">{question.topic}</span>
+                      <span className="snx-badge">{question.type}</span>
                     </div>
                   </div>
                 </div>
+
                 {question.type === "MCQ" ? (
-                  <div className="vstack gap-2">
+                  <div className="grid gap-2">
                     {(question.options || []).map((option) => (
-                      <button key={option} className={`btn text-start ${answers[question._id] === option ? "btn-info" : "btn-outline-light"}`} onClick={() => setAnswers((current) => ({ ...current, [question._id]: option }))}>{option}</button>
+                      <button key={option} className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                        answers[question._id] === option
+                          ? "border-brand-500 bg-brand-500 text-white"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"
+                      }`} onClick={() => setAnswers((current) => ({ ...current, [question._id]: option }))}>{option}</button>
                     ))}
                   </div>
                 ) : (
-                  <textarea className="form-control" rows="5" value={answers[question._id] || ""} onChange={(event) => setAnswers((current) => ({ ...current, [question._id]: event.target.value }))} placeholder={question.type === "Coding" ? "Write code or approach here..." : "Write your answer here..."} />
+                  <textarea
+                    className="snx-textarea min-h-[150px]"
+                    value={answers[question._id] || ""}
+                    onChange={(event) => setAnswers((current) => ({ ...current, [question._id]: event.target.value }))}
+                    placeholder={question.type === "Coding" ? "Write code or your approach here..." : "Write your answer here..."}
+                  />
                 )}
-                <div className="d-flex gap-2 flex-wrap mt-3">
-                  <button type="button" className="btn btn-outline-light" onClick={() => requestQuestionAnalysis(question)} disabled={!String(answers[question._id] || "").trim() || analysisLoadingByQuestionId[question._id]}>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    className="snx-btn-secondary"
+                    onClick={() => requestQuestionAnalysis(question)}
+                    disabled={!String(answers[question._id] || "").trim() || analysisLoadingByQuestionId[question._id]}
+                  >
                     {analysisLoadingByQuestionId[question._id] ? "Analyzing..." : "Analyze Answer"}
                   </button>
                 </div>
@@ -253,41 +305,46 @@ const MockTestsPage = ({ tests = [], refreshTests, refreshProfile, refreshHistor
             ))}
           </div>
 
-          <button className="btn btn-info mt-4" onClick={() => submitTest(false)} disabled={submitting}>{submitting ? "Submitting..." : "Submit Test"}</button>
-        </div>
+          <button className="snx-btn-accent" onClick={() => submitTest(false)} disabled={submitting}>
+            {submitting ? "Submitting..." : "Submit Test"}
+          </button>
+        </SurfaceCard>
       ) : null}
 
       {result ? (
-        <div className="glass-card p-4 mt-4">
-          <p className="eyebrow mb-2">Latest Result</p>
-          <h2 className="h4 mb-3">{result.autoSubmitted ? "Mock test auto-submitted when time ended" : "Mock test submitted successfully"}</h2>
-          <div className="mock-test-result-grid mb-4">
-            <div><span>Score</span><strong>{result.score}</strong></div>
-            <div><span>Accuracy</span><strong>{result.accuracy}%</strong></div>
-            <div><span>Weak Topics</span><strong>{(result.weakTopics || []).join(", ") || "None"}</strong></div>
-            <div><span>Strengths</span><strong>{(result.strengths || []).join(", ") || "None"}</strong></div>
+        <SurfaceCard strong className="space-y-6">
+          <div>
+            <span className="snx-kicker">Latest result</span>
+            <h2 className="snx-heading mt-4">{result.autoSubmitted ? "Mock test auto-submitted when time ended" : "Mock test submitted successfully"}</h2>
           </div>
-          <div className="vstack gap-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Score</div><div className="mt-2 text-3xl font-semibold text-slate-950">{result.score}</div></div>
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Accuracy</div><div className="mt-2 text-3xl font-semibold text-slate-950">{result.accuracy}%</div></div>
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Weak Topics</div><div className="mt-2 text-sm font-medium text-slate-700">{(result.weakTopics || []).join(", ") || "None"}</div></div>
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Strengths</div><div className="mt-2 text-sm font-medium text-slate-700">{(result.strengths || []).join(", ") || "None"}</div></div>
+          </div>
+          <div className="space-y-4">
             {(result.answers || []).map((entry, index) => {
               const question = entry?.question;
               if (!question || typeof question !== "object") return null;
               return (
-                <div key={question._id || index} className="mock-test-question-block">
-                  <h3 className="h5 mb-2">{question.title}</h3>
-                  <p className="text-secondary mb-2">{String(entry.submittedAnswer || "No answer submitted")}</p>
+                <div key={question._id || index} className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+                  <h3 className="text-lg font-semibold text-slate-950">{question.title}</h3>
+                  <p className="mt-2 text-sm text-slate-500">{String(entry.submittedAnswer || "No answer submitted")}</p>
                   <AnswerAnalysisBlock analysis={analysisByQuestionId[question._id]} loading={analysisLoadingByQuestionId[question._id]} />
                 </div>
               );
             })}
           </div>
-        </div>
+        </SurfaceCard>
       ) : null}
 
       {!activeTest && !pendingTest && !result ? (
-        <div className="glass-card p-4 mock-test-empty-state">
-          <h2 className="h4 mb-2">Ready for a fresh mock?</h2>
-          <p className="text-secondary mb-0">Generate a new software mock test to practice DSA, aptitude, HR, and core subjects in one round.</p>
-        </div>
+        <EmptyState
+          title="Ready for a fresh mock?"
+          description="Generate a new software mock test to practice DSA, aptitude, HR, and core subjects in one polished round."
+          action={<button className="snx-btn-accent" onClick={generateTest}>Generate Mock Test</button>}
+        />
       ) : null}
     </div>
   );

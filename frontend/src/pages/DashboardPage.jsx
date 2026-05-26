@@ -1,5 +1,9 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FiActivity, FiArrowRight, FiBarChart2, FiClock, FiCompass, FiTrendingUp } from "react-icons/fi";
+import EmptyState from "../components/ui/EmptyState";
+import PageHeader from "../components/ui/PageHeader";
+import SurfaceCard from "../components/ui/SurfaceCard";
 
 const createRoadmap = (profile) => {
   const weakTopics = profile?.progress?.weakTopics || [];
@@ -8,10 +12,10 @@ const createRoadmap = (profile) => {
   const topics = focus.length ? focus : ["Arrays", "DBMS", "Operating Systems", "HR Communication"];
 
   return [
-    { week: "Week 1", goal: `Strengthen ${topics[0]} fundamentals and close quick gaps.` },
-    { week: "Week 2", goal: `Practice ${topics[1] || topics[0]} with timed question sets.` },
-    { week: "Week 3", goal: `Revise ${topics[2] || topics[0]} and review mistakes carefully.` },
-    { week: "Week 4", goal: `Polish ${topics[3] || "communication"} with final mock rounds.` }
+    { week: "Week 1", goal: `Sharpen ${topics[0]} fundamentals with guided revision and short practice loops.` },
+    { week: "Week 2", goal: `Use timed exercises to improve confidence in ${topics[1] || topics[0]}.` },
+    { week: "Week 3", goal: `Review mistakes from ${topics[2] || topics[0]} and refine how you explain solutions.` },
+    { week: "Week 4", goal: `Run final mock rounds focused on ${topics[3] || "communication"} and delivery.` }
   ];
 };
 
@@ -27,7 +31,9 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
   const weakTopics = profile?.progress?.weakTopics || [];
   const recommendedTopics = profile?.progress?.recommendedTopics || [];
   const roadmap = createRoadmap(profile);
-  const companyPrep = questions.filter((question) => ["Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"].includes(question.company)).slice(0, 6);
+  const companyPrep = questions
+    .filter((question) => ["Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture", "Adobe", "Meta"].includes(question.company))
+    .slice(0, 6);
 
   const analytics = useMemo(() => {
     const recentHistory = [...history].slice(0, 6).reverse();
@@ -72,211 +78,203 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
 
   const readiness = Math.max(35, Math.round((analytics.accuracy + analytics.consistency) / 2));
 
+  const statCards = [
+    { label: "Readiness", value: `${readiness}%`, meta: "Balance of accuracy and consistency", icon: FiActivity },
+    { label: "Interviews Taken", value: analytics.testsTaken, meta: "Completed mock rounds", icon: FiBarChart2 },
+    { label: "Average Score", value: analytics.avgScore, meta: "Recent mock average", icon: FiCompass },
+    { label: "Momentum", value: analytics.momentum >= 0 ? `+${analytics.momentum}` : analytics.momentum, meta: "Recent progress trend", icon: FiTrendingUp }
+  ];
+
   return (
-    <div className="container-fluid py-4 snx-page-shell">
-      <div className="snx-hero-card mb-4">
-        <div className="row g-4 align-items-center">
-          <div className="col-xl-8">
-            <span className="snx-kicker">Performance Dashboard</span>
-            <h1 className="snx-page-title mt-3">Welcome back, {profile?.name || "Learner"}</h1>
-            <p className="snx-page-subtitle mb-0">
-              Track your interview preparation across practice, mock tests, and AI interview rounds from one clean dashboard.
-            </p>
-            <div className="d-flex flex-wrap gap-2 mt-4">
-              <Link to="/ai-interviewer" className="btn snx-btn-primary">Generate AI Interview</Link>
-              <Link to="/practice" className="btn snx-btn-secondary">Continue Practice</Link>
-            </div>
+    <div className="space-y-6">
+      <PageHeader
+        kicker="AI performance dashboard"
+        title={`Welcome back, ${profile?.name || "Learner"}`}
+        description="Track interview progress, revisit company-focused questions, and keep your practice momentum visible from one premium AI workspace."
+        actions={(
+          <>
+            <Link to="/ai-interviewer" className="snx-btn-accent">Start Interview Loop</Link>
+            <Link to="/practice" className="snx-btn-secondary">Continue Practice</Link>
+          </>
+        )}
+        aside={(
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            {statCards.map(({ label, value, meta, icon: Icon }) => (
+              <div key={label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+                <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500/15 to-accent-500/15 text-brand-700">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</div>
+                <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{value}</div>
+                <div className="mt-2 text-sm text-slate-500">{meta}</div>
+              </div>
+            ))}
           </div>
-          <div className="col-xl-4">
-            <div className="row g-3">
-              <div className="col-sm-4 col-xl-12">
-                <div className="snx-highlight-card primary">
-                  <span>Readiness</span>
-                  <strong>{readiness}%</strong>
-                  <small>Blend of accuracy and consistency</small>
-                </div>
-              </div>
-              <div className="col-sm-4 col-xl-12">
-                <div className="snx-highlight-card success">
-                  <span>Momentum</span>
-                  <strong>{analytics.momentum >= 0 ? `+${analytics.momentum}` : analytics.momentum}</strong>
-                  <small>Recent progress trend</small>
-                </div>
-              </div>
-              <div className="col-sm-4 col-xl-12">
-                <div className="snx-highlight-card neutral">
-                  <span>Best Accuracy</span>
-                  <strong>{analytics.bestAccuracy}%</strong>
-                  <small>Top mock test result</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: "Overall Accuracy", value: `${analytics.accuracy}%`, meta: "Across your practice history" },
+          { label: "Best Accuracy", value: `${analytics.bestAccuracy}%`, meta: "Strongest mock performance" },
+          { label: "Consistency", value: `${analytics.consistency}%`, meta: "Lower score swings are healthier" },
+          { label: "Weak Topics", value: weakTopics.length || 0, meta: "Focus areas currently identified" }
+        ].map((card) => (
+          <SurfaceCard key={card.label}>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{card.label}</div>
+            <div className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{card.value}</div>
+            <p className="mt-2 text-sm text-slate-500">{card.meta}</p>
+          </SurfaceCard>
+        ))}
       </div>
 
-      <div className="row g-4 mb-4">
-        <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card snx-stat-card-clean">
-            <span className="snx-stat-label">Interviews Taken</span>
-            <strong className="snx-stat-value">{analytics.testsTaken}</strong>
-            <small className="snx-stat-meta">Completed mock rounds</small>
-          </div>
-        </div>
-        <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card snx-stat-card-clean">
-            <span className="snx-stat-label">Average Score</span>
-            <strong className="snx-stat-value">{analytics.avgScore}</strong>
-            <small className="snx-stat-meta">Recent mock average</small>
-          </div>
-        </div>
-        <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card snx-stat-card-clean">
-            <span className="snx-stat-label">Overall Accuracy</span>
-            <strong className="snx-stat-value">{analytics.accuracy}%</strong>
-            <small className="snx-stat-meta">Across your practice history</small>
-          </div>
-        </div>
-        <div className="col-sm-6 col-xl-3">
-          <div className="snx-stat-card snx-stat-card-clean">
-            <span className="snx-stat-label">Consistency</span>
-            <strong className="snx-stat-value">{analytics.consistency}%</strong>
-            <small className="snx-stat-meta">Lower score swing is better</small>
-          </div>
-        </div>
-      </div>
-
-      <div className="row g-4 mb-4">
-        <div className="col-xl-8">
-          <div className="snx-surface-card h-100">
-            <div className="snx-section-head">
-              <div>
-                <span className="snx-kicker">Performance Trend</span>
-                <h2>Recent mock test accuracy</h2>
-              </div>
-              <button className="btn snx-btn-secondary" onClick={() => navigate("/history")}>Open History</button>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+        <SurfaceCard strong>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <span className="snx-kicker">Performance trend</span>
+              <h2 className="snx-heading mt-4">Recent mock test accuracy</h2>
             </div>
+            <button className="snx-btn-secondary" onClick={() => navigate("/history")}>
+              Open History
+            </button>
+          </div>
 
-            {loading && !analytics.recentHistory.length ? (
-              <div className="snx-empty-state">
-                <p className="mb-2">Loading your latest performance data...</p>
-              </div>
-            ) : analytics.recentHistory.length ? (
-              <div className="snx-chart-grid">
-                {analytics.recentHistory.map((item, index) => {
-                  const accuracyValue = item.accuracy || 0;
-                  return (
-                    <div key={item._id || index} className="snx-bar-card">
-                      <div className="snx-bar-track">
-                        <div className="snx-bar-fill" style={{ height: `${Math.max(18, Math.min(100, accuracyValue))}%` }} />
-                      </div>
-                      <strong>{accuracyValue}%</strong>
-                      <span>Test {index + 1}</span>
+          {loading && !analytics.recentHistory.length ? (
+            <div className="mt-6 h-64 animate-pulse rounded-[24px] bg-slate-100" />
+          ) : analytics.recentHistory.length ? (
+            <div className="mt-8 grid gap-4 md:grid-cols-6">
+              {analytics.recentHistory.map((item, index) => {
+                const accuracyValue = item.accuracy || 0;
+                return (
+                  <div key={item._id || index} className="flex flex-col items-center gap-3 rounded-[24px] border border-slate-200/70 bg-white/70 p-4">
+                    <div className="relative flex h-48 w-10 items-end rounded-full bg-slate-100">
+                      <div
+                        className="w-full rounded-full bg-gradient-to-t from-brand-500 to-accent-500"
+                        style={{ height: `${Math.max(18, Math.min(100, accuracyValue))}%` }}
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="snx-empty-state">
-                <h3>No interviews yet</h3>
-                <p>Generate a mock test to start building your dashboard insights.</p>
-                <button className="btn snx-btn-primary" onClick={() => navigate("/mock-tests")}>Generate Mock Test</button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="col-xl-4">
-          <div className="snx-surface-card h-100">
-            <div className="snx-section-head">
-              <div>
-                <span className="snx-kicker">Topic Readiness</span>
-                <h2>Section-wise strength</h2>
-              </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-slate-950">{accuracyValue}%</div>
+                      <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Test {index + 1}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="snx-topic-list">
+          ) : (
+            <div className="mt-6">
+              <EmptyState
+                title="No interviews yet"
+                description="Generate a mock test to unlock trend charts, readiness signals, and accuracy history."
+                action={<button className="snx-btn-accent" onClick={() => navigate("/mock-tests")}>Generate Mock Test</button>}
+              />
+            </div>
+          )}
+        </SurfaceCard>
+
+        <SurfaceCard strong>
+          <div className="space-y-4">
+            <div>
+              <span className="snx-kicker">Topic readiness</span>
+              <h2 className="snx-heading mt-4">Section-wise strength</h2>
+            </div>
+            <div className="space-y-4">
               {analytics.topicHealth.map((item) => (
-                <div key={item.label} className="snx-topic-card">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <strong>{item.label}</strong>
-                    <span>{item.score}%</span>
+                <div key={item.label} className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <strong className="text-slate-950">{item.label}</strong>
+                    <span className="text-sm font-semibold text-slate-500">{item.score}%</span>
                   </div>
-                  <div className="snx-topic-track">
-                    <div className="snx-topic-fill" style={{ width: `${item.score}%` }} />
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500" style={{ width: `${item.score}%` }} />
                   </div>
-                  <small>{item.status}</small>
+                  <p className="mt-3 text-sm text-slate-500">{item.status}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </SurfaceCard>
       </div>
 
-      <div className="row g-4">
-        <div className="col-xl-4">
-          <div className="snx-surface-card h-100">
-            <div className="snx-section-head">
-              <div>
-                <span className="snx-kicker">Recommended Topics</span>
-                <h2>Your next best moves</h2>
-              </div>
+      <div className="grid gap-6 xl:grid-cols-3">
+        <SurfaceCard strong>
+          <div className="space-y-5">
+            <div>
+              <span className="snx-kicker">Recommended topics</span>
+              <h2 className="snx-heading mt-4">What to practice next</h2>
             </div>
-            <div className="snx-chip-grid">
+            <div className="flex flex-wrap gap-3">
               {(recommendedTopics.length ? recommendedTopics : ["Arrays", "DBMS", "Operating Systems", "HR"]).slice(0, 8).map((topic) => (
-                <button key={topic} className="snx-chip-button" onClick={() => navigate(`/questions?topic=${encodeURIComponent(topic)}`)}>
+                <button
+                  key={topic}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-slate-950"
+                  onClick={() => navigate(`/questions?topic=${encodeURIComponent(topic)}`)}
+                >
                   {topic}
                 </button>
               ))}
             </div>
           </div>
-        </div>
+        </SurfaceCard>
 
-        <div className="col-xl-4">
-          <div className="snx-surface-card h-100">
-            <div className="snx-section-head">
-              <div>
-                <span className="snx-kicker">4-Week Plan</span>
-                <h2>Personalized roadmap</h2>
-              </div>
+        <SurfaceCard strong>
+          <div className="space-y-5">
+            <div>
+              <span className="snx-kicker">4-week plan</span>
+              <h2 className="snx-heading mt-4">Personalized roadmap</h2>
             </div>
-            <div className="snx-roadmap-list">
+            <div className="space-y-4">
               {roadmap.map((item) => (
-                <div className="snx-roadmap-item" key={item.week}>
-                  <div className="snx-roadmap-week">{item.week}</div>
-                  <div>{item.goal}</div>
+                <div key={item.week} className="flex gap-4 rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
+                    {item.week.replace("Week ", "")}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">{item.week}</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.goal}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </SurfaceCard>
 
-        <div className="col-xl-4">
-          <div className="snx-surface-card h-100">
-            <div className="snx-section-head">
+        <SurfaceCard strong>
+          <div className="space-y-5">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="snx-kicker">Company Prep</span>
-                <h2>Targeted practice</h2>
+                <span className="snx-kicker">Company prep</span>
+                <h2 className="snx-heading mt-4">Targeted questions</h2>
               </div>
+              <button className="snx-btn-secondary" onClick={() => navigate("/questions")}>
+                Explore
+              </button>
             </div>
-            <div className="snx-company-list">
+            <div className="space-y-3">
               {companyPrep.length ? companyPrep.map((question) => (
                 <button
                   key={question._id}
-                  className="snx-company-card snx-company-card-clean"
+                  className="w-full rounded-[24px] border border-slate-200/70 bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_18px_36px_rgba(20,184,166,0.12)]"
                   onClick={() => navigate(`/questions?topic=${encodeURIComponent(question.topic)}&category=${encodeURIComponent(question.category)}`)}
                 >
-                  <span className="snx-company-tag">{question.company}</span>
-                  <strong className="snx-company-title">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</strong>
-                  <small className="snx-company-meta">{question.topic} | {question.category}</small>
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <span className="snx-badge">{question.company}</span>
+                    <span className="snx-badge">{question.category}</span>
+                  </div>
+                  <div className="text-base font-semibold text-slate-950">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</div>
+                  <div className="mt-2 text-sm text-slate-500">{question.topic}</div>
                 </button>
               )) : (
-                <div className="snx-empty-inline">
-                  Company-focused questions will appear here after the question bank loads.
-                </div>
+                <EmptyState
+                  title="Company-focused questions will appear here"
+                  description="As soon as the question bank loads, this area will spotlight company-tagged interview questions for focused revision."
+                  className="bg-transparent p-0 shadow-none"
+                />
               )}
             </div>
           </div>
-        </div>
+        </SurfaceCard>
       </div>
     </div>
   );
