@@ -35,33 +35,35 @@ const Avatar = ({ user }) => {
     .toUpperCase();
 
   if (user?.avatar) {
-    return <img src={user.avatar} alt={user.name} className="h-11 w-11 rounded-2xl object-cover ring-2 ring-white/70" />;
+    return <img src={user.avatar} alt={user.name} className="h-10 w-10 rounded-lg object-cover ring-2 ring-white/50" />;
   }
 
   return (
-    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 font-semibold text-white shadow-lg">
+    <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 font-semibold text-white shadow-md">
       {initials}
     </div>
   );
 };
 
 const SidebarNav = ({ closeMenu }) => (
-  <nav className="flex flex-col gap-2">
+  <nav className="flex flex-col gap-1">
     {navItems.map(({ label, path, icon: Icon }) => (
       <NavLink
         key={path}
         to={path}
         onClick={closeMenu}
-        className={({ isActive }) => `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+        className={({ isActive }) => `group relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-300 ${
           isActive
-            ? "bg-slate-950 text-white shadow-[0_18px_34px_rgba(15,23,42,0.2)]"
-            : "text-slate-600 hover:bg-white hover:text-slate-950"
+            ? "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md-soft"
+            : "text-slate-custom-600 hover:bg-slate-custom-100 hover:text-slate-custom-900"
         }`}
       >
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/80 text-base shadow-sm transition group-hover:bg-brand-50">
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition-all duration-300 ${
+          isActive ? "bg-white/20" : "bg-slate-custom-200/50 group-hover:bg-white"
+        }`}>
           <Icon className="h-4 w-4" />
         </span>
-        <span>{label}</span>
+        <span className="truncate">{label}</span>
       </NavLink>
     ))}
   </nav>
@@ -91,23 +93,23 @@ const Navbar = ({ user, profile, logout }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm transition md:hidden ${
+        className={`fixed inset-0 z-40 bg-slate-custom-950/40 backdrop-blur-sm transition-all duration-300 md:hidden ${
           mobileMenuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={() => setMobileMenuOpen(false)}
       />
 
       <aside
-        className={`fixed inset-y-4 left-4 z-50 w-[292px] transform transition duration-300 md:translate-x-0 ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-[118%]"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-[240px] transform bg-white/95 backdrop-blur-sm transition-transform duration-300 md:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        } border-r border-slate-custom-200/50 shadow-lg-soft md:shadow-none`}
       >
-        <div className="snx-panel flex h-full flex-col gap-6 overflow-hidden">
+        <div className="snx-scrollbar flex h-full flex-col gap-6 overflow-y-auto p-5">
           <div className="flex items-center justify-between">
-            <SkillNexaLogo showTagline linkTo="/dashboard" />
+            <SkillNexaLogo showTagline={false} linkTo="/dashboard" />
             <button
               type="button"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/80 text-slate-700 md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-custom-200 bg-white text-slate-custom-700 transition-all duration-300 hover:bg-slate-custom-100 md:hidden"
               onClick={() => setMobileMenuOpen(false)}
               aria-label="Close navigation menu"
             >
@@ -115,31 +117,41 @@ const Navbar = ({ user, profile, logout }) => {
             </button>
           </div>
 
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-            <div className="flex items-center gap-3">
+          <div className="rounded-lg border border-slate-custom-200/60 bg-gradient-to-br from-slate-custom-50 to-white p-4 shadow-sm-soft">
+            <div className="flex items-center gap-3 min-w-0">
               <Avatar user={currentUser} />
-              <div className="min-w-0">
-                <div className="truncate font-semibold text-slate-950">{currentUser?.name || "SkillNexa User"}</div>
-                <div className="truncate text-sm text-slate-500">{currentUser?.email || "AI workspace"}</div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold text-slate-custom-900 text-sm">{currentUser?.name || "User"}</div>
+                <div className="truncate text-xs text-slate-custom-500">{currentUser?.email || "workspace"}</div>
               </div>
             </div>
           </div>
 
-          <div className="snx-scrollbar flex-1 overflow-y-auto pr-1">
+          <div className="flex-1">
             <SidebarNav closeMenu={() => setMobileMenuOpen(false)} />
           </div>
 
-          <div className="space-y-3 border-t border-slate-200/80 pt-4">
+          <div className="space-y-3 border-t border-slate-custom-200/50 pt-4">
             <ThemeToggle className="w-full justify-center" />
+            {logout ? (
+              <button
+                type="button"
+                className="snx-btn-secondary w-full justify-center"
+                onClick={logout}
+              >
+                <FiLogOut className="h-4 w-4" />
+                Logout
+              </button>
+            ) : null}
           </div>
         </div>
       </aside>
 
-      <div className="fixed inset-x-0 top-0 z-30 border-b border-white/60 bg-white/70 backdrop-blur-2xl md:left-[332px]">
-        <div className="snx-container flex h-20 items-center gap-3">
+      <div className="fixed inset-x-0 top-0 z-30 border-b border-white/40 bg-white/80 backdrop-blur-md md:left-[240px]">
+        <div className="snx-container flex h-16 items-center gap-4">
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/80 text-slate-700 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-custom-200 bg-white text-slate-custom-700 transition-all duration-300 hover:bg-slate-custom-100 md:hidden"
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Open navigation menu"
           >
@@ -147,39 +159,39 @@ const Navbar = ({ user, profile, logout }) => {
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-custom-500">
               {activeMeta.label}
             </p>
-            <h2 className="truncate font-['Poppins'] text-lg font-semibold tracking-[-0.03em] text-slate-950">
-              Premium AI preparation workspace for focused interview practice
+            <h2 className="truncate font-['Poppins'] text-sm font-semibold text-slate-custom-900">
+              Premium AI preparation workspace
             </h2>
           </div>
 
-          <form onSubmit={submitSearch} className="hidden min-w-[260px] flex-1 md:flex md:max-w-sm">
+          <form onSubmit={submitSearch} className="hidden min-w-[240px] flex-1 md:flex md:max-w-xs">
             <label className="relative w-full">
-              <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-custom-400" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search questions, topics, companies..."
-                className="snx-input pl-11"
+                placeholder="Search questions..."
+                className="snx-input pl-10 text-xs"
               />
             </label>
           </form>
 
           <Link
             to="/profile"
-            className="hidden items-center gap-3 rounded-[22px] border border-slate-200 bg-white/80 px-3 py-2 transition hover:-translate-y-0.5 hover:border-brand-200 hover:bg-white md:flex"
+            className="hidden items-center gap-2 rounded-lg border border-slate-custom-200 bg-white/80 px-3 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-custom-300 hover:bg-white md:flex"
           >
             <div className="text-right">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Profile</div>
-              <div className="max-w-[160px] truncate text-sm font-semibold text-slate-950">{currentUser?.name || "Workspace"}</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-custom-500">Profile</div>
+              <div className="max-w-[120px] truncate text-xs font-semibold text-slate-custom-900">{currentUser?.name || "User"}</div>
             </div>
             <Avatar user={currentUser} />
           </Link>
 
           {logout ? (
-            <button type="button" className="hidden snx-btn-secondary md:inline-flex" onClick={logout}>
+            <button type="button" className="snx-btn-secondary hidden md:inline-flex" onClick={logout}>
               <FiLogOut className="h-4 w-4" />
               Logout
             </button>
@@ -187,7 +199,7 @@ const Navbar = ({ user, profile, logout }) => {
         </div>
       </div>
 
-      <div className="h-20 md:hidden" />
+      <div className="h-16 md:hidden" />
     </>
   );
 };

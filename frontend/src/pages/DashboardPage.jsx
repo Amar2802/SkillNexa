@@ -86,129 +86,131 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         kicker="AI performance dashboard"
         title={`Welcome back, ${profile?.name || "Learner"}`}
-        description="Track interview progress, revisit company-focused questions, and keep your practice momentum visible from one premium AI workspace."
+        description="Track interview progress and keep your practice momentum visible."
         actions={(
           <>
-            <Link to="/ai-interviewer" className="snx-btn-accent">Start Interview Loop</Link>
+            <Link to="/ai-interviewer" className="snx-btn-primary">Start Interview Loop</Link>
             <Link to="/practice" className="snx-btn-secondary">Continue Practice</Link>
           </>
         )}
         aside={(
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+          <div className="snx-grid-auto">
             {statCards.map(({ label, value, meta, icon: Icon }) => (
-              <div key={label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-                <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500/15 to-accent-500/15 text-brand-700">
-                  <Icon className="h-5 w-5" />
+              <div key={label} className="snx-stat">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <span className="snx-label">{label}</span>
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                    <Icon className="h-5 w-5" />
+                  </div>
                 </div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</div>
-                <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{value}</div>
-                <div className="mt-2 text-sm text-slate-500">{meta}</div>
+                <div className="snx-stat-value">{value}</div>
+                <p className="snx-stat-label mt-2">{meta}</p>
               </div>
             ))}
           </div>
         )}
       />
 
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="snx-grid-auto">
         {[
-          { label: "Overall Accuracy", value: `${analytics.accuracy}%`, meta: "Across your practice history" },
-          { label: "Best Accuracy", value: `${analytics.bestAccuracy}%`, meta: "Strongest mock performance" },
-          { label: "Consistency", value: `${analytics.consistency}%`, meta: "Lower score swings are healthier" },
-          { label: "Weak Topics", value: weakTopics.length || 0, meta: "Focus areas currently identified" }
+          { label: "Overall Accuracy", value: `${analytics.accuracy}%`, meta: "Practice history" },
+          { label: "Best Accuracy", value: `${analytics.bestAccuracy}%`, meta: "Best performance" },
+          { label: "Consistency", value: `${analytics.consistency}%`, meta: "Score stability" },
+          { label: "Weak Topics", value: weakTopics.length || 0, meta: "Focus areas" }
         ].map((card) => (
-          <SurfaceCard key={card.label}>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{card.label}</div>
-            <div className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{card.value}</div>
-            <p className="mt-2 text-sm text-slate-500">{card.meta}</p>
-          </SurfaceCard>
+          <div key={card.label} className="snx-stat">
+            <div className="snx-label">{card.label}</div>
+            <div className="snx-stat-value mt-3">{card.value}</div>
+            <p className="snx-stat-label mt-2">{card.meta}</p>
+          </div>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
-        <SurfaceCard strong>
-          <div className="flex items-start justify-between gap-4">
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+        <div className="snx-panel-muted">
+          <div className="flex items-start justify-between gap-4 mb-6">
             <div>
               <span className="snx-kicker">Performance trend</span>
-              <h2 className="snx-heading mt-4">Recent mock test accuracy</h2>
+              <h2 className="snx-heading-3 mt-2">Recent mock test accuracy</h2>
             </div>
-            <button className="snx-btn-secondary" onClick={() => navigate("/history")}>
-              Open History
+            <button className="snx-btn-secondary snx-btn-sm" onClick={() => navigate("/history")}>
+              History
             </button>
           </div>
 
           {loading && !analytics.recentHistory.length ? (
-            <div className="mt-6 h-64 animate-pulse rounded-[24px] bg-slate-100" />
+            <div className="h-64 animate-pulse rounded-lg bg-slate-custom-200" />
           ) : analytics.recentHistory.length ? (
-            <div className="mt-8 grid gap-4 md:grid-cols-6">
+            <div className="grid gap-4 md:grid-cols-6">
               {analytics.recentHistory.map((item, index) => {
                 const accuracyValue = item.accuracy || 0;
                 return (
-                  <div key={item._id || index} className="flex flex-col items-center gap-3 rounded-[24px] border border-slate-200/70 bg-white/70 p-4">
-                    <div className="relative flex h-48 w-10 items-end rounded-full bg-slate-100">
+                  <div key={item._id || index} className="flex flex-col items-center gap-3 rounded-lg border border-slate-custom-200 bg-white p-4">
+                    <div className="relative flex h-48 w-10 items-end rounded-full bg-slate-custom-100">
                       <div
-                        className="w-full rounded-full bg-gradient-to-t from-brand-500 to-accent-500"
+                        className="w-full rounded-full bg-gradient-to-t from-indigo-600 to-indigo-400"
                         style={{ height: `${Math.max(18, Math.min(100, accuracyValue))}%` }}
                       />
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-semibold text-slate-950">{accuracyValue}%</div>
-                      <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Test {index + 1}</div>
+                      <div className="text-lg font-semibold text-slate-custom-900">{accuracyValue}%</div>
+                      <div className="snx-label mt-1">Test {index + 1}</div>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="mt-6">
+            <div>
               <EmptyState
                 title="No interviews yet"
-                description="Generate a mock test to unlock trend charts, readiness signals, and accuracy history."
-                action={<button className="snx-btn-accent" onClick={() => navigate("/mock-tests")}>Generate Mock Test</button>}
+                description="Generate a mock test to unlock trend charts and accuracy history."
+                action={<button className="snx-btn-primary" onClick={() => navigate("/mock-tests")}>Generate Mock</button>}
               />
             </div>
           )}
-        </SurfaceCard>
+        </div>
 
-        <SurfaceCard strong>
+        <div className="snx-panel-muted">
           <div className="space-y-4">
             <div>
               <span className="snx-kicker">Topic readiness</span>
-              <h2 className="snx-heading mt-4">Section-wise strength</h2>
+              <h2 className="snx-heading-3 mt-2">Section strength</h2>
             </div>
             <div className="space-y-4">
               {analytics.topicHealth.map((item) => (
-                <div key={item.label} className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
+                <div key={item.label} className="rounded-lg border border-slate-custom-200 bg-white p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <strong className="text-slate-950">{item.label}</strong>
-                    <span className="text-sm font-semibold text-slate-500">{item.score}%</span>
+                    <strong className="text-slate-custom-900 text-sm">{item.label}</strong>
+                    <span className="snx-label">{item.score}%</span>
                   </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500" style={{ width: `${item.score}%` }} />
+                  <div className="h-2 rounded-full bg-slate-custom-100">
+                    <div className="h-2 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400" style={{ width: `${item.score}%` }} />
                   </div>
-                  <p className="mt-3 text-sm text-slate-500">{item.status}</p>
+                  <p className="mt-2 text-xs text-slate-custom-600">{item.status}</p>
                 </div>
               ))}
             </div>
           </div>
-        </SurfaceCard>
+        </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <SurfaceCard strong>
-          <div className="space-y-5">
+      <div className="snx-grid-3">
+        <div className="snx-panel-muted">
+          <div className="space-y-4">
             <div>
-              <span className="snx-kicker">Recommended topics</span>
-              <h2 className="snx-heading mt-4">What to practice next</h2>
+              <span className="snx-kicker">Recommended</span>
+              <h2 className="snx-heading-3 mt-2">Topics to practice</h2>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {(recommendedTopics.length ? recommendedTopics : ["Arrays", "DBMS", "Operating Systems", "HR"]).slice(0, 8).map((topic) => (
+            <div className="flex flex-wrap gap-2">
+              {(recommendedTopics.length ? recommendedTopics : ["Arrays", "DBMS", "OS", "HR"]).slice(0, 8).map((topic) => (
                 <button
                   key={topic}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-slate-950"
+                  className="snx-badge-primary"
                   onClick={() => navigate(`/questions?topic=${encodeURIComponent(topic)}`)}
                 >
                   {topic}
@@ -216,65 +218,65 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
               ))}
             </div>
           </div>
-        </SurfaceCard>
+        </div>
 
-        <SurfaceCard strong>
-          <div className="space-y-5">
+        <div className="snx-panel-muted">
+          <div className="space-y-4">
             <div>
               <span className="snx-kicker">4-week plan</span>
-              <h2 className="snx-heading mt-4">Personalized roadmap</h2>
+              <h2 className="snx-heading-3 mt-2">Your roadmap</h2>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {roadmap.map((item) => (
-                <div key={item.week} className="flex gap-4 rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
+                <div key={item.week} className="flex gap-3 rounded-lg border border-slate-custom-200 bg-white p-3">
+                  <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-xs font-semibold text-white">
                     {item.week.replace("Week ", "")}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">{item.week}</div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.goal}</p>
+                    <div className="snx-label">{item.week}</div>
+                    <p className="mt-1 text-xs leading-5 text-slate-custom-600">{item.goal}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </SurfaceCard>
+        </div>
 
-        <SurfaceCard strong>
-          <div className="space-y-5">
-            <div className="flex items-start justify-between gap-3">
+        <div className="snx-panel-muted">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-2">
               <div>
                 <span className="snx-kicker">Company prep</span>
-                <h2 className="snx-heading mt-4">Targeted questions</h2>
+                <h2 className="snx-heading-3 mt-2">Questions</h2>
               </div>
-              <button className="snx-btn-secondary" onClick={() => navigate("/questions")}>
-                Explore
+              <button className="snx-btn-secondary snx-btn-sm" onClick={() => navigate("/questions")}>
+                All
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {companyPrep.length ? companyPrep.map((question) => (
                 <button
                   key={question._id}
-                  className="w-full rounded-[24px] border border-slate-200/70 bg-white/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_18px_36px_rgba(20,184,166,0.12)]"
+                  className="w-full rounded-lg border border-slate-custom-200 bg-white p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md-soft snx-fade-in"
                   onClick={() => navigate(`/questions?topic=${encodeURIComponent(question.topic)}&category=${encodeURIComponent(question.category)}`)}
                 >
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    <span className="snx-badge">{question.company}</span>
-                    <span className="snx-badge">{question.category}</span>
+                  <div className="mb-2 flex flex-wrap gap-1">
+                    <span className="snx-badge-primary text-xs">{question.company}</span>
+                    <span className="snx-badge text-xs">{question.category}</span>
                   </div>
-                  <div className="text-base font-semibold text-slate-950">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</div>
-                  <div className="mt-2 text-sm text-slate-500">{question.topic}</div>
+                  <div className="text-sm font-semibold text-slate-custom-900 line-clamp-1">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</div>
+                  <div className="mt-1 text-xs text-slate-custom-600">{question.topic}</div>
                 </button>
               )) : (
                 <EmptyState
-                  title="Company-focused questions will appear here"
-                  description="As soon as the question bank loads, this area will spotlight company-tagged interview questions for focused revision."
+                  title="Questions loading"
+                  description="Company questions will appear here soon."
                   className="bg-transparent p-0 shadow-none"
                 />
               )}
             </div>
           </div>
-        </SurfaceCard>
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 import api from "../api/client";
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
-import SurfaceCard from "../components/ui/SurfaceCard";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
 const PAGE_SIZE = 18;
@@ -30,14 +29,14 @@ const splitDisplay = (question) => {
 };
 
 const SkeletonCard = () => (
-  <SurfaceCard className="animate-pulse space-y-4">
+  <div className="snx-card animate-pulse space-y-4">
     <div className="h-3 w-28 rounded-full bg-slate-200" />
     <div className="h-6 w-2/3 rounded-full bg-slate-200" />
     <div className="space-y-2">
       <div className="h-4 w-full rounded-full bg-slate-200" />
       <div className="h-4 w-5/6 rounded-full bg-slate-200" />
     </div>
-  </SurfaceCard>
+  </div>
 );
 
 const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software", bookmarks = [], refreshBookmarks }) => {
@@ -228,69 +227,78 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
               { label: "Active Filters", value: activeFilterCount }
             ].map((item) => (
               <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-                <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-custom-600">{item.label}</div>
+                <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-custom-900">{item.value}</div>
               </div>
             ))}
           </div>
         )}
       />
 
-      <SurfaceCard strong>
-        <div className="grid gap-4 lg:grid-cols-12">
-          <label className="lg:col-span-4 block space-y-2">
-            <span className="text-sm font-medium text-slate-700">Search questions</span>
-            <div className="relative">
-              <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                className="snx-input pl-11"
-                value={filters.search}
-                onChange={(event) => updateFilter("search", event.target.value)}
-                placeholder="Search by title, topic, or concept"
-              />
-            </div>
-          </label>
-
-          {[
-            { label: "Category", key: "category", options: filterOptions.category, col: "lg:col-span-2" },
-            { label: "Difficulty", key: "difficulty", options: filterOptions.difficulty, col: "lg:col-span-2" },
-            { label: "Topic", key: "topic", options: filterOptions.topic, col: "lg:col-span-2" },
-            { label: "Type", key: "type", options: typeOptions.map((option) => option.label), col: "lg:col-span-2" },
-            { label: "Company", key: "company", options: filterOptions.company, col: "lg:col-span-4" }
-          ].map((filter) => (
-            <label key={filter.key} className={`${filter.col} block space-y-2`}>
-              <span className="text-sm font-medium text-slate-700">{filter.label}</span>
-              {filter.key === "type" ? (
-                <select className="snx-select" value={type} onChange={(event) => setType(event.target.value)}>
-                  {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-                </select>
-              ) : (
-                <select className="snx-select" value={filters[filter.key]} onChange={(event) => updateFilter(filter.key, event.target.value)}>
-                  <option value="">All</option>
-                  {(filter.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
-                </select>
-              )}
+      <div className="snx-card">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <label className="block space-y-2">
+              <span className="snx-label">Search questions</span>
+              <div className="relative">
+                <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-custom-500" />
+                <input
+                  className="snx-input pl-11"
+                  value={filters.search}
+                  onChange={(event) => updateFilter("search", event.target.value)}
+                  placeholder="Search by title, topic, or concept"
+                />
+              </div>
             </label>
-          ))}
+
+            {[
+              { label: "Category", key: "category", options: filterOptions.category },
+              { label: "Difficulty", key: "difficulty", options: filterOptions.difficulty },
+              { label: "Topic", key: "topic", options: filterOptions.topic },
+              { label: "Type", key: "type", options: typeOptions.map((option) => option.label) }
+            ].map((filter) => (
+              <label key={filter.key} className="block space-y-2">
+                <span className="snx-label">{filter.label}</span>
+                {filter.key === "type" ? (
+                  <select className="snx-input" value={type} onChange={(event) => setType(event.target.value)}>
+                    {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                  </select>
+                ) : (
+                  <select className="snx-input" value={filters[filter.key]} onChange={(event) => updateFilter(filter.key, event.target.value)}>
+                    <option value="">All</option>
+                    {(filter.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                )}
+              </label>
+            ))}
+          </div>
+
+          <label className="block space-y-2">
+            <span className="snx-label">Company</span>
+            <select className="snx-input w-full" value={filters.company} onChange={(event) => updateFilter("company", event.target.value)}>
+              <option value="">All</option>
+              {(filterOptions.company || []).map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </label>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            <FiFilter className="h-4 w-4 text-brand-600" />
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-custom-600">
+            <FiFilter className="h-4 w-4 text-indigo-600" />
             {activeFilterCount} filters active
           </div>
           <button className="snx-btn-secondary" onClick={clearFilters}>Clear Filters</button>
         </div>
-      </SurfaceCard>
+      </div>
 
       {loading && !visibleItems.length ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)}
         </div>
       ) : null}
 
       {visibleItems.length ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {visibleItems.map((question) => {
             const display = splitDisplay(question);
             const show = !!openAnswers[question._id];
@@ -300,17 +308,17 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
             const isSavingBookmark = bookmarkLoadingId === question._id;
 
             return (
-              <SurfaceCard key={question._id} className="space-y-5">
+              <div key={question._id} className="snx-card snx-fade-in p-6 space-y-5">
                 <div className="flex flex-wrap gap-2">
-                  <span className="snx-badge">{question.category}</span>
+                  <span className="snx-badge-primary">{question.category}</span>
                   <span className="snx-badge">{question.topic}</span>
                   <span className="snx-badge">{question.company}</span>
                   <span className="snx-badge">{question.type}</span>
                   <span className="snx-badge">{question.difficulty}</span>
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-950">{display.title}</h2>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                  <h2 className="snx-heading-3 text-slate-custom-900">{display.title}</h2>
+                  <p className="snx-body-sm mt-3 text-slate-custom-700">
                     {display.description}
                     {display.advice ? ` (${display.advice})` : ""}
                   </p>
@@ -334,20 +342,20 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
                 </div>
 
                 {show ? (
-                  <div className="space-y-4 rounded-[24px] border border-slate-200/70 bg-slate-50/70 p-5">
+                  <div className="space-y-4 rounded-[16px] border border-slate-200/70 bg-slate-50/70 p-5">
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Suggested answer</div>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{String(question.correctAnswer)}</p>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-custom-600">Suggested answer</div>
+                      <p className="snx-body-sm mt-2 text-slate-custom-700">{String(question.correctAnswer)}</p>
                     </div>
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Detailed solution</div>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{detailedSolution}</p>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-custom-600">Detailed solution</div>
+                      <p className="snx-body-sm mt-2 text-slate-custom-700">{detailedSolution}</p>
                     </div>
                     {codeEntries.length ? (
                       <div className="space-y-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Starter code</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-custom-600">Starter code</div>
                         {codeEntries.map(([language, code]) => (
-                          <div key={`${question._id}-${language}`} className="overflow-hidden rounded-[20px] border border-slate-200 bg-slate-950">
+                          <div key={`${question._id}-${language}`} className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-950">
                             <div className="border-b border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">{language}</div>
                             <pre className="snx-scrollbar overflow-x-auto px-4 py-4 text-sm text-slate-100"><code>{code}</code></pre>
                           </div>
@@ -357,8 +365,8 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
                     {question.options?.length ? (
                       <div className="space-y-2">
                         {question.options.map((option) => (
-                          <div key={`${question._id}-${option}`} className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm ${
-                            option === question.correctAnswer ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600"
+                          <div key={`${question._id}-${option}`} className={`flex items-center justify-between rounded-[12px] border px-4 py-3 text-sm ${
+                            option === question.correctAnswer ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-custom-700"
                           }`}>
                             <span>{option}</span>
                             {option === question.correctAnswer ? <strong>Correct</strong> : null}
@@ -367,12 +375,12 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
                       </div>
                     ) : null}
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Explanation</div>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{display.explanation}</p>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-custom-600">Explanation</div>
+                      <p className="snx-body-sm mt-2 text-slate-custom-700">{display.explanation}</p>
                     </div>
                   </div>
                 ) : null}
-              </SurfaceCard>
+              </div>
             );
           })}
         </div>
@@ -386,7 +394,7 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
       ) : null}
 
       {visibleItems.length ? (
-        <div ref={loadMoreRef} className="pb-4 text-center text-sm text-slate-500">
+        <div ref={loadMoreRef} className="pb-4 text-center text-sm text-slate-custom-600">
           {loadingMore ? "Loading more questions..." : hasMore ? "Scroll to load more questions" : "You have reached the end of this question set."}
         </div>
       ) : null}

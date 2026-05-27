@@ -229,7 +229,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
         </SurfaceCard>
 
         {loading && !filteredQuestions.length ? (
-          <SurfaceCard><p className="text-sm text-slate-500">Loading questions...</p></SurfaceCard>
+          <SurfaceCard><p className="text-sm text-slate-custom-600">Loading questions...</p></SurfaceCard>
         ) : filteredQuestions.length ? (
           <div className="grid gap-4 lg:grid-cols-2">
             {filteredQuestions.map((item, index) => (
@@ -284,11 +284,11 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <span className="snx-badge">{question.category}</span>
-              <span className="snx-badge">{question.topic}</span>
-              <span className="snx-badge">{question.company}</span>
-              <span className="snx-badge">{question.type}</span>
-              <span className="snx-badge">{question.difficulty}</span>
+              <span className="snx-badge snx-label">{question.category}</span>
+              <span className="snx-badge snx-label">{question.topic}</span>
+              <span className="snx-badge snx-label">{question.company}</span>
+              <span className="snx-badge snx-label">{question.type}</span>
+              <span className="snx-badge snx-label">{question.difficulty}</span>
             </div>
 
             {question.type === "MCQ" ? (
@@ -311,7 +311,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 
             {question.type === "Subjective" ? (
               <textarea
-                className="snx-textarea min-h-[220px]"
+                className="snx-textarea min-h-[240px]"
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
                 placeholder="Write your answer here..."
@@ -340,22 +340,24 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               </div>
             ) : null}
 
-            <div className="flex flex-wrap gap-3">
-              <button className="snx-btn-secondary" onClick={() => moveQuestion("prev")}>
-                <FiArrowLeft className="h-4 w-4" />
-                Previous
-              </button>
-              <button className="snx-btn-accent" onClick={submit} disabled={submitting}>
-                <FiSend className="h-4 w-4" />
-                {submitting ? "Submitting..." : "Submit"}
-              </button>
+            <div className="flex flex-col gap-4 md:flex-row md:gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <button className="snx-btn-secondary h-12 px-6" onClick={() => moveQuestion("prev")}>
+                  <FiArrowLeft className="h-4 w-4" />
+                  Previous
+                </button>
+                <button className="snx-btn-primary h-12 px-6" onClick={submit} disabled={submitting}>
+                  <FiSend className="h-4 w-4" />
+                  {submitting ? "Submitting..." : "Submit"}
+                </button>
+              </div>
               {question.type === "Coding" ? (
-                <button className="snx-btn-secondary" onClick={runCode} disabled={runningCode}>
+                <button className="snx-btn-secondary h-12 px-6" onClick={runCode} disabled={runningCode}>
                   <FiPlay className="h-4 w-4" />
                   {runningCode ? "Running..." : "Run Code"}
                 </button>
               ) : null}
-              <button className="snx-btn-secondary" onClick={() => moveQuestion("next")}>
+              <button className="snx-btn-secondary h-12 px-6" onClick={() => moveQuestion("next")}>
                 Next
                 <FiArrowRight className="h-4 w-4" />
               </button>
