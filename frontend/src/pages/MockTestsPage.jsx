@@ -153,7 +153,7 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
         title="Run timed software mock tests with clean pacing and production-style review."
         description="Generate a balanced software round across DSA, aptitude, HR, and core subjects, then review your answer quality with structured post-test analysis."
         actions={(
-          <button className="snx-btn-accent" onClick={generateTest} disabled={loading}>
+          <button className="snx-btn-primary" onClick={generateTest} disabled={loading}>
             {loading ? "Generating..." : "Generate Mock Test"}
           </button>
         )}
@@ -164,9 +164,9 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
               { label: "Timer", value: activeTest ? formatTimer(remainingSeconds) : "Adaptive" },
               { label: "Mode", value: activeTest ? "Live" : pendingTest ? "Ready" : "Idle" }
             ].map((item) => (
-              <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-                <div className="mt-2 text-2xl font-semibold text-slate-950">{item.value}</div>
+              <div key={item.label} className="snx-stat">
+                <div className="snx-label">{item.label}</div>
+                <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{item.value}</div>
               </div>
             ))}
           </div>
@@ -174,67 +174,65 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
       />
 
       {loading && !pendingTest && !activeTest ? (
-        <SurfaceCard strong>
-          <div className="flex items-center gap-3 text-slate-700">
-            <FiZap className="h-5 w-5 text-brand-600" />
-            <div>
-              <div className="font-semibold">Generating your mock test...</div>
-              <div className="mt-1 text-sm text-slate-500">Preparing a balanced question set from your software interview bank.</div>
-            </div>
+        <div className="snx-panel-muted flex items-center gap-3">
+          <FiZap className="h-5 w-5 text-indigo-600" />
+          <div>
+            <div className="font-semibold text-slate-custom-900">Generating your mock test...</div>
+            <div className="mt-1 snx-body-sm text-slate-custom-600">Preparing a balanced question set from your software interview bank.</div>
           </div>
-        </SurfaceCard>
+        </div>
       ) : null}
 
       {generationError ? (
-        <SurfaceCard strong>
-          <div className="text-sm font-medium text-rose-700">{generationError}</div>
-        </SurfaceCard>
+        <div className="snx-panel-muted">
+          <div className="snx-body-sm font-medium text-rose-700">{generationError}</div>
+        </div>
       ) : null}
 
       {pendingTest ? (
-        <SurfaceCard strong className="space-y-6">
+        <div className="snx-panel-muted space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <span className="snx-kicker">Generated test</span>
-              <h2 className="snx-heading mt-4">{pendingTest.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">Your software mock is ready. Review the format and start when you are ready.</p>
+              <h2 className="snx-heading-3 mt-3 text-slate-custom-900">{pendingTest.title}</h2>
+              <p className="mt-3 snx-body text-slate-custom-600">Your software mock is ready. Review the format and start when you are ready.</p>
             </div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-slate-950 px-5 py-4 text-white">
-              <div className="text-xs uppercase tracking-[0.2em] text-white/60">Duration</div>
+            <div className="snx-stat bg-slate-custom-900 text-white">
+              <div className="snx-label text-white/70">Duration</div>
               <div className="mt-2 text-2xl font-semibold">{formatTimer((pendingTest.duration || 30) * 60)}</div>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Questions</div>
-              <div className="mt-2 text-3xl font-semibold text-slate-950">{pendingQuestionCount}</div>
+            <div className="snx-stat">
+              <div className="snx-label">Questions</div>
+              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{pendingQuestionCount}</div>
             </div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Duration</div>
-              <div className="mt-2 text-3xl font-semibold text-slate-950">{pendingTest.duration || 30} mins</div>
+            <div className="snx-stat">
+              <div className="snx-label">Duration</div>
+              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{pendingTest.duration || 30} mins</div>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="snx-btn-accent" onClick={startPendingTest}>Start Test</button>
+            <button className="snx-btn-primary" onClick={startPendingTest}>Start Test</button>
             <button className="snx-btn-secondary" onClick={generateTest} disabled={loading}>
               <FiRefreshCw className="h-4 w-4" />
               {loading ? "Generating..." : "Regenerate"}
             </button>
           </div>
-        </SurfaceCard>
+        </div>
       ) : null}
 
       {activeTest ? (
-        <SurfaceCard strong className="space-y-6">
+        <div className="snx-panel-muted space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="snx-heading">{activeTest.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <h2 className="snx-heading-3 text-slate-custom-900">{activeTest.title}</h2>
+              <p className="mt-3 snx-body text-slate-custom-600">
                 Answer each question and submit any time, or let the test auto-submit when the timer reaches zero.
               </p>
             </div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-slate-950 px-5 py-4 text-white">
-              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-white/60">
+            <div className="snx-stat bg-slate-custom-900 text-white">
+              <div className="snx-label text-white/70 inline-flex items-center gap-2">
                 <FiClock className="h-4 w-4" />
                 Time left
               </div>
@@ -243,41 +241,41 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Questions</div>
-              <div className="mt-2 text-3xl font-semibold text-slate-950">{questionCount}</div>
+            <div className="snx-stat">
+              <div className="snx-label">Questions</div>
+              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{questionCount}</div>
             </div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Duration</div>
-              <div className="mt-2 text-3xl font-semibold text-slate-950">{activeTest.duration || 30} mins</div>
+            <div className="snx-stat">
+              <div className="snx-label">Duration</div>
+              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{activeTest.duration || 30} mins</div>
             </div>
           </div>
 
           <div className="space-y-4">
             {activeTest.sections.flatMap((section) => section.questions).map((question, index) => (
-              <div key={question._id} className="rounded-[28px] border border-slate-200/70 bg-white/80 p-5">
-                <div className="mb-4 flex items-start gap-4">
-                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
+              <div key={question._id} className="snx-card space-y-4 snx-fade-in">
+                <div className="flex items-start gap-4">
+                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-sm font-semibold text-white">
                     {index + 1}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-lg font-semibold text-slate-950">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h3>
-                    <p className="mt-2 text-sm text-slate-500">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
+                    <h3 className="snx-heading-4 text-slate-custom-900">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h3>
+                    <p className="mt-2 snx-body-sm text-slate-custom-600">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="snx-badge">{question.category}</span>
-                      <span className="snx-badge">{question.topic}</span>
-                      <span className="snx-badge">{question.type}</span>
+                      <span className="snx-badge-primary text-xs">{question.category}</span>
+                      <span className="snx-badge text-xs">{question.topic}</span>
+                      <span className="snx-badge text-xs">{question.type}</span>
                     </div>
                   </div>
                 </div>
 
                 {question.type === "MCQ" ? (
-                  <div className="grid gap-2">
+                  <div className="grid gap-3">
                     {(question.options || []).map((option) => (
-                      <button key={option} className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                      <button key={option} className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all duration-300 ${
                         answers[question._id] === option
-                          ? "border-brand-500 bg-brand-500 text-white"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"
+                          ? "border-indigo-500 bg-indigo-50 text-indigo-900 shadow-md-soft"
+                          : "border-slate-custom-200 bg-white text-slate-custom-700 hover:border-indigo-200 hover:bg-indigo-50"
                       }`} onClick={() => setAnswers((current) => ({ ...current, [question._id]: option }))}>{option}</button>
                     ))}
                   </div>
@@ -290,7 +288,7 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
                   />
                 )}
 
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
                     className="snx-btn-secondary"
@@ -305,45 +303,57 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
             ))}
           </div>
 
-          <button className="snx-btn-accent" onClick={() => submitTest(false)} disabled={submitting}>
+          <button className="snx-btn-primary" onClick={() => submitTest(false)} disabled={submitting}>
             {submitting ? "Submitting..." : "Submit Test"}
           </button>
-        </SurfaceCard>
+        </div>
       ) : null}
 
       {result ? (
-        <SurfaceCard strong className="space-y-6">
+        <div className="snx-panel-muted space-y-6">
           <div>
             <span className="snx-kicker">Latest result</span>
-            <h2 className="snx-heading mt-4">{result.autoSubmitted ? "Mock test auto-submitted when time ended" : "Mock test submitted successfully"}</h2>
+            <h2 className="snx-heading-3 mt-3 text-slate-custom-900">{result.autoSubmitted ? "Mock test auto-submitted when time ended" : "Mock test submitted successfully"}</h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Score</div><div className="mt-2 text-3xl font-semibold text-slate-950">{result.score}</div></div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Accuracy</div><div className="mt-2 text-3xl font-semibold text-slate-950">{result.accuracy}%</div></div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Weak Topics</div><div className="mt-2 text-sm font-medium text-slate-700">{(result.weakTopics || []).join(", ") || "None"}</div></div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4"><div className="text-xs uppercase tracking-[0.18em] text-slate-400">Strengths</div><div className="mt-2 text-sm font-medium text-slate-700">{(result.strengths || []).join(", ") || "None"}</div></div>
+          <div className="snx-grid-auto">
+            <div className="snx-stat">
+              <div className="snx-label">Score</div>
+              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{result.score}</div>
+            </div>
+            <div className="snx-stat">
+              <div className="snx-label">Accuracy</div>
+              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{result.accuracy}%</div>
+            </div>
+            <div className="snx-stat">
+              <div className="snx-label">Weak Topics</div>
+              <div className="mt-3 snx-body-sm font-medium text-slate-custom-700">{(result.weakTopics || []).join(", ") || "None"}</div>
+            </div>
+            <div className="snx-stat">
+              <div className="snx-label">Strengths</div>
+              <div className="mt-3 snx-body-sm font-medium text-slate-custom-700">{(result.strengths || []).join(", ") || "None"}</div>
+            </div>
           </div>
           <div className="space-y-4">
             {(result.answers || []).map((entry, index) => {
               const question = entry?.question;
               if (!question || typeof question !== "object") return null;
               return (
-                <div key={question._id || index} className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                  <h3 className="text-lg font-semibold text-slate-950">{question.title}</h3>
-                  <p className="mt-2 text-sm text-slate-500">{String(entry.submittedAnswer || "No answer submitted")}</p>
+                <div key={question._id || index} className="snx-card">
+                  <h3 className="snx-heading-4 text-slate-custom-900">{question.title}</h3>
+                  <p className="mt-2 snx-body-sm text-slate-custom-600">{String(entry.submittedAnswer || "No answer submitted")}</p>
                   <AnswerAnalysisBlock analysis={analysisByQuestionId[question._id]} loading={analysisLoadingByQuestionId[question._id]} />
                 </div>
               );
             })}
           </div>
-        </SurfaceCard>
+        </div>
       ) : null}
 
       {!activeTest && !pendingTest && !result ? (
         <EmptyState
           title="Ready for a fresh mock?"
           description="Generate a new software mock test to practice DSA, aptitude, HR, and core subjects in one polished round."
-          action={<button className="snx-btn-accent" onClick={generateTest}>Generate Mock Test</button>}
+          action={<button className="snx-btn-primary" onClick={generateTest}>Generate Mock Test</button>}
         />
       ) : null}
     </div>

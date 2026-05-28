@@ -206,27 +206,27 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
           )}
         />
 
-        <SurfaceCard strong>
+        <div className="snx-panel-muted">
           <div className="grid gap-4 lg:grid-cols-3">
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Search</span>
-              <input className="snx-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by topic or title" />
+              <span className="snx-label">Search</span>
+              <input className="snx-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="By topic or title" />
             </label>
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Category</span>
+              <span className="snx-label">Category</span>
               <select className="snx-select" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
                 <option value="">All Categories</option>
                 {softwareCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
             </label>
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Question Type</span>
+              <span className="snx-label">Type</span>
               <select className="snx-select" value={selectedType} onChange={(event) => setSelectedType(event.target.value)}>
                 {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
               </select>
             </label>
           </div>
-        </SurfaceCard>
+        </div>
 
         {loading && !filteredQuestions.length ? (
           <SurfaceCard><p className="text-sm text-slate-custom-600">Loading questions...</p></SurfaceCard>
@@ -261,34 +261,34 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
   }
 
   return (
-    <div className="space-y-6">
-      <SurfaceCard strong className="space-y-6">
+    <div className="space-y-8">
+      <div className="snx-panel-muted space-y-6">
         {question ? (
           <>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-3">
-                <button className="snx-btn-secondary" onClick={goBackToList}>
+                <button className="snx-btn-secondary snx-btn-sm" onClick={goBackToList}>
                   <FiArrowLeft className="h-4 w-4" />
-                  Back to Question List
+                  Back to List
                 </button>
                 <div>
                   <span className="snx-kicker">Practice question</span>
-                  <h1 className="snx-heading mt-4">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h1>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
+                  <h1 className="snx-heading-3 mt-2 text-slate-custom-900">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h1>
+                  <p className="mt-2 snx-body text-slate-custom-600">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
                 </div>
               </div>
-              <button className={isBookmarked ? "snx-btn-accent" : "snx-btn-secondary"} onClick={toggleBookmark}>
+              <button className={isBookmarked ? "snx-btn-primary" : "snx-btn-secondary"} onClick={toggleBookmark}>
                 <FiBookmark className="h-4 w-4" />
                 {isBookmarked ? "Bookmarked" : "Bookmark"}
               </button>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <span className="snx-badge snx-label">{question.category}</span>
-              <span className="snx-badge snx-label">{question.topic}</span>
-              <span className="snx-badge snx-label">{question.company}</span>
-              <span className="snx-badge snx-label">{question.type}</span>
-              <span className="snx-badge snx-label">{question.difficulty}</span>
+              <span className="snx-badge-primary text-xs">{question.category}</span>
+              <span className="snx-badge text-xs">{question.topic}</span>
+              <span className="snx-badge text-xs">{question.company}</span>
+              <span className="snx-badge text-xs">{question.type}</span>
+              <span className="snx-badge text-xs">{question.difficulty}</span>
             </div>
 
             {question.type === "MCQ" ? (
@@ -296,10 +296,10 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                 {(question.options || []).map((option) => (
                   <button
                     key={option}
-                    className={`rounded-[22px] border px-4 py-4 text-left text-sm font-medium transition ${
+                    className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all duration-300 ${
                       answer === option
-                        ? "border-brand-500 bg-brand-500 text-white shadow-[0_18px_36px_rgba(20,184,166,0.22)]"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-900 shadow-md-soft"
+                        : "border-slate-custom-200 bg-white text-slate-custom-700 hover:border-indigo-200 hover:bg-indigo-50"
                     }`}
                     onClick={() => setAnswer((current) => (current === option ? "" : option))}
                   >
@@ -321,14 +321,14 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
             {question.type === "Coding" ? (
               <div className="space-y-4">
                 <label className="block max-w-xs space-y-2">
-                  <span className="text-sm font-medium text-slate-700">Language</span>
+                  <span className="snx-label">Language</span>
                   <select className="snx-select" value={language} onChange={(event) => setLanguage(event.target.value)}>
                     <option value="python">Python</option>
                     <option value="cpp">C++</option>
                     <option value="java">Java</option>
                   </select>
                 </label>
-                <div className="overflow-hidden rounded-[28px] border border-slate-200/70 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+                <div className="overflow-hidden rounded-lg border border-slate-custom-200 shadow-md-soft">
                   <Editor
                     height="420px"
                     theme="vs-dark"
@@ -340,72 +340,98 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-4 md:flex-row md:gap-4">
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <button className="snx-btn-secondary h-12 px-6" onClick={() => moveQuestion("prev")}>
-                  <FiArrowLeft className="h-4 w-4" />
-                  Previous
-                </button>
-                <button className="snx-btn-primary h-12 px-6" onClick={submit} disabled={submitting}>
-                  <FiSend className="h-4 w-4" />
-                  {submitting ? "Submitting..." : "Submit"}
-                </button>
-              </div>
+            <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+              <button className="snx-btn-secondary" onClick={() => moveQuestion("prev")}>
+                <FiArrowLeft className="h-4 w-4" />
+                Previous
+              </button>
+              <button className="snx-btn-primary" onClick={submit} disabled={submitting}>
+                <FiSend className="h-4 w-4" />
+                {submitting ? "Submitting..." : "Submit"}
+              </button>
               {question.type === "Coding" ? (
-                <button className="snx-btn-secondary h-12 px-6" onClick={runCode} disabled={runningCode}>
+                <button className="snx-btn-secondary" onClick={runCode} disabled={runningCode}>
                   <FiPlay className="h-4 w-4" />
                   {runningCode ? "Running..." : "Run Code"}
                 </button>
               ) : null}
-              <button className="snx-btn-secondary h-12 px-6" onClick={() => moveQuestion("next")}>
+              <button className="snx-btn-secondary" onClick={() => moveQuestion("next")}>
                 Next
                 <FiArrowRight className="h-4 w-4" />
               </button>
             </div>
-          </>
+          </div>
         ) : (
           <EmptyState
-            title="This question is not available in the current filter set"
-            description="Go back to the practice list and reopen another question from the filtered collection."
-            action={<button className="snx-btn-accent" onClick={goBackToList}>Back to Question List</button>}
+            title="Question not available"
+            description="Go back and select another question from the filtered set."
+            action={<button className="snx-btn-primary" onClick={goBackToList}>Back to List</button>}
           />
         )}
-      </SurfaceCard>
+      </div>
 
       {feedback && question ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <SurfaceCard strong className="space-y-5">
+        <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+          <div className="snx-panel-muted space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Your answer</div>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{String(answer || "No answer submitted")}</p>
+              <div className="rounded-lg border border-slate-custom-200 bg-white p-4">
+                <div className="snx-label">Your answer</div>
+                <p className="mt-2 snx-body-sm text-slate-custom-600">{String(answer || "No answer submitted")}</p>
               </div>
-              <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/70 p-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Correct answer</div>
-                <p className="mt-3 text-sm leading-7 text-emerald-900">{String(feedback.correctAnswer)}</p>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                <div className="snx-label text-emerald-700">Correct answer</div>
+                <p className="mt-2 snx-body-sm text-emerald-900">{String(feedback.correctAnswer)}</p>
               </div>
             </div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Detailed solution</div>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{detailedSolution}</p>
+            <div className="rounded-lg border border-slate-custom-200 bg-white p-4">
+              <div className="snx-label">Detailed solution</div>
+              <p className="mt-2 snx-body-sm text-slate-custom-600">{detailedSolution}</p>
             </div>
-            <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Explanation</div>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{feedback.explanation}</p>
+            <div className="rounded-lg border border-slate-custom-200 bg-white p-4">
+              <div className="snx-label">Explanation</div>
+              <p className="mt-2 snx-body-sm text-slate-custom-600">{feedback.explanation}</p>
             </div>
             {feedback.codeOutput ? (
-              <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950">
-                <div className="border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
-                  <span className="inline-flex items-center gap-2"><FiCode className="h-4 w-4" /> {feedback.codeStatus}</span>
+              <div className="overflow-hidden rounded-lg border border-slate-custom-200 bg-slate-custom-900">
+                <div className="border-b border-slate-custom-700 px-4 py-3">
+                  <span className="snx-label inline-flex items-center gap-2 text-white"><FiCode className="h-4 w-4" /> {feedback.codeStatus}</span>
                 </div>
                 <pre className="snx-scrollbar overflow-x-auto px-4 py-4 text-sm text-slate-100"><code>{feedback.codeOutput}</code></pre>
               </div>
             ) : null}
-          </SurfaceCard>
-
-          <div className="space-y-6">
-            <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
           </div>
+          <aside className="snx-card space-y-4 lg:h-fit lg:sticky lg:top-6">
+            <div>
+              <div className="snx-label">Question progress</div>
+              <div className="mt-3 h-3 w-full rounded-full bg-slate-custom-200">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-300"
+                  style={{ width: `${((currentQuestionIndex + 1) / allQuestions.length) * 100}%` }}
+                />
+              </div>
+              <p className="mt-3 snx-body-sm text-slate-custom-600">
+                Question {currentQuestionIndex + 1} of {allQuestions.length}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2">
+                <span className="snx-label">Accuracy</span>
+                <span className="text-sm font-semibold text-indigo-600">{accuracy}%</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2">
+                <span className="snx-label">Your result</span>
+                <span className="text-sm font-semibold text-emerald-600">{feedback ? (feedback.isCorrect ? "✓ Correct" : "✗ Incorrect") : "Pending"}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2">
+                <span className="snx-label">Time</span>
+                <span className="text-sm font-semibold text-slate-custom-700">{formatTime(timeElapsed)}</span>
+              </div>
+            </div>
+            <button className="w-full snx-btn-secondary" onClick={goBackToList}>
+              <FiArrowLeft className="h-4 w-4" />
+              Exit Practice
+            </button>
+            <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
         </div>
       ) : null}
     </div>

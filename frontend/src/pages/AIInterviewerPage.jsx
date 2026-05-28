@@ -147,61 +147,62 @@ const AIInterviewerPage = () => {
       />
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <SurfaceCard strong className="space-y-5">
+        <div className="snx-panel-muted space-y-5">
           <div>
             <span className="snx-kicker">Interview setup</span>
-            <h2 className="snx-heading mt-4">Four-step workflow</h2>
+            <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Four-step workflow</h2>
           </div>
           <div className="space-y-3">
             {steps.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className={`flex w-full items-center gap-3 rounded-[24px] border px-4 py-4 text-left transition ${
+                className={`flex w-full items-center gap-3 rounded-lg border px-4 py-4 text-left transition-all duration-300 ${
                   step === item.id
-                    ? "border-slate-950 bg-slate-950 text-white shadow-[0_18px_34px_rgba(15,23,42,0.22)]"
+                    ? "border-indigo-500 bg-indigo-50 text-indigo-900 shadow-md-soft"
                     : step > item.id
-                      ? "border-brand-200 bg-brand-50 text-brand-800"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-brand-200"
+                      ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                      : "border-slate-custom-200 bg-white text-slate-custom-600 hover:border-indigo-200"
                 }`}
                 onClick={() => setStep(item.id)}
               >
-                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-semibold ${
-                  step === item.id ? "bg-white/15 text-white" : "bg-white text-slate-700"
+                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold ${
+                  step === item.id ? "bg-indigo-600 text-white" : step > item.id ? "bg-indigo-600 text-white" : "bg-slate-custom-100 text-slate-custom-700"
                 }`}>
-                  {step > item.id ? "Done" : item.id}
+                  {step > item.id ? "✓" : item.id}
                 </span>
                 <span className="font-medium">{item.title}</span>
               </button>
             ))}
           </div>
-          <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4 text-sm text-slate-600">
-            <div><strong>Company:</strong> {config.company}</div>
-            <div className="mt-2"><strong>Flow:</strong> {config.roundType}</div>
-            <div className="mt-2"><strong>Questions:</strong> {config.count}</div>
-            <div className="mt-2"><strong>Skills:</strong> {config.skills.join(", ")}</div>
+          <div className="snx-stat">
+            <div className="snx-label">Configuration</div>
+            <div className="mt-3 space-y-2 snx-body-sm text-slate-custom-600">
+              <div><strong>Company:</strong> {config.company}</div>
+              <div><strong>Flow:</strong> {config.roundType}</div>
+              <div><strong>Questions:</strong> {config.count}</div>
+              <div><strong>Skills:</strong> {config.skills.join(", ")}</div>
+            </div>
           </div>
-        </SurfaceCard>
+        </div>
 
-        <SurfaceCard strong className="space-y-6">
+        <div className="snx-panel-muted space-y-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="snx-kicker">Conversational setup</span>
-              <h2 className="snx-heading mt-4">Step {step} of 4</h2>
+              <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Step {step} of 4</h2>
             </div>
-            <div className="rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
-              {config.roundType}
-            </div>
+            <div className="snx-badge-primary">{config.roundType}</div>
           </div>
 
           {step === 1 ? (
             <div className="grid gap-3 md:grid-cols-2">
               {roleOptions.map((role) => (
-                <button key={role} type="button" className={`rounded-[24px] border p-4 text-left transition ${
-                  config.role === role ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white hover:border-brand-200"
+                <button key={role} type="button" className={`snx-card border transition-all duration-300 cursor-pointer ${
+                  config.role === role ? "border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50" : "hover:border-indigo-200"
                 }`} onClick={() => setConfig((current) => ({ ...current, role }))}>
-                  <div className="font-semibold">{role}</div>
-                  <div className={`mt-2 text-sm ${config.role === role ? "text-slate-200" : "text-slate-500"}`}>Use this role to drive AI-generated prompts and follow-up emphasis.</div>
+                  <div className={`font-semibold ${config.role === role ? "text-indigo-900" : "text-slate-custom-900"}`}>{role}</div>
+                  <div className={`mt-2 snx-body-sm ${config.role === role ? "text-indigo-700" : "text-slate-custom-600"}`}>Use this role to drive AI-generated prompts and follow-up emphasis.</div>
                 </button>
               ))}
             </div>
@@ -210,11 +211,11 @@ const AIInterviewerPage = () => {
           {step === 2 ? (
             <div className="grid gap-3 md:grid-cols-2">
               {experienceOptions.map((level) => (
-                <button key={level} type="button" className={`rounded-[24px] border p-4 text-left transition ${
-                  config.experienceLevel === level ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white hover:border-brand-200"
+                <button key={level} type="button" className={`snx-card border transition-all duration-300 cursor-pointer ${
+                  config.experienceLevel === level ? "border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50" : "hover:border-indigo-200"
                 }`} onClick={() => setConfig((current) => ({ ...current, experienceLevel: level }))}>
-                  <div className="font-semibold">{level}</div>
-                  <div className={`mt-2 text-sm ${config.experienceLevel === level ? "text-slate-200" : "text-slate-500"}`}>Adjusts tone, expectations, and AI interviewer depth.</div>
+                  <div className={`font-semibold ${config.experienceLevel === level ? "text-indigo-900" : "text-slate-custom-900"}`}>{level}</div>
+                  <div className={`mt-2 snx-body-sm ${config.experienceLevel === level ? "text-indigo-700" : "text-slate-custom-600"}`}>Adjusts tone, expectations, and AI interviewer depth.</div>
                 </button>
               ))}
             </div>
@@ -222,16 +223,16 @@ const AIInterviewerPage = () => {
 
           {step === 3 ? (
             <div className="space-y-4">
-              <p className="text-sm text-slate-500">Choose up to six focus areas so the interview feels relevant and company-ready.</p>
+              <p className="snx-body-sm text-slate-custom-600">Choose up to six focus areas so the interview feels relevant and company-ready.</p>
               <div className="flex flex-wrap gap-3">
                 {skillOptions.map((skill) => (
                   <button
                     key={skill}
                     type="button"
-                    className={`rounded-2xl border px-4 py-2.5 text-sm font-medium transition ${
+                    className={`snx-badge transition-all duration-300 cursor-pointer ${
                       config.skills.includes(skill)
-                        ? "border-brand-500 bg-brand-500 text-white shadow-[0_16px_32px_rgba(20,184,166,0.24)]"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"
+                        ? "snx-badge-primary ring-2 ring-indigo-200"
+                        : "border border-slate-custom-200 bg-white text-slate-custom-700 hover:border-indigo-200 hover:bg-indigo-50"
                     }`}
                     onClick={() => toggleSkill(skill)}
                   >
@@ -245,19 +246,19 @@ const AIInterviewerPage = () => {
           {step === 4 ? (
             <div className="grid gap-4 md:grid-cols-3">
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Company</span>
+                <span className="snx-label">Company</span>
                 <select className="snx-select" value={config.company} onChange={(event) => setConfig((current) => ({ ...current, company: event.target.value }))}>
                   {companyOptions.map((company) => <option key={company} value={company}>{company}</option>)}
                 </select>
               </label>
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Interview flow</span>
+                <span className="snx-label">Interview flow</span>
                 <select className="snx-select" value={config.roundType} onChange={(event) => setConfig((current) => ({ ...current, roundType: event.target.value }))}>
                   {roundOptions.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
               </label>
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Question count</span>
+                <span className="snx-label">Question count</span>
                 <select className="snx-select" value={config.count} onChange={(event) => setConfig((current) => ({ ...current, count: Number(event.target.value) }))}>
                   {[3, 4, 5, 6, 7].map((count) => <option key={count} value={count}>{count}</option>)}
                 </select>
@@ -266,16 +267,16 @@ const AIInterviewerPage = () => {
           ) : null}
 
           {loading ? (
-            <div className="rounded-[28px] border border-slate-200/70 bg-slate-950 px-6 py-6 text-white">
-              <div className="mb-4 flex items-center gap-3">
+            <div className="snx-panel-dark space-y-3 text-white">
+              <div className="flex items-center gap-3">
                 <div className="flex gap-2">
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-300" />
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-accent-300 [animation-delay:150ms]" />
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/70 [animation-delay:300ms]" />
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-400" />
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-300 [animation-delay:150ms]" />
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-200 [animation-delay:300ms]" />
                 </div>
-                <span className="text-sm font-medium uppercase tracking-[0.2em] text-white/70">Generating</span>
+                <span className="snx-label text-white/70">Generating</span>
               </div>
-              <p className="text-sm text-slate-200">Building your interview flow with company context, round pacing, and skill-aware prompts.</p>
+              <p className="snx-body-sm text-slate-300">Building your interview flow with company context, round pacing, and skill-aware prompts.</p>
             </div>
           ) : null}
 
@@ -284,76 +285,77 @@ const AIInterviewerPage = () => {
               Back
             </button>
             {step < 4 ? (
-              <button className="snx-btn-accent" onClick={() => setStep((current) => Math.min(4, current + 1))}>Continue</button>
+              <button className="snx-btn-primary" onClick={() => setStep((current) => Math.min(4, current + 1))}>Continue</button>
             ) : (
-              <button className="snx-btn-accent" onClick={generateInterview} disabled={loading}>
+              <button className="snx-btn-primary" onClick={generateInterview} disabled={loading}>
                 {loading ? "Generating..." : "Generate Interview"}
               </button>
             )}
           </div>
-        </SurfaceCard>
+        </div>
       </div>
 
       {interviewQuestions.length ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_420px]">
+        <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
           <div className="space-y-6">
-            <SurfaceCard strong>
+            <div className="snx-panel-muted">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <span className="snx-kicker">Interview plan</span>
-                  <h2 className="snx-heading mt-4">Your AI-generated round sequence</h2>
+                  <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Your AI-generated round sequence</h2>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+                <span className="snx-badge-primary inline-flex items-center gap-2">
                   <FiZap className="h-4 w-4" />
                   AI adaptive
-                </div>
+                </span>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 {roundSummary.map((round, index) => (
-                  <span
+                  <button
                     key={`${round}-${index}`}
-                    className={`rounded-full px-4 py-2 text-sm font-medium ${
-                      index === currentIndex ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-600"
+                    className={`snx-badge transition-all duration-300 cursor-pointer ${
+                      index === currentIndex ? "snx-badge-primary" : "border border-slate-custom-200 bg-white text-slate-custom-600 hover:border-indigo-200"
                     }`}
+                    onClick={() => setCurrentIndex(index)}
                   >
                     {index + 1}. {round}
-                  </span>
+                  </button>
                 ))}
               </div>
-            </SurfaceCard>
+            </div>
 
             {currentQuestion ? (
-              <SurfaceCard strong className="space-y-6">
+              <div className="snx-panel-muted space-y-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <span className="snx-kicker">Question {currentIndex + 1} of {interviewQuestions.length}</span>
-                    <h2 className="snx-heading mt-4">{currentQuestion.round}</h2>
-                    <p className="mt-2 text-sm text-slate-500">{currentQuestion.category}</p>
+                    <h2 className="snx-heading-3 mt-3 text-slate-custom-900">{currentQuestion.round}</h2>
+                    <p className="mt-2 snx-body-sm text-slate-custom-600">{currentQuestion.category}</p>
                   </div>
-                  <span className="snx-badge">{currentQuestion.difficulty}</span>
+                  <span className="snx-badge-primary text-xs">{currentQuestion.difficulty}</span>
                 </div>
 
-                <div className="rounded-[28px] border border-slate-200/70 bg-slate-950 px-6 py-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-                  <p className="text-base leading-8 text-slate-100">{currentQuestion.question}</p>
+                <div className="snx-panel-dark space-y-4 text-white">
+                  <p className="snx-body leading-8 text-slate-100">{currentQuestion.question}</p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="snx-grid-auto">
                   {[
                     { label: "Intent", value: currentQuestion.intent },
                     { label: "Evaluation Focus", value: currentQuestion.evaluationFocus },
                     { label: "Follow-up Hint", value: currentQuestion.followUpHint }
                   ].map((item) => (
-                    <div key={item.label} className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-                      <p className="mt-3 text-sm leading-6 text-slate-600">{item.value}</p>
+                    <div key={item.label} className="snx-stat">
+                      <div className="snx-label">{item.label}</div>
+                      <p className="mt-3 snx-body-sm text-slate-custom-600">{item.value}</p>
                     </div>
                   ))}
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-slate-700">Your answer</label>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
+                    <label className="snx-label">Your answer</label>
+                    <span className="inline-flex items-center gap-2 rounded-lg border border-slate-custom-200 bg-slate-custom-100 px-3 py-1 text-xs font-medium text-slate-custom-700">
                       <FiMic className="h-3.5 w-3.5" />
                       Voice UI placeholder
                     </span>
@@ -367,7 +369,7 @@ const AIInterviewerPage = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <button className="snx-btn-accent" onClick={evaluateAnswer} disabled={evaluating}>
+                  <button className="snx-btn-primary" onClick={evaluateAnswer} disabled={evaluating}>
                     {evaluating ? "Evaluating..." : "Evaluate Answer"}
                   </button>
                   <button className="snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); setEvaluation(null); setAnswerAnalysis(null); }}>
@@ -379,48 +381,54 @@ const AIInterviewerPage = () => {
                     <FiChevronRight className="h-4 w-4" />
                   </button>
                 </div>
-              </SurfaceCard>
+              </div>
             ) : null}
           </div>
 
-          <SurfaceCard strong className="space-y-5">
+          <aside className="snx-card space-y-5 lg:h-fit lg:sticky lg:top-6">
             <div>
               <span className="snx-kicker">AI feedback</span>
-              <h2 className="snx-heading mt-4">Evaluation summary</h2>
+              <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Evaluation summary</h2>
             </div>
             {evaluation ? (
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Confidence</div>
-                    <div className="mt-3 text-3xl font-semibold text-slate-950">{evaluation.confidenceScore}</div>
+                  <div className="snx-stat">
+                    <div className="snx-label">Confidence</div>
+                    <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{evaluation.confidenceScore}</div>
                   </div>
-                  <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Communication</div>
-                    <div className="mt-3 text-3xl font-semibold text-slate-950">{evaluation.communicationScore}</div>
+                  <div className="snx-stat">
+                    <div className="snx-label">Communication</div>
+                    <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{evaluation.communicationScore}</div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Feedback</div>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{evaluation.feedback}</p>
+                  <div className="snx-stat">
+                    <div className="snx-label">Feedback</div>
+                    <p className="mt-3 snx-body-sm text-slate-custom-600">{evaluation.feedback}</p>
                   </div>
-                  <div className="rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ideal answer</div>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{evaluation.idealAnswer}</p>
+                  <div className="snx-stat">
+                    <div className="snx-label">Ideal answer</div>
+                    <p className="mt-3 snx-body-sm text-slate-custom-600">{evaluation.idealAnswer}</p>
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/70 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Strengths</div>
-                      <ul className="mt-3 space-y-2 text-sm text-emerald-900">
-                        {(evaluation.strengths || []).length ? evaluation.strengths.map((item) => <li key={item}>- {item}</li>) : <li>- Clear response direction</li>}
+                  <div className="grid gap-4">
+                    <div className="snx-stat bg-emerald-50 border-emerald-200">
+                      <div className="snx-label text-emerald-700">Strengths</div>
+                      <ul className="mt-3 space-y-2 snx-body-sm text-emerald-900">
+                        {(evaluation.strengths || []).length ? evaluation.strengths.map((item) => <li key={item}>• {item}</li>) : <li>• Clear response direction</li>}
                       </ul>
                     </div>
                     <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 p-4">
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Improvements</div>
                       <ul className="mt-3 space-y-2 text-sm text-amber-900">
                         {(evaluation.improvements || []).length ? evaluation.improvements.map((item) => <li key={item}>- {item}</li>) : <li>- Add stronger examples</li>}
+                      </ul>
+                    </div>
+                    <div className="snx-stat bg-amber-50 border-amber-200">
+                      <div className="snx-label text-amber-700">Improvements</div>
+                      <ul className="mt-3 space-y-2 snx-body-sm text-amber-900">
+                        {(evaluation.improvements || []).length ? evaluation.improvements.map((item) => <li key={item}>• {item}</li>) : <li>• Add stronger examples</li>}
                       </ul>
                     </div>
                   </div>
@@ -433,13 +441,13 @@ const AIInterviewerPage = () => {
                 description="Submit an answer to unlock confidence scoring, communication guidance, ideal answer suggestions, and concept-level AI analysis."
               />
             )}
-          </SurfaceCard>
+          </aside>
         </div>
       ) : (
         <EmptyState
           title="No interviews yet"
           description="Finish the four-step setup and generate a tailored interview loop to begin your AI-powered practice round."
-          action={<button className="snx-btn-accent" onClick={() => setStep(1)}>Start Setup</button>}
+          action={<button className="snx-btn-primary" onClick={() => setStep(1)}>Start Setup</button>}
         />
       )}
     </div>
