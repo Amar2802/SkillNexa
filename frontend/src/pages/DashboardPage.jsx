@@ -4,6 +4,7 @@ import { FiActivity, FiArrowRight, FiBarChart2, FiClock, FiCompass, FiTrendingUp
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
 import SurfaceCard from "../components/ui/SurfaceCard";
+import { StatsGrid } from "../components/ui/GridComponents";
 
 const createRoadmap = (profile) => {
   const weakTopics = profile?.progress?.weakTopics || [];
@@ -97,22 +98,20 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
             <Link to="/practice" className="snx-btn-secondary">Continue Practice</Link>
           </>
         )}
-        aside={(
-          <div className="snx-grid-auto">
-            {statCards.map(({ label, value, meta, icon: Icon }) => (
-              <div key={label} className="snx-stat snx-card-elevated h-full">
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <span className="snx-label">{label}</span>
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </div>
-                <div className="snx-stat-value">{value}</div>
-                <p className="snx-stat-label mt-2">{meta}</p>
+      <div className="snx-grid-auto">
+        {statCards.map(({ label, value, meta, icon: Icon }) => (
+          <div key={label} className="snx-stat snx-card-elevated h-full">
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <span className="snx-label">{label}</span>
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                <Icon className="h-5 w-5" />
               </div>
-            ))}
+            </div>
+            <div className="snx-stat-value">{value}</div>
+            <p className="snx-stat-label mt-2">{meta}</p>
           </div>
-        )}
+        ))}
+      </div>
       />
 
       <div className="snx-grid-auto">
