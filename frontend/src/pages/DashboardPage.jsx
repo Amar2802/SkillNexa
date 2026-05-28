@@ -100,7 +100,7 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
         aside={(
           <div className="snx-grid-auto">
             {statCards.map(({ label, value, meta, icon: Icon }) => (
-              <div key={label} className="snx-stat">
+              <div key={label} className="snx-stat snx-card-elevated h-full">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <span className="snx-label">{label}</span>
                   <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
@@ -122,7 +122,7 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
           { label: "Consistency", value: `${analytics.consistency}%`, meta: "Score stability" },
           { label: "Weak Topics", value: weakTopics.length || 0, meta: "Focus areas" }
         ].map((card) => (
-          <div key={card.label} className="snx-stat">
+          <div key={card.label} className="snx-stat snx-card-elevated h-full">
             <div className="snx-label">{card.label}</div>
             <div className="snx-stat-value mt-3">{card.value}</div>
             <p className="snx-stat-label mt-2">{card.meta}</p>
@@ -149,10 +149,10 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
               {analytics.recentHistory.map((item, index) => {
                 const accuracyValue = item.accuracy || 0;
                 return (
-                  <div key={item._id || index} className="flex flex-col items-center gap-3 rounded-lg border border-slate-custom-200 bg-white p-4">
+                  <div key={item._id || index} className="snx-card-elevated flex flex-col items-center gap-3 rounded-lg border border-slate-custom-200 bg-white p-4 h-full">
                     <div className="relative flex h-48 w-10 items-end rounded-full bg-slate-custom-100">
                       <div
-                        className="w-full rounded-full bg-gradient-to-t from-indigo-600 to-indigo-400"
+                        className="w-full rounded-full bg-gradient-to-t from-indigo-600 to-indigo-400 transition-all duration-500"
                         style={{ height: `${Math.max(18, Math.min(100, accuracyValue))}%` }}
                       />
                     </div>

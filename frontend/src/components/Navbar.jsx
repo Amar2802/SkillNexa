@@ -93,10 +93,12 @@ const Navbar = ({ user, profile, logout }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-slate-custom-950/40 backdrop-blur-sm transition-all duration-300 md:hidden ${
+        className={`snx-backdrop-blur md:hidden transition-all duration-300 ${
           mobileMenuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={() => setMobileMenuOpen(false)}
+        role="presentation"
+        aria-hidden="true"
       />
 
       <aside

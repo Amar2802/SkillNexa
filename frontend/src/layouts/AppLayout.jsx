@@ -11,9 +11,9 @@ const AppLayout = ({ user, profile, logout, appError }) => (
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="pb-12 pt-20 md:pl-[240px] md:pt-28"
     >
-      <div className="snx-container max-w-6xl space-y-8">
+      <div className="snx-container-md mx-auto space-y-8">
         {appError ? (
-          <div className="rounded-lg border border-rose-200 bg-rose-50/80 px-6 py-4 text-sm font-medium text-rose-900 shadow-sm">
+          <div className="rounded-lg border border-rose-200 bg-rose-50/80 px-6 py-4 text-sm font-medium text-rose-900 shadow-sm" role="alert">
             {appError}
           </div>
         ) : null}
