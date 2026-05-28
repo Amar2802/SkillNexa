@@ -45,7 +45,15 @@
 
   /* Container */
   .snx-container {
-    @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-app px-4 sm:px-6 lg:px-8;
+  }
+  
+  .snx-container-sm {
+    @apply mx-auto w-full max-w-4xl px-4 sm:px-6;
+  }
+  
+  .snx-container-md {
+    @apply mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8;
   }
 
   /* Glass Effects */
@@ -268,6 +276,69 @@
   .snx-dotted-bg {
     background-image: radial-gradient(rgba(7, 16, 40, 0.06) 1px, transparent 1px);
     background-size: 20px 20px;
+  }
+
+  /* Skeleton Loader */
+  .snx-skeleton {
+    @apply animate-pulse rounded-lg bg-slate-custom-200;
+  }
+
+  .snx-skeleton-text {
+    @apply h-4 w-full rounded bg-slate-custom-200;
+  }
+
+  .snx-skeleton-avatar {
+    @apply h-12 w-12 rounded-full bg-slate-custom-200;
+  }
+
+  /* Accessibility */
+  .snx-focus-ring {
+    @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-white transition-all duration-200;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply snx-focus-ring;
+  }
+
+  /* Empty State */
+  .snx-empty-state {
+    @apply flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-custom-200 bg-slate-custom-50 px-8 py-16 text-center;
+  }
+
+  .snx-empty-state-icon {
+    @apply mb-4 text-6xl text-slate-custom-300;
+  }
+
+  .snx-empty-state-title {
+    @apply snx-heading-3 mb-2 text-slate-custom-900;
+  }
+
+  .snx-empty-state-description {
+    @apply snx-body mb-6 max-w-sm text-slate-custom-600;
+  }
+
+  /* Depth & Layering */
+  .snx-backdrop-blur {
+    @apply fixed inset-0 bg-black/30 backdrop-blur-sm;
+  }
+
+  .snx-card-elevated {
+    @apply relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg-soft;
+  }
+
+  /* Loading Shimmer */
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  .snx-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
   }
 
   .snx-fade-in {

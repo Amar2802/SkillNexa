@@ -119,7 +119,8 @@ export default {
         '5xl': '1024px',
         '6xl': '1152px',
         '7xl': '1280px',
-        'container': '1344px'
+        'container': '1344px',
+        'app': '1600px'
       },
       transitionDuration: {
         '200': '200ms',

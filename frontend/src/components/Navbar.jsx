@@ -100,11 +100,11 @@ const Navbar = ({ user, profile, logout }) => {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[240px] transform bg-white/95 backdrop-blur-sm transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[240px] transform bg-white/95 backdrop-blur-sm transition-transform duration-300 md:sticky md:translate-x-0 md:shadow-none ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } border-r border-slate-custom-200/50 shadow-lg-soft md:shadow-none`}
+        } border-r border-slate-custom-200/50 shadow-lg-soft overflow-y-auto`}
       >
-        <div className="snx-scrollbar flex h-full flex-col gap-6 overflow-y-auto p-5">
+        <div className="snx-scrollbar flex h-screen flex-col gap-6 p-5">
           <div className="flex items-center justify-between">
             <SkillNexaLogo showTagline={false} linkTo="/dashboard" />
             <button
@@ -167,7 +167,7 @@ const Navbar = ({ user, profile, logout }) => {
             </h2>
           </div>
 
-          <form onSubmit={submitSearch} className="hidden min-w-[240px] flex-1 md:flex md:max-w-xs">
+          <form onSubmit={submitSearch} className="hidden md:flex lg:min-w-[420px] md:min-w-[320px] flex-1 md:max-w-xs lg:max-w-sm">
             <label className="relative w-full">
               <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-custom-400" />
               <input
@@ -175,6 +175,7 @@ const Navbar = ({ user, profile, logout }) => {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search questions..."
                 className="snx-input pl-10 text-xs"
+                aria-label="Search questions"
               />
             </label>
           </form>
