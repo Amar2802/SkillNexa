@@ -1,43 +1,13 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiArrowRight, FiCheckCircle, FiEye, FiEyeOff, FiMail, FiX } from "react-icons/fi";
+import { FiArrowRight, FiEye, FiEyeOff, FiMail, FiX } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { authService } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/ui/ToastProvider";
 import { consumeAuthNotice, getRememberMePreference } from "../utils/authStorage";
-import SkillNexaLogo from "../components/SkillNexaLogo";
-import SurfaceCard from "../components/ui/SurfaceCard";
-
-const trustMetrics = [
-  { label: "Interview prompts", value: "1000+" },
-  { label: "Company patterns", value: "Top-tier" },
-  { label: "Preparation loops", value: "Guided" }
-];
-
-const featureBullets = [
-  "Generate professional AI mock interviews tailored to your role and skills",
-  "Practice coding, aptitude, HR, and core subjects in one premium workflow",
-  "Track improvement through mock tests, bookmarks, and AI feedback summaries"
-];
-
-const showcaseCards = [
-  {
-    title: "AI Mock Interviews",
-    body: "Simulate interviewer-quality conversations with progressive difficulty and targeted follow-ups."
-  },
-  {
-    title: "Resume-Ready Preparation",
-    body: "Turn your current skills into a clear revision roadmap with company-aware practice suggestions."
-  },
-  {
-    title: "Startup-grade UX",
-    body: "Clean dashboards, responsive practice screens, and modern flows built for real product teams."
-  }
-];
-
 const getPasswordStrength = (value) => {
   const password = String(value || "");
   let score = 0;
@@ -488,96 +458,12 @@ const AuthPage = ({ mode = "none" }) => {
     }
   };
 
+  if (mode === "none") {
+    return null;
+  }
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-custom-50 dark:bg-slate-custom-900">
-      <section id="hero" className="snx-container py-10 md:py-14">
-        <div className="overflow-hidden rounded-card border border-slate-custom-200 bg-white shadow-md-soft dark:border-slate-custom-700 dark:bg-slate-custom-800">
-          <div className="snx-panel relative overflow-hidden !border-0 !shadow-none">
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-indigo-100/50 to-transparent dark:from-indigo-500/10" />
-
-            <div className="relative grid items-center gap-8 lg:grid-cols-2">
-              <div className="space-y-5 py-2 lg:py-4">
-                <div className="space-y-4">
-                  <span className="snx-kicker">
-                    Premium AI Interview Platform
-                  </span>
-
-                  <h1 className="snx-display-lg">
-                    Crack interviews with AI-powered preparation.
-                  </h1>
-
-                  <p className="snx-subcopy max-w-xl">
-                    Generate company-quality mock interviews,
-                    practice coding and communication, track your
-                    performance, and stay ready for top product
-                    companies.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Link to="/login" className="snx-btn-primary">Get started</Link>
-                  <Link to="/signup" className="snx-btn-secondary">Create account</Link>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {trustMetrics.map((item) => (
-                    <div key={item.label} className="snx-card !p-4">
-                      <div className="text-xl font-bold text-brand-600 dark:text-brand-400">{item.value}</div>
-                      <div className="mt-1 text-xs text-slate-custom-500">{item.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="hidden lg:flex flex-col gap-3">
-                <div className="snx-glass-dark flex-1 !p-5">
-                  <div className="mb-5 flex items-center justify-between">
-                    <SkillNexaLogo showTagline={false} />
-
-                    <span className="snx-badge-primary text-xs">
-                      AI SaaS
-                    </span>
-                  </div>
-
-                  <div className="space-y-4">
-                    {featureBullets.map((item) => (
-                      <div
-                        key={item}
-                        className="flex items-start gap-3"
-                      >
-                        <FiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-cyan-accent-400" />
-
-                        <p className="text-sm leading-6 text-white/80">
-                          {item}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid gap-3">
-                  {showcaseCards.map((card) => (
-                    <div key={card.title} className="snx-card !p-4">
-                      <span className="snx-badge-primary text-xs mb-2">
-                        Feature
-                      </span>
-
-                      <h3 className="text-base font-semibold text-slate-custom-900">
-                        {card.title}
-                      </h3>
-
-                      <p className="mt-2 text-xs leading-5 text-slate-custom-600">
-                        {card.body}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
+    <>
       <AnimatePresence>
         {authPanelOpen || isForgot ? (
           <motion.div
@@ -897,7 +783,7 @@ const AuthPage = ({ mode = "none" }) => {
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 
