@@ -1,52 +1,227 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root,
-[data-theme="light"] {
-  --theme-background: #f8fafc;
-  --theme-surface: rgba(255, 255, 255, 0.74);
-  --theme-surface-strong: rgba(255, 255, 255, 0.92);
-  --theme-border: rgba(148, 163, 184, 0.28);
-  --theme-text: #111827;
-  --theme-text-muted: #475569;
-  --theme-primary: #14b8a6;
-  --theme-secondary: #0f172a;
-  --theme-accent: #06b6d4;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  body {
+    @apply min-h-screen bg-slate-custom-50 text-slate-custom-700 antialiased;
+    background-image:
+      radial-gradient(circle at 8% 0%, rgba(79, 70, 229, 0.07), transparent 26%),
+      radial-gradient(circle at 92% 4%, rgba(139, 92, 246, 0.06), transparent 22%);
+  }
+
+  body[data-overlay="true"] {
+    overflow: hidden;
+  }
+
+  .dark body {
+    @apply bg-slate-custom-900 text-slate-custom-200;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(79, 70, 229, 0.14), transparent 28%),
+      radial-gradient(circle at 90% 8%, rgba(139, 92, 246, 0.1), transparent 24%);
+  }
 }
 
-[data-theme="dark"] {
-  --theme-background: #020617;
-  --theme-surface: rgba(15, 23, 42, 0.82);
-  --theme-surface-strong: rgba(15, 23, 42, 0.94);
-  --theme-border: rgba(71, 85, 105, 0.48);
-  --theme-text: #e5eef7;
-  --theme-text-muted: #94a3b8;
-  --theme-primary: #14b8a6;
-  --theme-secondary: #e2e8f0;
-  --theme-accent: #22d3ee;
+@layer components {
+  .snx-app-shell {
+    @apply relative min-h-screen;
+  }
+
+  .snx-container {
+    @apply mx-auto w-full max-w-app px-4 sm:px-6;
+  }
+
+  .snx-container-md {
+    @apply snx-container;
+  }
+
+  .snx-glass {
+    @apply rounded-card border border-slate-custom-200 bg-white shadow-sm-soft backdrop-blur-xl dark:border-slate-custom-700 dark:bg-slate-custom-800;
+  }
+
+  .snx-panel {
+    @apply snx-glass p-6;
+  }
+
+  .snx-panel-muted {
+    @apply rounded-card border border-slate-custom-200 bg-white p-6 shadow-sm-soft dark:border-slate-custom-700 dark:bg-slate-custom-800;
+  }
+
+  .snx-card {
+    @apply rounded-card border border-slate-custom-200 bg-white p-6 shadow-sm-soft transition duration-200 hover:-translate-y-1 hover:border-slate-custom-300 hover:shadow-md-soft dark:border-slate-custom-700 dark:bg-slate-custom-800 dark:hover:border-slate-custom-600;
+  }
+
+  .snx-kicker {
+    @apply inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-200;
+  }
+
+  .snx-label {
+    @apply text-xs font-semibold uppercase tracking-wider text-slate-custom-500 dark:text-slate-custom-400;
+  }
+
+  .snx-display,
+  .snx-display-lg {
+    @apply text-3xl font-bold tracking-tight text-slate-custom-900 sm:text-4xl lg:text-5xl dark:text-white;
+  }
+
+  .snx-heading-1 {
+    @apply text-3xl font-bold text-slate-custom-900 dark:text-white;
+  }
+
+  .snx-heading-2 {
+    @apply text-2xl font-semibold text-slate-custom-900 dark:text-white;
+  }
+
+  .snx-heading-3 {
+    @apply text-xl font-semibold text-slate-custom-900 dark:text-white;
+  }
+
+  .snx-heading {
+    @apply text-lg font-semibold text-slate-custom-900 dark:text-white;
+  }
+
+  .snx-subcopy {
+    @apply text-sm leading-relaxed text-slate-custom-500 dark:text-slate-custom-400;
+  }
+
+  .snx-body-sm {
+    @apply text-sm leading-relaxed text-slate-custom-600 dark:text-slate-custom-400;
+  }
+
+  .snx-input {
+    @apply h-11 w-full rounded-xl border border-slate-custom-200 bg-white px-4 text-sm text-slate-custom-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-custom-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-custom-600 dark:bg-slate-custom-800 dark:text-white;
+  }
+
+  .snx-textarea {
+    @apply min-h-[120px] w-full rounded-xl border border-slate-custom-200 bg-white px-4 py-3 text-sm text-slate-custom-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-custom-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-custom-600 dark:bg-slate-custom-800 dark:text-white;
+  }
+
+  .snx-select {
+    @apply snx-input appearance-none bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748B' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-size: 14px;
+  }
+
+  .snx-btn-primary {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-accent-500 px-5 text-sm font-semibold text-white shadow-elevation-1 transition duration-200 hover:scale-[1.02] hover:from-brand-600 hover:to-accent-600 hover:shadow-elevation-2 active:scale-100 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .snx-btn-secondary {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-custom-300 bg-white px-5 text-sm font-semibold text-slate-custom-800 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-slate-custom-400 hover:bg-slate-custom-50 dark:border-slate-custom-600 dark:bg-slate-custom-800 dark:text-slate-custom-100 dark:hover:bg-slate-custom-700;
+  }
+
+  .snx-btn-accent {
+    @apply snx-btn-primary;
+  }
+
+  .snx-btn-danger {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500 px-5 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] hover:bg-red-600 active:scale-100;
+  }
+
+  .snx-btn-sm {
+    @apply h-9 px-4 text-xs;
+  }
+
+  .snx-stat {
+    @apply snx-card p-5;
+  }
+
+  .snx-stat-value {
+    @apply text-2xl font-bold tracking-tight text-slate-custom-900 dark:text-white;
+  }
+
+  .snx-stat-label {
+    @apply text-xs font-medium text-slate-custom-500;
+  }
+
+  .snx-badge {
+    @apply inline-flex items-center rounded-full border border-slate-custom-200 bg-slate-custom-100 px-3 py-1 text-xs font-medium text-slate-custom-700 dark:border-slate-custom-600 dark:bg-slate-custom-700 dark:text-slate-custom-200;
+  }
+
+  .snx-badge-primary {
+    @apply inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/20 dark:text-indigo-200;
+  }
+
+  .snx-grid-auto {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .snx-grid-2 {
+    @apply grid grid-cols-1 gap-6 md:grid-cols-2;
+  }
+
+  .snx-grid-3 {
+    @apply grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .snx-dashboard-layout {
+    @apply grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)];
+  }
+
+  .snx-empty-state {
+    @apply flex flex-col items-center justify-center rounded-card border-2 border-dashed border-slate-custom-200 bg-slate-custom-100 px-6 py-12 text-center dark:border-slate-custom-700 dark:bg-slate-custom-800;
+  }
+
+  .snx-empty-state-icon {
+    @apply mb-3 text-5xl text-slate-custom-300;
+  }
+
+  .snx-empty-state-title {
+    @apply text-lg font-semibold text-slate-custom-900 dark:text-white;
+  }
+
+  .snx-empty-state-description {
+    @apply mt-2 max-w-sm text-sm text-slate-custom-500;
+  }
+
+  .snx-backdrop-blur {
+    @apply fixed inset-0 z-40 bg-slate-custom-900/40 backdrop-blur-sm;
+  }
+
+  .snx-card-elevated {
+    @apply transition duration-200 hover:-translate-y-1 hover:shadow-md-soft;
+  }
+
+  .snx-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(79, 70, 229, 0.35) transparent;
+  }
+
+  .snx-fade-in {
+    animation: snxFadeIn 0.25s ease-out;
+  }
+
+  .snx-gradient-border {
+    @apply rounded-card;
+  }
+
+  .snx-glass-dark {
+    @apply rounded-card border border-slate-custom-700/50 bg-slate-custom-900/95 p-6 text-white shadow-lg-soft backdrop-blur-xl;
+  }
+
+  .snx-link {
+    @apply text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline dark:text-brand-400;
+  }
+
+  .snx-focus-ring:focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-custom-900;
+  }
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  color: var(--theme-text);
-  background-color: var(--theme-background);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
+@keyframes snxFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

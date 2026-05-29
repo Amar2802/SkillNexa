@@ -6,7 +6,6 @@ import { ToastProvider } from "./components/ui/ToastProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./index.css";
-import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>

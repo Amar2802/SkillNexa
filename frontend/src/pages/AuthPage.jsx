@@ -1,6 +1,6 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiArrowRight, FiCheckCircle, FiEye, FiEyeOff, FiMail, FiX } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
@@ -489,27 +489,24 @@ const AuthPage = ({ mode = "none" }) => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <section
-        id="hero"
-        className="space-y-8 px-4 py-12 sm:px-6 md:py-20"
-      >
-        <div className="snx-gradient-border overflow-hidden rounded-2xl border border-white/60 bg-white/80 shadow-lg-soft backdrop-blur-xl">
-          <div className="snx-panel relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-indigo-100/40 to-transparent" />
+    <div className="relative min-h-screen overflow-hidden bg-slate-custom-50 dark:bg-slate-custom-900">
+      <section id="hero" className="snx-container py-10 md:py-14">
+        <div className="overflow-hidden rounded-card border border-slate-custom-200 bg-white shadow-md-soft dark:border-slate-custom-700 dark:bg-slate-custom-800">
+          <div className="snx-panel relative overflow-hidden !border-0 !shadow-none">
+            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-indigo-100/50 to-transparent dark:from-indigo-500/10" />
 
-            <div className="relative grid gap-8 lg:grid-cols-[1fr_minmax(320px,380px)]">
-              <div className="space-y-6 py-8 lg:py-12">
+            <div className="relative grid items-center gap-8 lg:grid-cols-2">
+              <div className="space-y-5 py-2 lg:py-4">
                 <div className="space-y-4">
                   <span className="snx-kicker">
                     Premium AI Interview Platform
                   </span>
 
-                  <h1 className="snx-display-lg text-5xl">
+                  <h1 className="snx-display-lg">
                     Crack interviews with AI-powered preparation.
                   </h1>
 
-                  <p className="snx-body max-w-2xl text-slate-custom-600">
+                  <p className="snx-subcopy max-w-xl">
                     Generate company-quality mock interviews,
                     practice coding and communication, track your
                     performance, and stay ready for top product
@@ -517,23 +514,23 @@ const AuthPage = ({ mode = "none" }) => {
                   </p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {trustMetrics.map((item) => (
-                    <div key={item.label} className="snx-card">
-                      <div className="text-3xl font-bold text-indigo-600">
-                        {item.value}
-                      </div>
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/login" className="snx-btn-primary">Get started</Link>
+                  <Link to="/signup" className="snx-btn-secondary">Create account</Link>
+                </div>
 
-                      <div className="mt-2 text-sm text-slate-custom-600">
-                        {item.label}
-                      </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {trustMetrics.map((item) => (
+                    <div key={item.label} className="snx-card !p-4">
+                      <div className="text-xl font-bold text-brand-600 dark:text-brand-400">{item.value}</div>
+                      <div className="mt-1 text-xs text-slate-custom-500">{item.label}</div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="hidden lg:flex flex-col py-8 lg:py-12">
-                <div className="snx-glass-dark rounded-xl p-6 flex-1">
+              <div className="hidden lg:flex flex-col gap-3">
+                <div className="snx-glass-dark flex-1 !p-5">
                   <div className="mb-5 flex items-center justify-between">
                     <SkillNexaLogo showTagline={false} />
 
@@ -548,7 +545,7 @@ const AuthPage = ({ mode = "none" }) => {
                         key={item}
                         className="flex items-start gap-3"
                       >
-                        <FiCheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-cyan-accent-400" />
+                        <FiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-cyan-accent-400" />
 
                         <p className="text-sm leading-6 text-white/80">
                           {item}
@@ -558,9 +555,9 @@ const AuthPage = ({ mode = "none" }) => {
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-3">
+                <div className="grid gap-3">
                   {showcaseCards.map((card) => (
-                    <div key={card.title} className="snx-card">
+                    <div key={card.title} className="snx-card !p-4">
                       <span className="snx-badge-primary text-xs mb-2">
                         Feature
                       </span>

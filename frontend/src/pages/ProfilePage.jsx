@@ -24,7 +24,10 @@ const ProfilePage = ({ profile = {}, refreshProfile }) => {
   const { showToast } = useToast();
   const [selectedInterests, setSelectedInterests] = useState(profile?.interests || []);
   const [isUploading, setIsUploading] = useState(false);
-  const initials = useMemo(() => (profile?.name || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(), [profile?.name]);
+  const initials = useMemo(
+    () => (profile?.name || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(),
+    [profile?.name]
+  );
 
   useEffect(() => {
     setSelectedInterests(profile?.interests || []);
@@ -49,7 +52,6 @@ const ProfilePage = ({ profile = {}, refreshProfile }) => {
       showToast("Profile photo must be 2MB or smaller.", "error");
       return;
     }
-
     setIsUploading(true);
     try {
       const dataUrl = await new Promise((resolve, reject) => {
@@ -79,97 +81,99 @@ const ProfilePage = ({ profile = {}, refreshProfile }) => {
     }
   };
 
+  const stats = [
+    { label: "Completion", value: `${profileCompletion}%` },
+    { label: "Tests taken", value: profile?.progress?.testsTaken || 0 },
+    { label: "Accuracy", value: `${profile?.progress?.accuracy || 0}%` }
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 snx-fade-in">
       <PageHeader
         kicker={`Member since ${memberSince}`}
         title={profile?.name || "SkillNexa User"}
         description={profile?.email || "AI interview workspace"}
-        aside={(
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            {[
-              { label: "Profile completion", value: `${profileCompletion}%` },
-              { label: "Tests taken", value: profile?.progress?.testsTaken || 0 },
-              { label: "Accuracy", value: `${profile?.progress?.accuracy || 0}%` }
-            ].map((item) => (
-              <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-                <div className="mt-2 text-3xl font-semibold text-slate-950">{item.value}</div>
-              </div>
-            ))}
-          </div>
-        )}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <SurfaceCard strong className="space-y-6">
-          <div className="flex flex-col items-center gap-4 text-center">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+        <SurfaceCard strong className="space-y-5">
+          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
             <button
               type="button"
-              className="group relative h-32 w-32 overflow-hidden rounded-[32px] border border-white/70 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
+              className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-card border border-slate-custom-200 shadow-md-soft"
               disabled={isUploading}
               onClick={() => !isUploading && fileInputRef.current?.click()}
             >
               {profile?.avatar ? (
                 <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-500 to-accent-500 text-4xl font-semibold text-white">
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-500 to-accent-500 text-2xl font-semibold text-white">
                   {initials}
                 </div>
               )}
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/40 opacity-0 transition group-hover:opacity-100">
-                <FiCamera className="h-6 w-6 text-white" />
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-custom-900/40 opacity-0 transition group-hover:opacity-100">
+                <FiCamera className="h-5 w-5 text-white" />
               </div>
             </button>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) updateAvatar(file); }} />
-            <div>
-              <h2 className="text-xl font-semibold text-slate-950">{profile?.name || "Learner"}</h2>
-              <p className="mt-1 text-sm text-slate-500">{profile?.email}</p>
-              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-400">Joined {memberSince}</p>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) updateAvatar(f); }} />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-semibold text-slate-custom-900 dark:text-white">{profile?.name || "Learner"}</h2>
+              <p className="mt-0.5 text-sm text-slate-custom-500">{profile?.email}</p>
+              <p className="mt-1 text-xs uppercase tracking-wider text-slate-custom-400">Joined {memberSince}</p>
             </div>
-            <div className="w-full rounded-[24px] border border-slate-200/70 bg-white/80 p-4">
-              <div className="flex items-center justify-between text-sm font-medium text-slate-600">
-                <span>Profile completion</span>
-                <span>{profileCompletion}%</span>
-              </div>
-              <div className="mt-3 h-2 rounded-full bg-slate-100">
-                <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500" style={{ width: `${profileCompletion}%` }} />
-              </div>
+          </div>
+          <div className="rounded-xl border border-slate-custom-200 bg-slate-custom-50 p-4 dark:border-slate-custom-600 dark:bg-slate-custom-800">
+            <div className="flex justify-between text-sm font-medium text-slate-custom-600 dark:text-slate-custom-300">
+              <span>Profile completion</span>
+              <span>{profileCompletion}%</span>
+            </div>
+            <div className="mt-2 h-2 rounded-full bg-slate-custom-200 dark:bg-slate-custom-700">
+              <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500" style={{ width: `${profileCompletion}%` }} />
             </div>
           </div>
         </SurfaceCard>
 
-        <SurfaceCard strong className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <span className="snx-kicker">Interested topics</span>
-              <h2 className="snx-heading mt-4">Choose what you want to focus on</h2>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          {stats.map((item) => (
+            <div key={item.label} className="snx-stat !p-4">
+              <div className="snx-label">{item.label}</div>
+              <div className="snx-stat-value mt-1">{item.value}</div>
             </div>
-            <div className="flex items-center gap-3">
-              {hasUnsavedInterests ? <span className="text-sm font-medium text-amber-700">Unsaved changes</span> : null}
-              <button className="snx-btn-accent" onClick={saveInterests}>Save Interests</button>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {INTEREST_OPTIONS.map((item) => {
-              const active = selectedInterests.includes(item);
-              return (
-                <button
-                  key={item}
-                  className={`rounded-2xl border px-4 py-2.5 text-sm font-medium transition ${
-                    active
-                      ? "border-brand-500 bg-brand-500 text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"
-                  }`}
-                  onClick={() => setSelectedInterests((current) => active ? current.filter((value) => value !== item) : [...current, item])}
-                >
-                  {item}
-                </button>
-              );
-            })}
-          </div>
-        </SurfaceCard>
+          ))}
+        </div>
       </div>
+
+      <SurfaceCard strong className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span className="snx-kicker">Interests</span>
+            <h2 className="snx-heading mt-2">Focus topics</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            {hasUnsavedInterests ? <span className="text-sm font-medium text-amber-600">Unsaved</span> : null}
+            <button type="button" className="snx-btn-primary snx-btn-sm" onClick={saveInterests}>Save</button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {INTEREST_OPTIONS.map((item) => {
+            const active = selectedInterests.includes(item);
+            return (
+              <button
+                key={item}
+                type="button"
+                className={`rounded-full border px-3 py-1.5 text-sm font-medium transition duration-200 ${
+                  active
+                    ? "border-brand-500 bg-brand-500 text-white"
+                    : "border-slate-custom-200 bg-white text-slate-custom-700 hover:border-brand-300 hover:bg-indigo-50 dark:border-slate-custom-600 dark:bg-slate-custom-800 dark:text-slate-custom-200"
+                }`}
+                onClick={() => setSelectedInterests((c) => (active ? c.filter((v) => v !== item) : [...c, item]))}
+              >
+                {item}
+              </button>
+            );
+          })}
+        </div>
+      </SurfaceCard>
     </div>
   );
 };

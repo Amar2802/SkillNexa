@@ -13,7 +13,7 @@ const LogoContent = ({ className = "", imageClassName, showTagline = false }) =>
   <div className={`flex items-center gap-3 ${className}`.trim()}>
     <LogoMark imageClassName={imageClassName} />
     <div className="min-w-0">
-      <div className="truncate font-['Poppins'] text-lg font-semibold tracking-[-0.03em] text-slate-950">
+      <div className="truncate text-lg font-semibold tracking-tight text-slate-custom-900 dark:text-white">
         SkillNexa
       </div>
       {showTagline ? (

@@ -360,7 +360,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                 <FiArrowRight className="h-4 w-4" />
               </button>
             </div>
-          </div>
+          </>
         ) : (
           <EmptyState
             title="Question not available"
@@ -432,6 +432,7 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               Exit Practice
             </button>
             <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
+          </aside>
         </div>
       ) : null}
     </div>

@@ -6,14 +6,17 @@ const AppLayout = ({ user, profile, logout, appError }) => (
   <div className="snx-app-shell min-h-screen">
     <Navbar user={user} profile={profile} logout={logout} />
     <motion.main
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="pb-12 pt-20 md:pl-[240px] md:pt-28"
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="pb-8 pt-4 md:pl-[280px] md:pt-[88px]"
     >
-      <div className="snx-container-md mx-auto space-y-8">
+      <div className="snx-container space-y-6">
         {appError ? (
-          <div className="rounded-lg border border-rose-200 bg-rose-50/80 px-6 py-4 text-sm font-medium text-rose-900 shadow-sm" role="alert">
+          <div
+            className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+            role="alert"
+          >
             {appError}
           </div>
         ) : null}

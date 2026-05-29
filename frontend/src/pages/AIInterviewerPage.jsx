@@ -117,36 +117,33 @@ const AIInterviewerPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 snx-fade-in">
       <PageHeader
         kicker="AI Interview Studio"
-        title="Create professional mock interviews with a guided AI flow."
-        description="Configure role, experience, and skill focus, then generate a realistic interview sequence with layered AI evaluation and answer analysis."
+        title="Build a mock interview in four steps"
+        description="Set role, experience, skills, and company — then generate your AI interview."
         actions={(
-          <>
-            <button className="snx-btn-accent" onClick={generateInterview} disabled={loading}>
-              {loading ? "Generating..." : "Generate Interview"}
-            </button>
-            <button className="snx-btn-secondary" onClick={() => setStep(1)}>Restart Setup</button>
-          </>
+          <button type="button" className="snx-btn-primary" onClick={generateInterview} disabled={loading}>
+            {loading ? "Generating..." : "Generate Interview"}
+          </button>
         )}
         aside={(
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
             {[
               { label: "Role", value: config.role },
               { label: "Experience", value: config.experienceLevel },
-              { label: "Skills", value: `${config.skills.length} selected` }
+              { label: "Skills", value: config.skills.length }
             ].map((item) => (
-              <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-                <div className="mt-2 text-lg font-semibold text-slate-950">{item.value}</div>
+              <div key={item.label} className="snx-stat !p-3">
+                <div className="snx-label">{item.label}</div>
+                <div className="mt-1 truncate text-sm font-semibold text-slate-custom-900 dark:text-white">{item.value}</div>
               </div>
             ))}
           </div>
         )}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <div className="snx-panel-muted space-y-5">
           <div>
             <span className="snx-kicker">Interview setup</span>
@@ -280,19 +277,22 @@ const AIInterviewerPage = () => {
             </div>
           ) : null}
 
-          <div className="flex flex-wrap justify-between gap-3">
-            <button className="snx-btn-secondary" onClick={() => setStep((current) => Math.max(1, current - 1))} disabled={step === 1}>
-              Back
-            </button>
-            {step < 4 ? (
-              <button className="snx-btn-primary" onClick={() => setStep((current) => Math.min(4, current + 1))}>Continue</button>
-            ) : (
-              <button className="snx-btn-primary" onClick={generateInterview} disabled={loading}>
-                {loading ? "Generating..." : "Generate Interview"}
-              </button>
-            )}
-          </div>
         </div>
+      </div>
+
+      <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-card border border-slate-custom-200 bg-white/95 p-4 shadow-lg-soft backdrop-blur-md dark:border-slate-custom-600 dark:bg-slate-custom-900/95">
+        <button type="button" className="snx-btn-secondary" onClick={() => setStep((c) => Math.max(1, c - 1))} disabled={step === 1}>
+          Back
+        </button>
+        {step < 4 ? (
+          <button type="button" className="snx-btn-primary min-w-[140px]" onClick={() => setStep((c) => Math.min(4, c + 1))}>
+            Continue
+          </button>
+        ) : (
+          <button type="button" className="snx-btn-primary min-w-[180px]" onClick={generateInterview} disabled={loading}>
+            {loading ? "Generating..." : "Generate Interview"}
+          </button>
+        )}
       </div>
 
       {interviewQuestions.length ? (
