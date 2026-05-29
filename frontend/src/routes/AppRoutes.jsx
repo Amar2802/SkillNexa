@@ -150,12 +150,12 @@ const AppRoutes = () => {
           )}
         >
           <Route path="/dashboard" element={<DashboardPage profile={profile || user} questions={questions} recommendations={dashboardRecommendations} history={history} loading={loadingApp} />} />
-          <Route path="/questions" element={<QuestionBankPage questions={questions} loadQuestions={loadQuestions} defaultField={SOFTWARE_FIELD} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} />} />
-          <Route path="/practice" element={<PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} />} />
-          <Route path="/practice/:questionId" element={<PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} />} />
+          <Route path="/questions" element={<QuestionBankPage questions={questions} loadQuestions={loadQuestions} defaultField={SOFTWARE_FIELD} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} refreshProfile={refreshProfile} />} />
+          <Route path="/practice" element={<PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} refreshProfile={refreshProfile} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} />} />
+          <Route path="/practice/:questionId" element={<PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} refreshProfile={refreshProfile} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} />} />
           <Route path="/mock-tests" element={<MockTestsPage tests={tests} refreshTests={refreshTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} questions={questions} />} />
           <Route path="/review-mistakes" element={<ReviewMistakesPage history={history} />} />
-          <Route path="/ai-interviewer" element={<AIInterviewerPage questions={questions} />} />
+          <Route path="/ai-interviewer" element={<AIInterviewerPage questions={questions} refreshProfile={refreshProfile} />} />
           <Route path="/bookmarks" element={<BookmarksPage bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} />} />
           <Route path="/history" element={<HistoryPage history={history} refreshHistory={refreshHistory} />} />
           <Route path="/profile" element={<ProfilePage profile={profile || user} refreshProfile={refreshProfile} />} />

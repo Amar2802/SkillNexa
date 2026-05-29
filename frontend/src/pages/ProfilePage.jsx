@@ -81,10 +81,11 @@ const ProfilePage = ({ profile = {}, refreshProfile }) => {
     }
   };
 
+  const evalStats = profile?.analytics?.evaluation || {};
   const stats = [
-    { label: "Completion", value: `${profileCompletion}%` },
-    { label: "Tests taken", value: profile?.progress?.testsTaken || 0 },
-    { label: "Accuracy", value: `${profile?.progress?.accuracy || 0}%` }
+    { label: "Evaluated answers", value: evalStats.totalEvaluated || profile?.progress?.evaluationsCount || 0 },
+    { label: "Average score", value: evalStats.averageScore || profile?.progress?.averageInterviewScore || 0 },
+    { label: "Highest score", value: evalStats.highestScore || 0 }
   ];
 
   return (
@@ -141,6 +142,25 @@ const ProfilePage = ({ profile = {}, refreshProfile }) => {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="snx-grid-2">
+        <SurfaceCard className="space-y-3">
+          <span className="snx-kicker">Strongest skills</span>
+          <div className="flex flex-wrap gap-2">
+            {(evalStats.strongestSkills || []).length
+              ? evalStats.strongestSkills.map((skill) => <span key={skill} className="snx-badge-primary">{skill}</span>)
+              : <span className="snx-body-sm">Complete AI evaluations to unlock skill insights.</span>}
+          </div>
+        </SurfaceCard>
+        <SurfaceCard className="space-y-3">
+          <span className="snx-kicker">Weakest skills</span>
+          <div className="flex flex-wrap gap-2">
+            {(evalStats.weakestSkills || []).length
+              ? evalStats.weakestSkills.map((skill) => <span key={skill} className="snx-badge">{skill}</span>)
+              : <span className="snx-body-sm">Weak areas appear after several evaluated answers.</span>}
+          </div>
+        </SurfaceCard>
       </div>
 
       <SurfaceCard strong className="space-y-4">

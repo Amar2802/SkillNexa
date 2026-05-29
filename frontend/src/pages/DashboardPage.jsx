@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiActivity, FiBarChart2, FiCompass, FiTrendingUp } from "react-icons/fi";
+import EvaluationAnalyticsPanel from "../components/evaluation/EvaluationAnalyticsPanel";
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
 
@@ -69,12 +70,13 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
   }, [history, profile?.progress?.accuracy, profile?.progress?.testsTaken, recommendedTopics, weakTopics]);
 
   const readiness = Math.max(35, Math.round((analytics.accuracy + analytics.consistency) / 2));
+  const evalAnalytics = profile?.analytics?.evaluation || {};
 
   const statCards = [
-    { label: "Readiness", value: `${readiness}%`, meta: "Accuracy + consistency", icon: FiActivity },
-    { label: "Interviews", value: analytics.testsTaken, meta: "Mock rounds", icon: FiBarChart2 },
-    { label: "Avg score", value: analytics.avgScore, meta: "Recent average", icon: FiCompass },
-    { label: "Momentum", value: analytics.momentum >= 0 ? `+${analytics.momentum}` : analytics.momentum, meta: "Trend", icon: FiTrendingUp }
+    { label: "AI readiness", value: evalAnalytics.aiReadinessScore || profile?.progress?.aiReadinessScore || readiness, meta: "From AI evaluations", icon: FiActivity },
+    { label: "Avg interview score", value: evalAnalytics.averageScore || profile?.progress?.averageInterviewScore || 0, meta: "Across evaluated answers", icon: FiBarChart2 },
+    { label: "Best topic", value: evalAnalytics.bestTopic || "—", meta: "Strongest area", icon: FiCompass },
+    { label: "Improvement", value: `${evalAnalytics.improvementRate >= 0 ? "+" : ""}${evalAnalytics.improvementRate || 0}`, meta: "Score trend", icon: FiTrendingUp }
   ];
 
   const sideStats = [
@@ -248,6 +250,8 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
           </div>
         </aside>
       </div>
+
+      <EvaluationAnalyticsPanel analytics={evalAnalytics} />
     </div>
   );
 };

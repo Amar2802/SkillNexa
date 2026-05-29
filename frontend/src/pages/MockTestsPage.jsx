@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FiClock, FiRefreshCw, FiZap } from "react-icons/fi";
 import api from "../api/client";
-import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
 import SurfaceCard from "../components/ui/SurfaceCard";
 import { useToast } from "../components/ui/ToastProvider";
-import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
+import { submitAnswerEvaluation } from "../services/evaluationService";
 
 const formatTimer = (seconds) => {
   const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -25,8 +25,8 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [generationError, setGenerationError] = useState("");
   const autoSubmittedRef = useRef(false);
-  const [analysisByQuestionId, setAnalysisByQuestionId] = useState({});
-  const [analysisLoadingByQuestionId, setAnalysisLoadingByQuestionId] = useState({});
+  const [evaluationByQuestionId, setEvaluationByQuestionId] = useState({});
+  const [evaluationLoadingByQuestionId, setEvaluationLoadingByQuestionId] = useState({});
 
   const questionCount = useMemo(() => activeTest ? activeTest.sections.flatMap((section) => section.questions).length : 0, [activeTest]);
   const pendingQuestionCount = useMemo(() => pendingTest ? pendingTest.sections.flatMap((section) => section.questions).length : 0, [pendingTest]);
@@ -57,8 +57,8 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
       setActiveTest(null);
       setAnswers({});
       setResult(null);
-      setAnalysisByQuestionId({});
-      setAnalysisLoadingByQuestionId({});
+      setEvaluationByQuestionId({});
+      setEvaluationLoadingByQuestionId({});
       setRemainingSeconds(0);
       autoSubmittedRef.current = false;
       await refreshTests?.().catch(() => undefined);
@@ -84,23 +84,27 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
     autoSubmittedRef.current = false;
   };
 
-  const requestQuestionAnalysis = async (question) => {
+  const requestQuestionEvaluation = async (question) => {
     const userAnswer = answers[question._id];
     if (!String(userAnswer || "").trim()) return;
 
-    setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
+    setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
     try {
-      const data = await fetchAnswerAnalysis({
+      const data = await submitAnswerEvaluation({
         questionId: question._id,
-        userAnswer,
-        correctAnswer: question.correctAnswer,
-        topic: question.topic
+        question: `${question.title}. ${question.description || ""}`,
+        userAnswer: String(userAnswer),
+        topic: question.topic,
+        difficulty: question.difficulty,
+        interviewType: "mock-interview",
+        module: "mock-test"
       });
-      setAnalysisByQuestionId((current) => ({ ...current, [question._id]: data }));
+      setEvaluationByQuestionId((current) => ({ ...current, [question._id]: data }));
     } catch {
-      setAnalysisByQuestionId((current) => ({ ...current, [question._id]: null }));
+      setEvaluationByQuestionId((current) => ({ ...current, [question._id]: null }));
+      showToast("Evaluation failed for this question.", "error");
     } finally {
-      setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
+      setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
     }
   };
 
@@ -117,16 +121,19 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
       (data?.answers || []).forEach((entry) => {
         const question = entry?.question;
         if (!question || typeof question !== "object") return;
-        setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
-        void fetchAnswerAnalysis({
+        setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
+        void submitAnswerEvaluation({
           questionId: question._id,
-          userAnswer: entry.submittedAnswer,
-          correctAnswer: question.correctAnswer,
-          topic: question.topic
-        }).then((analysis) => {
-          setAnalysisByQuestionId((current) => ({ ...current, [question._id]: analysis }));
+          question: `${question.title}. ${question.description || ""}`,
+          userAnswer: String(entry.submittedAnswer || ""),
+          topic: question.topic,
+          difficulty: question.difficulty,
+          interviewType: "mock-interview",
+          module: "mock-test"
+        }).then((evaluation) => {
+          setEvaluationByQuestionId((current) => ({ ...current, [question._id]: evaluation }));
         }).catch(() => undefined).finally(() => {
-          setAnalysisLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
+          setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
         });
       });
       setActiveTest(null);
@@ -292,13 +299,13 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
                   <button
                     type="button"
                     className="snx-btn-secondary"
-                    onClick={() => requestQuestionAnalysis(question)}
-                    disabled={!String(answers[question._id] || "").trim() || analysisLoadingByQuestionId[question._id]}
+                    onClick={() => requestQuestionEvaluation(question)}
+                    disabled={!String(answers[question._id] || "").trim() || evaluationLoadingByQuestionId[question._id]}
                   >
-                    {analysisLoadingByQuestionId[question._id] ? "Analyzing..." : "Analyze Answer"}
+                    {evaluationLoadingByQuestionId[question._id] ? "Analyzing..." : "Analyze Answer"}
                   </button>
                 </div>
-                <AnswerAnalysisBlock analysis={analysisByQuestionId[question._id]} loading={analysisLoadingByQuestionId[question._id]} />
+                <AnswerEvaluationCard evaluation={evaluationByQuestionId[question._id]} loading={evaluationLoadingByQuestionId[question._id]} />
               </div>
             ))}
           </div>
@@ -341,7 +348,7 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
                 <div key={question._id || index} className="snx-card">
                   <h3 className="snx-heading-4 text-slate-custom-900">{question.title}</h3>
                   <p className="mt-2 snx-body-sm text-slate-custom-600">{String(entry.submittedAnswer || "No answer submitted")}</p>
-                  <AnswerAnalysisBlock analysis={analysisByQuestionId[question._id]} loading={analysisLoadingByQuestionId[question._id]} />
+                  <AnswerEvaluationCard evaluation={evaluationByQuestionId[question._id]} loading={evaluationLoadingByQuestionId[question._id]} />
                 </div>
               );
             })}

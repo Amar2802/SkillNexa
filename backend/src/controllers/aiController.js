@@ -1,6 +1,8 @@
 import Question from "../models/Question.js";
 import openai from "../config/openai.js";
 import { heuristicInterviewEvaluation } from "../utils/analytics.js";
+import AnswerEvaluation from "../models/AnswerEvaluation.js";
+import { runAnswerEvaluation } from "../utils/answerEvaluationEngine.js";
 
 const ROUND_BLUEPRINTS = {
   "Full Loop": [
@@ -169,53 +171,57 @@ Make the flow feel like a real hiring process with different rounds and realisti
 };
 
 export const evaluateInterviewAnswer = async (req, res) => {
-  const { question, answer, role = "Software Engineer", roundType = "Full Loop", round = "Interview Round" } = req.body;
+  const {
+    question,
+    answer,
+    role = "Software Engineer",
+    roundType = "Full Loop",
+    round = "Interview Round",
+    topic = round,
+    difficulty = "Medium",
+    questionId = ""
+  } = req.body;
+
   if (!question || !answer) {
     return res.status(400).json({ message: "Question and answer are required" });
   }
 
-  if (!openai) {
-    return res.json({ source: "fallback", ...enrichFallbackEvaluation(answer, question, round) });
-  }
-
-  const prompt = `Evaluate this interview answer for a ${role} candidate.
-The current interview format is ${roundType} and this question belongs to the ${round}.
-Return valid JSON only with these fields:
-- feedback: string
-- idealAnswer: string
-- confidenceScore: number from 0 to 100
-- communicationScore: number from 0 to 100
-- structureScore: number from 0 to 100
-- technicalScore: number from 0 to 100
-- strengths: array of short strings
-- improvements: array of short strings
-- followUpQuestion: string
-
-Question: ${question}
-Answer: ${answer}`;
-
-  const completion = await openai.responses.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    input: prompt
+  const result = await runAnswerEvaluation({
+    question,
+    userAnswer: answer,
+    topic,
+    role,
+    difficulty,
+    interviewType: `ai-interview-${roundType.toLowerCase().replace(/\s+/g, "-")}`
   });
 
-  try {
-    const parsed = JSON.parse(completion.output_text);
-    res.json({
-      source: "openai",
-      feedback: parsed.feedback || "Solid answer overall.",
-      idealAnswer: parsed.idealAnswer || "Start with a direct answer, support it with a clear example, and end with impact.",
-      confidenceScore: Number(parsed.confidenceScore) || 75,
-      communicationScore: Number(parsed.communicationScore) || 75,
-      structureScore: Number(parsed.structureScore) || 75,
-      technicalScore: Number(parsed.technicalScore) || 75,
-      strengths: Array.isArray(parsed.strengths) ? parsed.strengths : ["Clear overall direction"],
-      improvements: Array.isArray(parsed.improvements) ? parsed.improvements : ["Add one stronger example"],
-      followUpQuestion: parsed.followUpQuestion || "Can you back that up with one measurable example?"
-    });
-  } catch {
-    res.json({ source: "openai", ...enrichFallbackEvaluation(answer, question, round) });
-  }
+  const saved = await AnswerEvaluation.create({
+    user: req.user._id,
+    questionId: String(questionId || ""),
+    question,
+    userAnswer: answer,
+    topic,
+    role,
+    difficulty,
+    interviewType: "ai-interviewer",
+    module: "ai-interviewer",
+    ...result
+  });
+
+  const legacy = enrichFallbackEvaluation(answer, question, round);
+  res.json({
+    ...saved.toObject(),
+    feedback: result.recruiterFeedback || legacy.feedback,
+    idealAnswer: result.idealAnswer,
+    confidenceScore: (result.confidenceScore || 0) * 10,
+    communicationScore: (result.communicationScore || 0) * 10,
+    structureScore: (result.clarityScore || 0) * 10,
+    technicalScore: (result.technicalScore || 0) * 10,
+    strengths: result.strengths,
+    improvements: result.weaknesses,
+    followUpQuestion: result.followUpQuestions?.[0] || legacy.followUpQuestion,
+    followUpQuestions: result.followUpQuestions
+  });
 };
 
 export const getRecommendations = async (req, res) => {

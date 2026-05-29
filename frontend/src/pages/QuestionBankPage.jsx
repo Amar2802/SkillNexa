@@ -1,9 +1,12 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { FiBookmark, FiFilter, FiSearch } from "react-icons/fi";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import api from "../api/client";
+import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
+import { useToast } from "../components/ui/ToastProvider";
+import { submitAnswerEvaluation } from "../services/evaluationService";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
 const PAGE_SIZE = 18;
@@ -39,8 +42,9 @@ const SkeletonCard = () => (
   </div>
 );
 
-const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software", bookmarks = [], refreshBookmarks }) => {
+const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Software", bookmarks = [], refreshBookmarks, refreshProfile }) => {
   const location = useLocation();
+  const { showToast } = useToast();
   const loadMoreRef = useRef(null);
   const requestRef = useRef(0);
   const [filters, setFilters] = useState(initialFilters);
@@ -55,6 +59,9 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
   const [loadingMore, setLoadingMore] = useState(false);
   const [openAnswers, setOpenAnswers] = useState({});
   const [bookmarkLoadingId, setBookmarkLoadingId] = useState("");
+  const [userAnswers, setUserAnswers] = useState({});
+  const [evaluationByQuestionId, setEvaluationByQuestionId] = useState({});
+  const [evaluationLoadingByQuestionId, setEvaluationLoadingByQuestionId] = useState({});
 
   const sourceQuestions = questions.length ? questions : items;
   const bookmarkedIds = useMemo(() => new Set((bookmarks || []).map((item) => item._id)), [bookmarks]);
@@ -163,6 +170,35 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
     setFilters(initialFilters);
     setType("all");
     setOpenAnswers({});
+  };
+
+  const displayTitle = (question) => (question.title || "Untitled Question").replace(/\s+Practice Variant\s+\d+$/i, "").trim();
+
+  const evaluateQuestionAnswer = async (question) => {
+    const userAnswer = userAnswers[question._id];
+    if (!String(userAnswer || "").trim()) {
+      showToast("Write your answer before requesting AI evaluation.", "error");
+      return;
+    }
+    setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
+    try {
+      const data = await submitAnswerEvaluation({
+        questionId: question._id,
+        question: `${displayTitle(question)}. ${question.description || ""}`,
+        userAnswer,
+        topic: question.topic,
+        difficulty: question.difficulty,
+        interviewType: question.category === "HR" ? "hr-interview" : question.category === "Aptitude" ? "aptitude" : "question-bank",
+        module: "question-bank"
+      });
+      setEvaluationByQuestionId((current) => ({ ...current, [question._id]: data }));
+      refreshProfile?.();
+      showToast("AI evaluation ready.", "success");
+    } catch (error) {
+      showToast(error.response?.data?.message || "Evaluation failed.", "error");
+    } finally {
+      setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
+    }
   };
 
   const toggleBookmark = async (questionId) => {
@@ -377,6 +413,26 @@ const QuestionBankPage = ({ questions = [], loadQuestions, defaultField = "Softw
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-custom-600">Explanation</div>
                       <p className="snx-body-sm mt-2 text-slate-custom-700">{display.explanation}</p>
+                    </div>
+                    <div className="space-y-3 border-t border-slate-custom-200 pt-4">
+                      <span className="snx-label">Your answer</span>
+                      <textarea
+                        className="snx-textarea min-h-[120px]"
+                        value={userAnswers[question._id] || ""}
+                        onChange={(event) => setUserAnswers((current) => ({ ...current, [question._id]: event.target.value }))}
+                        placeholder="Type your answer for AI recruiter-style evaluation..."
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" className="snx-btn-primary snx-btn-sm" onClick={() => evaluateQuestionAnswer(question)}>
+                          Evaluate with AI
+                        </button>
+                        <Link to={`/practice/${question._id}`} className="snx-btn-secondary snx-btn-sm">Open in Practice</Link>
+                      </div>
+                      <AnswerEvaluationCard
+                        evaluation={evaluationByQuestionId[question._id]}
+                        loading={evaluationLoadingByQuestionId[question._id]}
+                        onRetry={() => evaluateQuestionAnswer(question)}
+                      />
                     </div>
                   </div>
                 ) : null}

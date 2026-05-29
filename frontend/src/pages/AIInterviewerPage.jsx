@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { FiChevronLeft, FiChevronRight, FiMic, FiZap } from "react-icons/fi";
 import api from "../api/client";
-import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
-import SurfaceCard from "../components/ui/SurfaceCard";
 import { useToast } from "../components/ui/ToastProvider";
-import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
+import useAnswerEvaluation from "../hooks/useAnswerEvaluation";
 
 const roundOptions = ["Full Loop", "Technical", "HR", "Mixed"];
 const companyOptions = ["General", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
@@ -21,8 +20,9 @@ const steps = [
   { id: 4, title: "Generate" }
 ];
 
-const AIInterviewerPage = () => {
+const AIInterviewerPage = ({ refreshProfile }) => {
   const { showToast } = useToast();
+  const { evaluation, loading: evalLoading, error: evalError, evaluate, retry, reset: resetEvaluation } = useAnswerEvaluation({ refreshProfile });
   const [step, setStep] = useState(1);
   const [config, setConfig] = useState({
     role: "Software Engineer",
@@ -35,11 +35,8 @@ const AIInterviewerPage = () => {
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState("");
-  const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [evaluating, setEvaluating] = useState(false);
-  const [answerAnalysis, setAnswerAnalysis] = useState(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [voiceNote, setVoiceNote] = useState("");
 
   const currentQuestion = interviewQuestions[currentIndex];
   const roundSummary = useMemo(() => interviewQuestions.map((item) => item.round), [interviewQuestions]);
@@ -67,9 +64,8 @@ const AIInterviewerPage = () => {
       setInterviewQuestions(data.questions || []);
       setCurrentIndex(0);
       setAnswer("");
-      setEvaluation(null);
-      setAnswerAnalysis(null);
-      setAnalysisLoading(false);
+      resetEvaluation();
+      setVoiceNote("");
       showToast("AI interview generated successfully.", "success");
     } catch (error) {
       showToast(error.response?.data?.message || "Unable to generate interview right now.", "error");
@@ -78,42 +74,31 @@ const AIInterviewerPage = () => {
     }
   };
 
-  const loadAnswerAnalysis = async (payload) => {
-    setAnalysisLoading(true);
-    try {
-      const data = await fetchAnswerAnalysis(payload);
-      setAnswerAnalysis(data);
-    } catch {
-      setAnswerAnalysis(null);
-    } finally {
-      setAnalysisLoading(false);
-    }
-  };
-
   const evaluateAnswer = async () => {
     if (!currentQuestion || !answer.trim()) return;
-    try {
-      setEvaluating(true);
-      const { data } = await api.post("/ai/evaluate", {
-        question: currentQuestion.question,
-        answer,
-        role: config.role,
-        roundType: config.roundType,
-        round: currentQuestion.round
-      });
-      setEvaluation(data);
-      showToast("AI feedback is ready.", "success");
-      void loadAnswerAnalysis({
-        questionId: currentQuestion.id,
-        userAnswer: answer,
-        correctAnswer: data.idealAnswer,
-        topic: currentQuestion.category
-      });
-    } catch (error) {
-      showToast(error.response?.data?.message || "Unable to evaluate the answer right now.", "error");
-    } finally {
-      setEvaluating(false);
+    const data = await evaluate({
+      questionId: currentQuestion.id,
+      question: currentQuestion.question,
+      userAnswer: answer,
+      topic: currentQuestion.category,
+      role: config.role,
+      difficulty: currentQuestion.difficulty,
+      category: currentQuestion.category,
+      module: "ai-interviewer",
+      voiceTranscript: voiceNote
+    });
+    if (data) showToast("AI feedback is ready.", "success");
+  };
+
+  const goToNextQuestion = () => {
+    const score = evaluation?.score || 0;
+    if (score < 55 && currentQuestion?.difficulty !== "Hard") {
+      showToast("Next question difficulty increased based on your score.", "info");
     }
+    setCurrentIndex((index) => Math.min(index + 1, interviewQuestions.length - 1));
+    setAnswer("");
+    resetEvaluation();
+    setVoiceNote("");
   };
 
   return (
@@ -366,80 +351,62 @@ const AIInterviewerPage = () => {
                     onChange={(event) => setAnswer(event.target.value)}
                     placeholder="Write your answer as though you are speaking to a senior interviewer in a real mock round..."
                   />
+                  <label className="block space-y-2">
+                    <span className="snx-label">Voice transcript (optional)</span>
+                    <textarea
+                      className="snx-textarea min-h-[100px]"
+                      value={voiceNote}
+                      onChange={(event) => setVoiceNote(event.target.value)}
+                      placeholder="Paste speech-to-text transcript for communication scoring..."
+                    />
+                  </label>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <button className="snx-btn-primary" onClick={evaluateAnswer} disabled={evaluating}>
-                    {evaluating ? "Evaluating..." : "Evaluate Answer"}
+                  <button type="button" className="snx-btn-primary" onClick={evaluateAnswer} disabled={evalLoading}>
+                    {evalLoading ? "Evaluating..." : "Evaluate Answer"}
                   </button>
-                  <button className="snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); setEvaluation(null); setAnswerAnalysis(null); }}>
+                  <button type="button" className="snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); resetEvaluation(); setVoiceNote(""); }}>
                     <FiChevronLeft className="h-4 w-4" />
                     Previous
                   </button>
-                  <button className="snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.min(index + 1, interviewQuestions.length - 1)); setAnswer(""); setEvaluation(null); setAnswerAnalysis(null); }}>
+                  <button type="button" className="snx-btn-secondary" onClick={goToNextQuestion}>
                     Next
                     <FiChevronRight className="h-4 w-4" />
                   </button>
                 </div>
+
+                <AnswerEvaluationCard
+                  evaluation={evaluation}
+                  loading={evalLoading}
+                  error={evalError}
+                  onRetry={() => currentQuestion && evaluate({
+                    questionId: currentQuestion.id,
+                    question: currentQuestion.question,
+                    userAnswer: answer,
+                    topic: currentQuestion.category,
+                    role: config.role,
+                    difficulty: currentQuestion.difficulty,
+                    category: currentQuestion.category,
+                    module: "ai-interviewer",
+                    voiceTranscript: voiceNote
+                  })}
+                />
               </div>
             ) : null}
           </div>
 
-          <aside className="snx-card space-y-5 lg:h-fit lg:sticky lg:top-6">
-            <div>
-              <span className="snx-kicker">AI feedback</span>
-              <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Evaluation summary</h2>
-            </div>
-            {evaluation ? (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="snx-stat">
-                    <div className="snx-label">Confidence</div>
-                    <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{evaluation.confidenceScore}</div>
-                  </div>
-                  <div className="snx-stat">
-                    <div className="snx-label">Communication</div>
-                    <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{evaluation.communicationScore}</div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="snx-stat">
-                    <div className="snx-label">Feedback</div>
-                    <p className="mt-3 snx-body-sm text-slate-custom-600">{evaluation.feedback}</p>
-                  </div>
-                  <div className="snx-stat">
-                    <div className="snx-label">Ideal answer</div>
-                    <p className="mt-3 snx-body-sm text-slate-custom-600">{evaluation.idealAnswer}</p>
-                  </div>
-                  <div className="grid gap-4">
-                    <div className="snx-stat bg-emerald-50 border-emerald-200">
-                      <div className="snx-label text-emerald-700">Strengths</div>
-                      <ul className="mt-3 space-y-2 snx-body-sm text-emerald-900">
-                        {(evaluation.strengths || []).length ? evaluation.strengths.map((item) => <li key={item}>• {item}</li>) : <li>• Clear response direction</li>}
-                      </ul>
-                    </div>
-                    <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Improvements</div>
-                      <ul className="mt-3 space-y-2 text-sm text-amber-900">
-                        {(evaluation.improvements || []).length ? evaluation.improvements.map((item) => <li key={item}>- {item}</li>) : <li>- Add stronger examples</li>}
-                      </ul>
-                    </div>
-                    <div className="snx-stat bg-amber-50 border-amber-200">
-                      <div className="snx-label text-amber-700">Improvements</div>
-                      <ul className="mt-3 space-y-2 snx-body-sm text-amber-900">
-                        {(evaluation.improvements || []).length ? evaluation.improvements.map((item) => <li key={item}>• {item}</li>) : <li>• Add stronger examples</li>}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
-              </>
+          <aside className="snx-card space-y-4 lg:sticky lg:top-24 lg:h-fit">
+            <span className="snx-kicker">Follow-ups</span>
+            <h2 className="snx-heading-3 mt-1">Adaptive interview loop</h2>
+            {evaluation?.followUpQuestions?.length ? (
+              <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-custom-600 dark:text-slate-custom-300">
+                {evaluation.followUpQuestions.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ol>
             ) : (
-              <EmptyState
-                title="No feedback yet"
-                description="Submit an answer to unlock confidence scoring, communication guidance, ideal answer suggestions, and concept-level AI analysis."
-              />
+              <p className="snx-body-sm">Evaluate your answer to unlock recruiter follow-up questions and difficulty adaptation.</p>
             )}
           </aside>
         </div>

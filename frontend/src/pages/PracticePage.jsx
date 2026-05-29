@@ -3,13 +3,18 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import { FiArrowLeft, FiArrowRight, FiBookmark, FiCode, FiPlay, FiSend } from "react-icons/fi";
 import api from "../api/client";
-import AnswerAnalysisBlock from "../components/AnswerAnalysisBlock";
+import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
-import SurfaceCard from "../components/ui/SurfaceCard";
 import { useToast } from "../components/ui/ToastProvider";
-import { fetchAnswerAnalysis } from "../services/answerAnalysisService";
+import useAnswerEvaluation from "../hooks/useAnswerEvaluation";
 import { buildDetailedSolution } from "../utils/answerHelpers";
+
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+};
 
 const typeOptions = [
   { id: "all", label: "All Questions" },
@@ -19,7 +24,7 @@ const typeOptions = [
 ];
 const softwareCategoryOptions = ["DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
 
-const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, targetField = "Software", loadQuestions }) => {
+const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, refreshProfile, targetField = "Software", loadQuestions }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { questionId } = useParams();
@@ -36,8 +41,8 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
   const [submitting, setSubmitting] = useState(false);
   const [runningCode, setRunningCode] = useState(false);
   const [startedAt, setStartedAt] = useState(Date.now());
-  const [answerAnalysis, setAnswerAnalysis] = useState(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [codingExplanation, setCodingExplanation] = useState("");
+  const { evaluation, loading: evalLoading, error: evalError, evaluate, retry, reset: resetEvaluation } = useAnswerEvaluation({ refreshProfile });
 
   useEffect(() => {
     if (questions.length || !loadQuestions) return;
@@ -95,11 +100,11 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
   useEffect(() => {
     if (!question) return;
     setFeedback(null);
-    setAnswerAnalysis(null);
-    setAnalysisLoading(false);
+    resetEvaluation();
+    setCodingExplanation("");
     setStartedAt(Date.now());
     setAnswer(question.type === "Coding" ? question.starterCode?.[language] || "" : "");
-  }, [question, language]);
+  }, [question, language, resetEvaluation]);
 
   const openQuestion = (id) => {
     navigate(`/practice/${id}${location.search}`);
@@ -107,18 +112,6 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
 
   const goBackToList = () => {
     navigate(`/practice${location.search}`);
-  };
-
-  const loadAnswerAnalysis = async (payload) => {
-    setAnalysisLoading(true);
-    try {
-      const data = await fetchAnswerAnalysis(payload);
-      setAnswerAnalysis(data);
-    } catch {
-      setAnswerAnalysis(null);
-    } finally {
-      setAnalysisLoading(false);
-    }
   };
 
   const submit = async () => {
@@ -130,19 +123,36 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
         timeSpent: Math.round((Date.now() - startedAt) / 1000)
       }, { timeout: 25000 });
       setFeedback(data);
-      showToast("Answer evaluated successfully.", "success");
-      void loadAnswerAnalysis({
+      const questionText = `${question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}. ${String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}`;
+      await evaluate({
         questionId: question._id,
+        question: questionText,
         userAnswer: answer,
-        correctAnswer: data.correctAnswer,
-        topic: question.topic
+        topic: question.topic,
+        difficulty: question.difficulty,
+        category: question.category,
+        module: "practice",
+        codingExplanation: question.type === "Coding" ? codingExplanation : ""
       });
+      showToast("Answer evaluated successfully.", "success");
     } catch (error) {
       showToast(error.response?.data?.message || "Unable to evaluate your answer right now.", "error");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const timeElapsed = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
+  const lastPayload = question ? {
+    questionId: question._id,
+    question: `${question.title}. ${question.description || ""}`,
+    userAnswer: answer,
+    topic: question.topic,
+    difficulty: question.difficulty,
+    category: question.category,
+    module: "practice",
+    codingExplanation
+  } : null;
 
   const runCode = async () => {
     try {
@@ -337,6 +347,15 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                     onChange={(value) => setAnswer(value || "")}
                   />
                 </div>
+                <label className="block space-y-2">
+                  <span className="snx-label">Explain your solution (logic, time & space complexity)</span>
+                  <textarea
+                    className="snx-textarea min-h-[140px]"
+                    value={codingExplanation}
+                    onChange={(event) => setCodingExplanation(event.target.value)}
+                    placeholder="Walk through your approach, optimization, and complexity..."
+                  />
+                </label>
               </div>
             ) : null}
 
@@ -370,8 +389,15 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
         )}
       </div>
 
+      <AnswerEvaluationCard
+        evaluation={evaluation}
+        loading={evalLoading || submitting}
+        error={evalError}
+        onRetry={() => lastPayload && retry(lastPayload)}
+      />
+
       {feedback && question ? (
-        <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+        <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div className="snx-panel-muted space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-lg border border-slate-custom-200 bg-white p-4">
@@ -406,17 +432,17 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
               <div className="mt-3 h-3 w-full rounded-full bg-slate-custom-200">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-300"
-                  style={{ width: `${((currentQuestionIndex + 1) / allQuestions.length) * 100}%` }}
+                  style={{ width: `${navigationPool.length ? ((currentIndex + 1) / navigationPool.length) * 100 : 0}%` }}
                 />
               </div>
               <p className="mt-3 snx-body-sm text-slate-custom-600">
-                Question {currentQuestionIndex + 1} of {allQuestions.length}
+                Question {currentIndex + 1} of {navigationPool.length}
               </p>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2">
-                <span className="snx-label">Accuracy</span>
-                <span className="text-sm font-semibold text-indigo-600">{accuracy}%</span>
+              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2 dark:bg-slate-custom-800">
+                <span className="snx-label">AI score</span>
+                <span className="text-sm font-semibold text-brand-600">{evaluation?.score ?? "—"}</span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2">
                 <span className="snx-label">Your result</span>
@@ -427,11 +453,10 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, target
                 <span className="text-sm font-semibold text-slate-custom-700">{formatTime(timeElapsed)}</span>
               </div>
             </div>
-            <button className="w-full snx-btn-secondary" onClick={goBackToList}>
+            <button type="button" className="w-full snx-btn-secondary" onClick={goBackToList}>
               <FiArrowLeft className="h-4 w-4" />
               Exit Practice
             </button>
-            <AnswerAnalysisBlock analysis={answerAnalysis} loading={analysisLoading} />
           </aside>
         </div>
       ) : null}

@@ -2,7 +2,9 @@ import Question from "../models/Question.js";
 import Result from "../models/Result.js";
 import User from "../models/User.js";
 import { toSafeUser } from "../utils/auth.js";
+import AnswerEvaluation from "../models/AnswerEvaluation.js";
 import { weakTopicsFromAnswers } from "../utils/analytics.js";
+import { buildEvaluationAnalytics } from "../utils/answerEvaluationEngine.js";
 import { FIELD_DEFAULT_TOPICS, FIELD_OPTIONS } from "../utils/prepFields.js";
 
 const normalizeTargetField = (value) => (FIELD_OPTIONS.includes(value) ? value : "Software");
@@ -66,14 +68,23 @@ const buildRoadmap = ({ interests = [], weakTopics = [], company = "General", ta
 };
 
 export const getProfile = async (req, res) => {
-  const results = await Result.find({ user: req.user._id })
-    .populate("answers.question", "topic title category difficulty")
-    .sort({ createdAt: -1 });
+  const [results, evaluations] = await Promise.all([
+    Result.find({ user: req.user._id })
+      .populate("answers.question", "topic title category difficulty")
+      .sort({ createdAt: -1 }),
+    AnswerEvaluation.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(500).lean()
+  ]);
 
   const answers = results.flatMap((result) => result.answers);
   const correct = answers.filter((answer) => answer.isCorrect).length;
   const weakTopics = weakTopicsFromAnswers(answers);
+  const evalWeakTopics = evaluations
+    .filter((item) => (item.score || 0) < 70)
+    .map((item) => item.topic)
+    .filter(Boolean);
+  const mergedWeak = [...new Set([...weakTopics, ...evalWeakTopics])].slice(0, 6);
   const targetField = normalizeTargetField(req.user.targetField);
+  const evaluationAnalytics = buildEvaluationAnalytics(evaluations);
 
   res.json({
     ...toSafeUser(req.user),
@@ -82,15 +93,19 @@ export const getProfile = async (req, res) => {
     progress: {
       testsTaken: results.length,
       accuracy: answers.length ? Math.round((correct / answers.length) * 100) : 0,
-      weakTopics,
-      recommendedTopics: weakTopics.length ? weakTopics : (FIELD_DEFAULT_TOPICS[targetField] || FIELD_DEFAULT_TOPICS.Software)
+      weakTopics: mergedWeak,
+      recommendedTopics: mergedWeak.length ? mergedWeak : (FIELD_DEFAULT_TOPICS[targetField] || FIELD_DEFAULT_TOPICS.Software),
+      evaluationsCount: evaluationAnalytics.totalEvaluated,
+      averageInterviewScore: evaluationAnalytics.averageScore,
+      aiReadinessScore: evaluationAnalytics.aiReadinessScore
     },
     analytics: {
       totalQuestionsAttempted: answers.length,
       avgTimePerQuestion: answers.length
         ? Math.round(answers.reduce((sum, answer) => sum + (answer.timeSpent || 0), 0) / answers.length)
         : 0,
-      recentResults: results.slice(0, 5)
+      recentResults: results.slice(0, 5),
+      evaluation: evaluationAnalytics
     }
   });
 };
