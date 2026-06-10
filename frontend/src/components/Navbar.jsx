@@ -64,7 +64,7 @@ const SidebarNav = ({ closeMenu }) => (
           <>
             <span
               className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition duration-200 ${
-                isActive ? "bg-white/20" : "bg-slate-custom-100 group-hover:bg-white dark:bg-slate-custom-700"
+                isActive ? "bg-white/20 text-white" : "bg-slate-custom-100 text-slate-custom-700 group-hover:bg-white group-hover:text-slate-custom-900 dark:bg-slate-custom-700 dark:text-slate-custom-100"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -145,12 +145,6 @@ const Navbar = ({ user, profile, logout }) => {
 
           <div className="space-y-2 border-t border-slate-custom-200 pt-3 dark:border-slate-custom-700">
             <ThemeToggle className="w-full justify-center !rounded-xl" />
-            {logout ? (
-              <button type="button" className="snx-btn-secondary w-full justify-center" onClick={logout}>
-                <FiLogOut className="h-4 w-4" />
-                Logout
-              </button>
-            ) : null}
           </div>
         </div>
       </aside>
@@ -177,7 +171,7 @@ const Navbar = ({ user, profile, logout }) => {
 
           <form onSubmit={submitSearch} className="hidden min-w-0 flex-1 md:block md:max-w-xl">
             <label className="relative block w-full">
-              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-custom-400" />
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-custom-400 dark:text-slate-custom-300" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -202,7 +196,7 @@ const Navbar = ({ user, profile, logout }) => {
           </Link>
 
           {logout ? (
-            <button type="button" className="snx-btn-secondary snx-btn-sm hidden md:inline-flex" onClick={logout}>
+            <button type="button" className="snx-btn-secondary snx-btn-sm hidden md:inline-flex [&_svg]:text-slate-custom-700 dark:[&_svg]:text-slate-custom-100" onClick={logout}>
               <FiLogOut className="h-4 w-4" />
               Logout
             </button>

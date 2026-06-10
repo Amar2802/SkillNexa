@@ -11,7 +11,7 @@ const ThemeToggle = ({ className = "" }) => {
       onClick={toggleTheme}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Light mode" : "Dark mode"}
-      className={`snx-btn-secondary !h-10 w-full ${className}`.trim()}
+      className={`snx-btn-secondary !h-10 w-full [&_svg]:text-slate-custom-700 dark:[&_svg]:text-slate-custom-100 ${className}`.trim()}
     >
       {isDark ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
       <span>{isDark ? "Light" : "Dark"}</span>
