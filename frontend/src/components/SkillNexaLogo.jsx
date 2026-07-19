@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const LOGO_SRC = "/skillnexa-logo.png";
+const LOGO_SRC = "Logo.png";
 
 const LogoMark = ({ imageClassName = "h-9 w-9 rounded-2xl object-cover" }) => (
   <div className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 shadow-[0_18px_36px_rgba(15,23,42,0.12)] ring-1 ring-white/70">
