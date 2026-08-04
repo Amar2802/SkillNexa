@@ -86,6 +86,32 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
     { label: "Weak topics", value: weakTopics.length || 0 }
   ];
 
+  const weeklyDays = useMemo(() => {
+    const days = [];
+    const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const today = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const isToday = i === 0;
+      const hasTest = history.some(h => {
+        if (!h.createdAt) return false;
+        return new Date(h.createdAt).toISOString().split('T')[0] === dateStr;
+      });
+      const active = hasTest || profile.lastActiveDate === dateStr;
+
+      days.push({
+        name: weekdayNames[d.getDay()],
+        dateStr,
+        isToday,
+        active
+      });
+    }
+    return days;
+  }, [history, profile.lastActiveDate]);
+
   return (
     <div className="space-y-6 snx-fade-in">
       <PageHeader
@@ -99,6 +125,56 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
           </>
         )}
       />
+
+      {/* Gamification: Streak Tracker & Preparation Calendar */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Streak Flame Card */}
+        <div className="md:col-span-1 snx-panel-muted bg-gradient-to-br from-brand-600 to-indigo-800 text-white flex flex-col justify-between p-6 rounded-card border-0 shadow-lg relative overflow-hidden">
+          <div className="absolute right-0 top-0 -mr-6 -mt-6 h-32 w-32 rounded-full bg-white/5" />
+          <div className="absolute -left-6 -bottom-6 h-24 w-24 rounded-full bg-white/5" />
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-indigo-200">Activity Streak</div>
+            <div className="mt-4 flex items-center gap-4">
+              <span className="text-5xl font-extrabold">{profile?.streakCount || 1}</span>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-orange-400 animate-bounce">🔥 Days</span>
+                <span className="text-[10px] text-indigo-200">Consecutive prep streak</span>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-indigo-100 leading-relaxed font-medium">
+            Keep practicing daily! A streak helps build muscle memory for coding & system design.
+          </p>
+        </div>
+
+        {/* Weekly Activity Tracker */}
+        <div className="md:col-span-2 snx-panel-muted flex flex-col justify-between p-6">
+          <div>
+            <span className="snx-kicker">Habit Builder</span>
+            <h3 className="snx-heading-3 mt-1 text-slate-custom-900 dark:text-white">Preparation Calendar</h3>
+            <p className="text-xs text-slate-custom-500 mt-1">Light up the rings by attempting coding questions or mock tests.</p>
+          </div>
+          
+          <div className="mt-6 flex justify-between gap-2 max-w-md mx-auto w-full">
+            {weeklyDays.map((day) => (
+              <div key={day.dateStr} className="flex flex-col items-center gap-2">
+                <div className={`h-11 w-11 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-300 ${
+                  day.active
+                    ? "border-green-500 bg-green-500 text-white shadow-sm-soft"
+                    : day.isToday
+                      ? "border-brand-500 text-brand-650 animate-pulse font-extrabold"
+                      : "border-slate-custom-200 text-slate-custom-400 dark:border-slate-custom-700"
+                }`}>
+                  {day.active ? "✓" : day.name[0]}
+                </div>
+                <span className={`text-[10px] font-semibold ${day.isToday ? "text-brand-600 dark:text-brand-400 font-bold" : "text-slate-custom-500"}`}>
+                  {day.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <div className="snx-grid-auto">
         {statCards.map(({ label, value, meta, icon: Icon }) => (

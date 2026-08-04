@@ -146,12 +146,12 @@ ${combinedAnswer}`;
   }
 
   try {
-    const completion = await openai.responses.create({
+    const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      input: systemPrompt
+      messages: [{ role: "user", content: systemPrompt }]
     });
 
-    const parsed = JSON.parse(completion.output_text);
+    const parsed = JSON.parse(completion.choices[0].message.content);
     const dimensions = [
       clamp(parsed.technicalScore),
       clamp(parsed.communicationScore),

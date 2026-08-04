@@ -6,38 +6,39 @@ import PageHeader from "../components/ui/PageHeader";
 import LoadingScreen from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
 
-const RoadmapsPage = () => {
+const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallCompletion, refreshRoadmaps, refreshProfile }) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [roadmaps, setRoadmaps] = useState([]);
-  const [completedTopics, setCompletedTopics] = useState([]);
-  const [overallCompletion, setOverallCompletion] = useState(0);
+  
+  const [roadmaps, setRoadmaps] = useState(cachedRoadmaps || []);
+  const [completedTopics, setCompletedTopics] = useState(cachedCompletedTopics || []);
+  const [overallCompletion, setOverallCompletion] = useState(cachedOverallCompletion || 0);
+  const [loading, setLoading] = useState(!cachedRoadmaps || cachedRoadmaps.length === 0);
+
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [activeTopic, setActiveTopic] = useState(null);
   const [selectedMcqAnswers, setSelectedMcqAnswers] = useState({});
   const [submittedMcqs, setSubmittedMcqs] = useState({});
+  const [flippedCards, setFlippedCards] = useState({}); // state for 3D flip card toggle
 
   useEffect(() => {
-    fetchRoadmaps();
-  }, []);
-
-  const fetchRoadmaps = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get("/roadmaps");
-      setRoadmaps(data.roadmaps || []);
-      setCompletedTopics(data.completedRoadmapTopics || []);
-      setOverallCompletion(data.overallCompletion || 0);
-      if (data.roadmaps && data.roadmaps.length > 0) {
-        setSelectedSubject(data.roadmaps[0]);
+    if (cachedRoadmaps && cachedRoadmaps.length > 0) {
+      setRoadmaps(cachedRoadmaps);
+      setCompletedTopics(cachedCompletedTopics);
+      setOverallCompletion(cachedOverallCompletion);
+      if (!selectedSubject) {
+        setSelectedSubject(cachedRoadmaps[0]);
       }
-    } catch (error) {
-      showToast("Failed to load roadmaps", "error");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [cachedRoadmaps, cachedCompletedTopics, cachedOverallCompletion]);
+
+  useEffect(() => {
+    const fetchLatest = async () => {
+      await refreshRoadmaps();
+      setLoading(false);
+    };
+    fetchLatest();
+  }, []);
 
   const toggleTopicComplete = async (roadmapId, topicName) => {
     const topicId = `${roadmapId}:${topicName}`;
@@ -45,6 +46,8 @@ const RoadmapsPage = () => {
       const { data } = await api.post("/roadmaps/toggle-complete", { topicId });
       setCompletedTopics(data.completedRoadmapTopics);
       setOverallCompletion(data.overallCompletion);
+      refreshRoadmaps();
+      refreshProfile?.();
       showToast("Progress updated successfully", "success");
     } catch (error) {
       showToast("Error updating progress", "error");
@@ -257,13 +260,30 @@ const RoadmapsPage = () => {
                       <FiCompass className="h-4 w-4 text-brand-600 dark:text-indigo-400" />
                       <span className="text-xs font-semibold uppercase tracking-wider text-slate-custom-700 dark:text-white">Quick Revision</span>
                     </div>
-                    <div className="space-y-3">
-                      {activeTopic.revision.map((rev, index) => (
-                        <div key={index} className="border border-slate-custom-200 dark:border-slate-custom-700 p-3 rounded-xl space-y-1">
-                          <div className="text-xs font-bold text-slate-custom-800 dark:text-white">Q: {rev.question}</div>
-                          <div className="text-xs text-slate-custom-600 dark:text-slate-custom-400">A: {rev.answer}</div>
-                        </div>
-                      ))}
+                    <div className="grid gap-3">
+                      {activeTopic.revision.map((rev, index) => {
+                        const isFlipped = !!flippedCards[index];
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => setFlippedCards((c) => ({ ...c, [index]: !c[index] }))}
+                            className={`flashcard-container relative w-full min-h-[90px] ${isFlipped ? "flipped" : ""}`}
+                          >
+                            <div className="flashcard-inner w-full h-full relative min-h-[90px]">
+                              {/* FRONT */}
+                              <div className="flashcard-front border border-slate-custom-200 bg-white dark:border-slate-custom-700 dark:bg-slate-custom-800 p-4 rounded-xl flex flex-col justify-center shadow-sm hover:border-indigo-400 dark:hover:border-indigo-400 transition-all duration-200">
+                                <div className="text-[9px] font-bold uppercase tracking-wider text-brand-650 dark:text-indigo-400 mb-1">Click to Flip</div>
+                                <div className="text-xs font-bold text-slate-custom-850 dark:text-white">Q: {rev.question}</div>
+                              </div>
+                              {/* BACK */}
+                              <div className="flashcard-back border border-brand-500 bg-indigo-50/20 dark:bg-indigo-950/20 p-4 rounded-xl flex flex-col justify-center shadow-sm">
+                                <div className="text-[9px] font-bold uppercase tracking-wider text-green-600 mb-1">Answer</div>
+                                <div className="text-xs text-slate-custom-700 dark:text-slate-custom-300 leading-relaxed font-semibold">{rev.answer}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

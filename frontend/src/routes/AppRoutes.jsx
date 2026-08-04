@@ -45,6 +45,12 @@ const AppRoutes = () => {
   const [history, setHistory] = useState([]);
   const [loadingApp, setLoadingApp] = useState(false);
   const [appError, setAppError] = useState("");
+  
+  // Cache States for instant loads
+  const [roadmaps, setRoadmaps] = useState([]);
+  const [roadmapsCompleted, setRoadmapsCompleted] = useState([]);
+  const [roadmapsCompletion, setRoadmapsCompletion] = useState(0);
+  const [revisionData, setRevisionData] = useState(null);
 
   useAuthSession({ setLoadingApp, setAppError });
 
@@ -85,6 +91,26 @@ const AppRoutes = () => {
     return data || [];
   };
 
+  const refreshRoadmaps = async () => {
+    try {
+      const { data } = await api.get("/roadmaps", { timeout: 25000 });
+      setRoadmaps(data.roadmaps || []);
+      setRoadmapsCompleted(data.completedRoadmapTopics || []);
+      setRoadmapsCompletion(data.overallCompletion || 0);
+    } catch (err) {
+      console.error("refreshRoadmaps error:", err);
+    }
+  };
+
+  const refreshRevisionData = async () => {
+    try {
+      const { data } = await api.get("/users/revision", { timeout: 25000 });
+      setRevisionData(data);
+    } catch (err) {
+      console.error("refreshRevisionData error:", err);
+    }
+  };
+
   useEffect(() => {
     if (!authReady || !user) {
       if (!user) {
@@ -106,7 +132,9 @@ const AppRoutes = () => {
           refreshBookmarks(),
           refreshHistory(),
           refreshTests(),
-          loadQuestions()
+          loadQuestions(),
+          refreshRoadmaps(),
+          refreshRevisionData()
         ]);
       } catch (error) {
         if (active && error?.response?.status !== 401) {
@@ -162,8 +190,21 @@ const AppRoutes = () => {
           <Route path="/bookmarks" element={<BookmarksPage bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} />} />
           <Route path="/history" element={<HistoryPage history={history} refreshHistory={refreshHistory} />} />
           <Route path="/profile" element={<ProfilePage profile={profile || user} refreshProfile={refreshProfile} />} />
-          <Route path="/roadmaps" element={<RoadmapsPage refreshProfile={refreshProfile} />} />
-          <Route path="/revision" element={<RevisionPage />} />
+          <Route path="/roadmaps" element={
+            <RoadmapsPage 
+              cachedRoadmaps={roadmaps} 
+              cachedCompletedTopics={roadmapsCompleted} 
+              cachedOverallCompletion={roadmapsCompletion} 
+              refreshRoadmaps={refreshRoadmaps} 
+              refreshProfile={refreshProfile} 
+            />
+          } />
+          <Route path="/revision" element={
+            <RevisionPage 
+              cachedRevisionData={revisionData} 
+              refreshRevisionData={refreshRevisionData} 
+            />
+          } />
           <Route path="/admin" element={
             user && (user.role === "admin" || String(user.email).toLowerCase().includes("admin")) 
               ? <AdminDashboardPage /> 

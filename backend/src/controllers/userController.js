@@ -69,6 +69,33 @@ const buildRoadmap = ({ interests = [], weakTopics = [], company = "General", ta
 };
 
 export const getProfile = async (req, res) => {
+  // Streak calculation
+  const todayStr = new Date().toISOString().split('T')[0];
+  const lastActive = req.user.lastActiveDate;
+  let hasUpdatedStreak = false;
+
+  if (!lastActive) {
+    req.user.streakCount = 1;
+    req.user.lastActiveDate = todayStr;
+    hasUpdatedStreak = true;
+  } else if (lastActive !== todayStr) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    if (lastActive === yesterdayStr) {
+      req.user.streakCount += 1;
+    } else {
+      req.user.streakCount = 1;
+    }
+    req.user.lastActiveDate = todayStr;
+    hasUpdatedStreak = true;
+  }
+
+  if (hasUpdatedStreak) {
+    await req.user.save();
+  }
+
   const [results, evaluations] = await Promise.all([
     Result.find({ user: req.user._id })
       .populate("answers.question", "topic title category difficulty")

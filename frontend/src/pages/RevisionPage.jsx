@@ -7,33 +7,33 @@ import LoadingScreen from "../components/ui/LoadingScreen";
 import EmptyState from "../components/ui/EmptyState";
 import { useToast } from "../components/ui/ToastProvider";
 
-const RevisionPage = () => {
+const RevisionPage = ({ cachedRevisionData, refreshRevisionData }) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
+  
+  const [data, setData] = useState(cachedRevisionData || {
     wrongQuestions: [],
     bookmarkedQuestions: [],
     recentlyViewed: [],
     frequentlyFailedTopics: [],
     revisionSheet: []
   });
+  const [loading, setLoading] = useState(!cachedRevisionData);
+  const [flippedCards, setFlippedCards] = useState({}); // state for 3D flashcards
 
   useEffect(() => {
-    fetchRevisionData();
-  }, []);
-
-  const fetchRevisionData = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/users/revision");
-      setData(res.data);
-    } catch (error) {
-      showToast("Failed to load revision workspace", "error");
-    } finally {
-      setLoading(false);
+    if (cachedRevisionData) {
+      setData(cachedRevisionData);
     }
-  };
+  }, [cachedRevisionData]);
+
+  useEffect(() => {
+    const fetchLatest = async () => {
+      await refreshRevisionData();
+      setLoading(false);
+    };
+    fetchLatest();
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -217,15 +217,36 @@ const RevisionPage = () => {
                     <h5 className="text-xs font-bold uppercase tracking-wider text-slate-custom-700 dark:text-slate-custom-200 flex items-center gap-2 print:text-black">
                       <FiFileText className="h-3.5 w-3.5" /> Quick Revision Flashcards
                     </h5>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {sheet.flashcards.map((fc, fcIdx) => (
-                        <div key={fcIdx} className="p-3 border border-slate-custom-200 bg-white rounded-xl dark:border-slate-custom-700 dark:bg-slate-custom-800 print:bg-white print:border-slate-300">
-                          <div className="text-[11px] font-bold text-slate-custom-800 dark:text-white print:text-black">Q: {fc.question}</div>
-                          <div className="text-[11px] text-slate-custom-600 dark:text-slate-custom-400 mt-1.5 border-t border-slate-custom-50 pt-1.5 dark:border-slate-custom-750 print:text-slate-800 print:border-slate-200">
-                            <strong>Ans:</strong> {fc.answer}
+                    <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-1">
+                      {sheet.flashcards.map((fc, fcIdx) => {
+                        const cardKey = `${sheet.topic}-${fcIdx}`;
+                        const isFlipped = !!flippedCards[cardKey];
+
+                        return (
+                          <div
+                            key={fcIdx}
+                            onClick={() => setFlippedCards((c) => ({ ...c, [cardKey]: !c[cardKey] }))}
+                            className={`flashcard-container relative w-full min-h-[100px] ${isFlipped ? "flipped" : ""} print:!min-h-0`}
+                          >
+                            <div className="flashcard-inner w-full h-full relative min-h-[100px] print:!min-h-0 print:!transform-none">
+                              {/* FRONT */}
+                              <div className="flashcard-front border border-slate-custom-200 bg-white dark:border-slate-custom-700 dark:bg-slate-custom-850 p-4 rounded-xl flex flex-col justify-center shadow-sm hover:border-indigo-400 dark:hover:border-indigo-400 transition-all duration-200 print:border-slate-350 print:bg-white print:!static">
+                                <div className="text-[9px] font-bold uppercase tracking-wider text-brand-650 dark:text-indigo-400 mb-1 print:hidden">Click to Flip</div>
+                                <div className="text-[11px] font-bold text-slate-custom-850 dark:text-white print:text-black">Q: {fc.question}</div>
+                                {/* In print layouts, display the answer directly below the question to save space */}
+                                <div className="hidden print:block text-[11px] text-slate-800 mt-2 border-t border-slate-200 pt-2 font-medium">
+                                  <strong>Ans:</strong> {fc.answer}
+                                </div>
+                              </div>
+                              {/* BACK */}
+                              <div className="flashcard-back border border-brand-500 bg-indigo-50/20 dark:bg-indigo-950/20 p-4 rounded-xl flex flex-col justify-center shadow-sm print:hidden">
+                                <div className="text-[9px] font-bold uppercase tracking-wider text-green-600 mb-1">Answer</div>
+                                <div className="text-[11px] text-slate-custom-700 dark:text-slate-custom-300 leading-relaxed font-semibold">{fc.answer}</div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

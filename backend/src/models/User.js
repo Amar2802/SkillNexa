@@ -15,6 +15,8 @@ const userSchema = new mongoose.Schema(
     completedRoadmapTopics: [{ type: String, default: [] }],
     recentlyViewed: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question", default: [] }],
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    streakCount: { type: Number, default: 0 },
+    lastActiveDate: { type: String, default: "" },
     progress: {
       testsTaken: { type: Number, default: 0 },
       accuracy: { type: Number, default: 0 },

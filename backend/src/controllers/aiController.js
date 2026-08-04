@@ -178,13 +178,14 @@ Each object must include these string fields:
 Make the flow feel like a real hiring process with different rounds and realistic interviewer wording.`;
   }
 
-  const completion = await openai.responses.create({
+  const completion = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    input: systemPrompt
+    messages: [{ role: "user", content: systemPrompt }]
   });
 
   try {
-    const parsed = JSON.parse(completion.output_text);
+    const output_text = completion.choices[0].message.content;
+    const parsed = JSON.parse(output_text);
     res.json({ source: "openai", questions: normalizeQuestionPayload(parsed) });
   } catch {
     res.json({ source: "openai", questions: normalizeQuestionPayload(await fallbackQuestions({ count: safeCount, roundType })) });
@@ -324,11 +325,11 @@ Return valid JSON only matching this shape:
 `;
 
     try {
-      const completion = await openai.responses.create({
+      const completion = await openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-        input: systemPrompt
+        messages: [{ role: "user", content: systemPrompt }]
       });
-      const parsed = JSON.parse(completion.output_text);
+      const parsed = JSON.parse(completion.choices[0].message.content);
       if (parsed) {
         consolidated = {
           overallScore: Number(parsed.overallScore) || avgScore,

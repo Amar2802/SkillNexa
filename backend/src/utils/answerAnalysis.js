@@ -47,11 +47,11 @@ Correct answer: ${safeCorrectAnswer}
 User answer: ${safeUserAnswer}`;
 
   try {
-    const completion = await openai.responses.create({
+    const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      input: prompt
+      messages: [{ role: "user", content: prompt }]
     });
-    const parsed = JSON.parse(completion.output_text);
+    const parsed = JSON.parse(completion.choices[0].message.content);
     const verdict = normalizeVerdict(parsed.verdict, safeUserAnswer, safeCorrectAnswer);
     const fallback = buildFallbackAnalysis({ userAnswer: safeUserAnswer, correctAnswer: safeCorrectAnswer, topic: safeTopic });
     return {

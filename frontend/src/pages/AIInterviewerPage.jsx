@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { FiChevronLeft, FiChevronRight, FiMic, FiMicOff, FiZap, FiCheckCircle, FiAward, FiAlertCircle, FiTrendingUp } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiMic, FiMicOff, FiZap, FiCheckCircle, FiAward, FiAlertCircle, FiTrendingUp, FiVolume2 } from "react-icons/fi";
 import api from "../api/client";
 import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
 import EmptyState from "../components/ui/EmptyState";
@@ -48,6 +48,56 @@ const AIInterviewerPage = ({ refreshProfile }) => {
   // Voice Speech Recognition State
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
+
+  // Timer State for interview pacing
+  const [timeLeft, setTimeLeft] = useState(120);
+
+  useEffect(() => {
+    if (interviewQuestions.length > 0 && currentQuestion) {
+      // If we already evaluated this question, don't run the timer
+      const isGraded = !!sessionAnswers[currentIndex]?.evaluation;
+      if (isGraded) {
+        setTimeLeft(0);
+        return;
+      }
+
+      setTimeLeft(120); // reset 120s timer
+      const interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentIndex, interviewQuestions, sessionAnswers]);
+
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [currentIndex]);
+
+  const handleSpeakQuestion = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const text = currentQuestion?.question;
+      if (text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+        showToast("Reading question out loud...", "info");
+      }
+    } else {
+      showToast("Audio voice reading not supported in this browser.", "error");
+    }
+  };
 
   useEffect(() => {
     // Setup Speech Recognition if supported
@@ -260,17 +310,25 @@ const AIInterviewerPage = ({ refreshProfile }) => {
           title="Interview Loop Results"
           description={`Consolidated assessment report for ${sessionReport.role} mock interview loop.`}
           actions={
-            <button
-              onClick={() => {
-                setSessionReport(null);
-                setInterviewQuestions([]);
-                setSessionAnswers({});
-                setStep(1);
-              }}
-              className="snx-btn-primary cursor-pointer"
-            >
-              Start New Mock Loop
-            </button>
+            <div className="flex gap-2 print:hidden">
+              <button
+                onClick={() => window.print()}
+                className="snx-btn-secondary cursor-pointer flex items-center gap-1.5"
+              >
+                Print Report
+              </button>
+              <button
+                onClick={() => {
+                  setSessionReport(null);
+                  setInterviewQuestions([]);
+                  setSessionAnswers({});
+                  setStep(1);
+                }}
+                className="snx-btn-primary cursor-pointer"
+              >
+                Start New Mock Loop
+              </button>
+            </div>
           }
         />
 
@@ -631,14 +689,51 @@ const AIInterviewerPage = ({ refreshProfile }) => {
                 <div>
                   <span className="snx-kicker">Question {currentIndex + 1} of {interviewQuestions.length}</span>
                   <h3 className="snx-heading-3 mt-1.5">{currentQuestion.round}</h3>
-                  <p className="text-[10px] text-slate-custom-500 font-bold uppercase tracking-wider mt-1">{currentQuestion.category} • {currentQuestion.difficulty}</p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                    <span className="text-[10px] text-slate-custom-500 font-bold uppercase tracking-wider">{currentQuestion.category} • {currentQuestion.difficulty}</span>
+                    {timeLeft > 0 && !activeSavedState?.evaluation && (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                        timeLeft > 60 ? "bg-green-50 text-green-700 border border-green-200" : timeLeft > 20 ? "bg-yellow-550/10 text-yellow-750 border border-yellow-200" : "bg-red-50 text-red-600 border border-red-200 animate-pulse"
+                      }`}>
+                        ⏱️ {timeLeft}s remaining
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {activeSavedState?.evaluation && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950/25 px-2.5 py-1 rounded-full">
-                    ✓ Graded
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSpeakQuestion}
+                    className="h-8 w-8 rounded-lg border border-slate-custom-200 flex items-center justify-center text-slate-custom-650 hover:bg-slate-custom-50 dark:border-slate-custom-700 dark:hover:bg-slate-custom-850 cursor-pointer shrink-0"
+                    title="Speak Question out loud"
+                  >
+                    <FiVolume2 className="h-4 w-4" />
+                  </button>
+                  {activeSavedState?.evaluation && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950/25 px-2.5 py-1 rounded-full">
+                      ✓ Graded
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {timeLeft > 0 && !activeSavedState?.evaluation && (
+                <div className="h-1 w-full rounded-full bg-slate-custom-200 dark:bg-slate-custom-700 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-1000 ${
+                      timeLeft > 60 ? "bg-green-500" : timeLeft > 20 ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${(timeLeft / 120) * 100}%` }}
+                  />
+                </div>
+              )}
+
+              {timeLeft === 0 && !activeSavedState?.evaluation && (
+                <div className="bg-red-50 border border-red-200 text-red-800 text-[10px] font-bold p-2.5 rounded-lg flex items-center gap-2 animate-pulse dark:bg-red-950/20 dark:border-red-900/40 dark:text-red-300">
+                  <FiAlertCircle className="h-3.5 w-3.5" />
+                  Pacing Alert: Time's up! Formulate your final response and click "Submit Answer".
+                </div>
+              )}
 
               <p className="text-sm leading-relaxed text-slate-custom-850 dark:text-white bg-slate-custom-50 dark:bg-slate-custom-850 p-4 rounded-xl font-medium border-l-4 border-brand-500">
                 {currentQuestion.question}

@@ -225,3 +225,57 @@
     transform: translateY(0);
   }
 }
+
+/* 3D Flashcard styles */
+.flashcard-container {
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.flashcard-inner {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+}
+
+.flashcard-container.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+  backface-visibility: hidden;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.flashcard-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotateY(180deg);
+}
+
+/* Print Layout styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  header, footer, nav, aside, button, .snx-btn-primary, .snx-btn-secondary, sidebar, .print-hide {
+    display: none !important;
+  }
+  main, .print\:block {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .print\:page-break-before {
+    page-break-before: always !important;
+  }
+}
