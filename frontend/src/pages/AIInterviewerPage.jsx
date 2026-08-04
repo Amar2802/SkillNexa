@@ -434,6 +434,220 @@ const AIInterviewerPage = ({ refreshProfile }) => {
     );
   }
 
+  if (interviewQuestions.length > 0 && currentQuestion) {
+    return (
+      <div className="space-y-6 snx-fade-in">
+        {/* Minimalist Header for Active mock loop */}
+        <div className="flex items-center justify-between border-b border-slate-custom-200 pb-3 dark:border-slate-custom-700">
+          <div>
+            <span className="snx-kicker">Mock Interview Session in Progress</span>
+            <h2 className="text-lg font-bold text-slate-custom-900 dark:text-white">{config.role} - {config.domain}</h2>
+          </div>
+          <button
+            onClick={() => {
+              if (window.confirm("Are you sure you want to exit the interview loop? Progress will be lost.")) {
+                setInterviewQuestions([]);
+                setSessionAnswers({});
+                setStep(1);
+              }
+            }}
+            className="snx-btn-secondary snx-btn-sm !text-red-500 hover:!border-red-400 border border-transparent cursor-pointer font-semibold"
+          >
+            Exit Loop
+          </button>
+        </div>
+
+        {/* Active Interview Panel */}
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-6">
+            
+            {/* Horizontal Rounds sequence */}
+            <div className="snx-panel-muted space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="snx-kicker">Mock Sequence</span>
+                <span className="text-xs font-semibold text-brand-600">{config.mode} Mode</span>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {roundSummary.map((rnd, idx) => {
+                  const isActive = idx === currentIndex;
+                  const isEval = !!sessionAnswers[idx]?.evaluation;
+                  let style = "border-slate-custom-200 bg-white text-slate-custom-600 dark:border-slate-custom-700 dark:bg-slate-custom-850";
+                  if (isActive) style = "border-brand-500 bg-brand-50/50 text-brand-900 dark:bg-brand-950/20 dark:text-brand-300 ring-2 ring-brand-500/10";
+                  else if (isEval) style = "border-green-500 bg-green-50 text-green-800 dark:bg-green-950/15 dark:text-green-300";
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectQuestionIndex(idx)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer truncate max-w-[120px] transition duration-200 ${style}`}
+                    >
+                      {idx+1}. {rnd}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active Question details */}
+            <div className="snx-panel-muted space-y-4">
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <span className="snx-kicker">Question {currentIndex + 1} of {interviewQuestions.length}</span>
+                  <h3 className="snx-heading-3 mt-1.5">{currentQuestion.round}</h3>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                    <span className="text-[10px] text-slate-custom-500 font-bold uppercase tracking-wider">{currentQuestion.category} • {currentQuestion.difficulty}</span>
+                    {timeLeft > 0 && !activeSavedState?.evaluation && (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                        timeLeft > 60 ? "bg-green-550/10 text-green-600 border border-green-200" : timeLeft > 20 ? "bg-yellow-550/10 text-yellow-750 border border-yellow-250" : "bg-red-50 text-red-600 border border-red-200 animate-pulse"
+                      }`}>
+                        ⏱️ {timeLeft}s remaining
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSpeakQuestion}
+                    className="h-8 w-8 rounded-lg border border-slate-custom-200 flex items-center justify-center text-slate-custom-650 hover:bg-slate-custom-50 dark:border-slate-custom-700 dark:hover:bg-slate-custom-850 cursor-pointer shrink-0"
+                    title="Speak Question out loud"
+                  >
+                    <FiVolume2 className="h-4 w-4" />
+                  </button>
+                  {activeSavedState?.evaluation && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950/25 px-2.5 py-1 rounded-full">
+                      ✓ Graded
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {timeLeft > 0 && !activeSavedState?.evaluation && (
+                <div className="h-1 w-full rounded-full bg-slate-custom-200 dark:bg-slate-custom-700 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-1000 ${
+                      timeLeft > 60 ? "bg-green-500" : timeLeft > 20 ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${(timeLeft / 120) * 100}%` }}
+                  />
+                </div>
+              )}
+
+              {timeLeft === 0 && !activeSavedState?.evaluation && (
+                <div className="bg-red-50 border border-red-200 text-red-800 text-[10px] font-bold p-2.5 rounded-lg flex items-center gap-2 animate-pulse dark:bg-red-950/20 dark:border-red-900/40 dark:text-red-300">
+                  <FiAlertCircle className="h-3.5 w-3.5" />
+                  Pacing Alert: Time's up! Formulate your final response and click "Submit Answer".
+                </div>
+              )}
+
+              <p className="text-sm leading-relaxed text-slate-custom-850 dark:text-white bg-slate-custom-50 dark:bg-slate-custom-850 p-4 rounded-xl font-medium border-l-4 border-brand-500">
+                {currentQuestion.question}
+              </p>
+
+              {/* Speech input panel for Voice mode */}
+              {config.mode === "Voice" && (
+                <div className="flex flex-col items-center p-4 border border-indigo-100 bg-indigo-50/20 rounded-xl space-y-3 dark:border-indigo-900/20">
+                  <button
+                    onClick={handleToggleRecording}
+                    className={`h-14 w-14 rounded-full flex items-center justify-center text-white cursor-pointer shadow-md transition-all duration-300 ${
+                      isRecording
+                        ? "bg-red-500 animate-pulse hover:bg-red-650"
+                        : "bg-brand-500 hover:bg-brand-650"
+                    }`}
+                  >
+                    {isRecording ? <FiMicOff className="h-6 w-6" /> : <FiMic className="h-6 w-6" />}
+                  </button>
+                  <span className="text-[10px] font-bold text-slate-custom-500 uppercase">
+                    {isRecording ? "Transcribing voice in real-time..." : "Click to speak your response"}
+                  </span>
+                </div>
+              )}
+
+              <label className="block space-y-1.5">
+                <span className="snx-label">Your response</span>
+                <textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  className="snx-textarea min-h-[160px] text-xs leading-relaxed"
+                  placeholder="Formulate your response as though explaining it directly to a senior recruiter..."
+                />
+              </label>
+
+              {/* Actions panel */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={goToPrevQuestion}
+                    disabled={currentIndex === 0}
+                    className="snx-btn-secondary snx-btn-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    <FiChevronLeft className="h-4 w-4" /> Previous
+                  </button>
+                  <button
+                    onClick={goToNextQuestion}
+                    disabled={currentIndex === interviewQuestions.length - 1}
+                    className="snx-btn-secondary snx-btn-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    Next <FiChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleEvaluateAnswer}
+                    disabled={evalLoading || !answer.trim()}
+                    className="snx-btn-secondary snx-btn-sm bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 cursor-pointer disabled:opacity-50"
+                  >
+                    {evalLoading ? "Grading..." : "Submit Answer"}
+                  </button>
+
+                  {/* Finish report compilation button */}
+                  {currentIndex === interviewQuestions.length - 1 && (
+                    <button
+                      onClick={handleFinishInterview}
+                      disabled={submittingSession}
+                      className="snx-btn-primary snx-btn-sm flex items-center gap-1 cursor-pointer"
+                    >
+                      <FiZap className="h-3.5 w-3.5" />
+                      {submittingSession ? "Compiling..." : "Finish & Compile Report"}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Dynamic feedback panel below */}
+              {evaluation && (
+                <div className="pt-4 border-t border-slate-custom-100 dark:border-slate-custom-800">
+                  <AnswerEvaluationCard
+                    evaluation={evaluation}
+                    loading={evalLoading}
+                    error={evalError}
+                    onRetry={handleEvaluateAnswer}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Setup details details cards */}
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+            <div className="snx-card space-y-4">
+              <span className="snx-kicker">Evaluations Info</span>
+              <h4 className="font-bold text-sm text-slate-custom-900 dark:text-white uppercase tracking-wider">Evaluation Focus</h4>
+              <p className="text-[11px] leading-relaxed text-slate-custom-500">
+                {currentQuestion.evaluationFocus || "Assess structure, definitions, clarity, complexity, and metrics."}
+              </p>
+              <div className="border-t border-slate-custom-100 dark:border-slate-custom-800 pt-3 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-custom-400 uppercase">Follow-up hint</span>
+                <p className="text-[11px] italic text-slate-custom-500">"{currentQuestion.followUpHint}"</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 snx-fade-in">
       <PageHeader
@@ -650,196 +864,6 @@ const AIInterviewerPage = ({ refreshProfile }) => {
         </div>
 
       </div>
-
-      {/* Active Interview Panel */}
-      {interviewQuestions.length > 0 && currentQuestion && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-6">
-            
-            {/* Horizontal Rounds sequence */}
-            <div className="snx-panel-muted space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="snx-kicker">Mock Sequence</span>
-                <span className="text-xs font-semibold text-brand-600">{config.mode} Mode</span>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {roundSummary.map((rnd, idx) => {
-                  const isActive = idx === currentIndex;
-                  const isEval = !!sessionAnswers[idx]?.evaluation;
-                  let style = "border-slate-custom-200 bg-white text-slate-custom-600 dark:border-slate-custom-700 dark:bg-slate-custom-850";
-                  if (isActive) style = "border-brand-500 bg-brand-50/50 text-brand-900 dark:bg-brand-950/20 dark:text-brand-300 ring-2 ring-brand-500/10";
-                  else if (isEval) style = "border-green-500 bg-green-50 text-green-800 dark:bg-green-950/15 dark:text-green-300";
-
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleSelectQuestionIndex(idx)}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer truncate max-w-[120px] transition duration-200 ${style}`}
-                    >
-                      {idx+1}. {rnd}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Active Question details */}
-            <div className="snx-panel-muted space-y-4">
-              <div className="flex justify-between items-start gap-3">
-                <div>
-                  <span className="snx-kicker">Question {currentIndex + 1} of {interviewQuestions.length}</span>
-                  <h3 className="snx-heading-3 mt-1.5">{currentQuestion.round}</h3>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                    <span className="text-[10px] text-slate-custom-500 font-bold uppercase tracking-wider">{currentQuestion.category} • {currentQuestion.difficulty}</span>
-                    {timeLeft > 0 && !activeSavedState?.evaluation && (
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
-                        timeLeft > 60 ? "bg-green-50 text-green-700 border border-green-200" : timeLeft > 20 ? "bg-yellow-550/10 text-yellow-750 border border-yellow-200" : "bg-red-50 text-red-600 border border-red-200 animate-pulse"
-                      }`}>
-                        ⏱️ {timeLeft}s remaining
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSpeakQuestion}
-                    className="h-8 w-8 rounded-lg border border-slate-custom-200 flex items-center justify-center text-slate-custom-650 hover:bg-slate-custom-50 dark:border-slate-custom-700 dark:hover:bg-slate-custom-850 cursor-pointer shrink-0"
-                    title="Speak Question out loud"
-                  >
-                    <FiVolume2 className="h-4 w-4" />
-                  </button>
-                  {activeSavedState?.evaluation && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950/25 px-2.5 py-1 rounded-full">
-                      ✓ Graded
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {timeLeft > 0 && !activeSavedState?.evaluation && (
-                <div className="h-1 w-full rounded-full bg-slate-custom-200 dark:bg-slate-custom-700 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-1000 ${
-                      timeLeft > 60 ? "bg-green-500" : timeLeft > 20 ? "bg-yellow-500" : "bg-red-500"
-                    }`}
-                    style={{ width: `${(timeLeft / 120) * 100}%` }}
-                  />
-                </div>
-              )}
-
-              {timeLeft === 0 && !activeSavedState?.evaluation && (
-                <div className="bg-red-50 border border-red-200 text-red-800 text-[10px] font-bold p-2.5 rounded-lg flex items-center gap-2 animate-pulse dark:bg-red-950/20 dark:border-red-900/40 dark:text-red-300">
-                  <FiAlertCircle className="h-3.5 w-3.5" />
-                  Pacing Alert: Time's up! Formulate your final response and click "Submit Answer".
-                </div>
-              )}
-
-              <p className="text-sm leading-relaxed text-slate-custom-850 dark:text-white bg-slate-custom-50 dark:bg-slate-custom-850 p-4 rounded-xl font-medium border-l-4 border-brand-500">
-                {currentQuestion.question}
-              </p>
-
-              {/* Speech input panel for Voice mode */}
-              {config.mode === "Voice" && (
-                <div className="flex flex-col items-center p-4 border border-indigo-100 bg-indigo-50/20 rounded-xl space-y-3 dark:border-indigo-900/20">
-                  <button
-                    onClick={handleToggleRecording}
-                    className={`h-14 w-14 rounded-full flex items-center justify-center text-white cursor-pointer shadow-md transition-all duration-300 ${
-                      isRecording
-                        ? "bg-red-500 animate-pulse hover:bg-red-650"
-                        : "bg-brand-500 hover:bg-brand-650"
-                    }`}
-                  >
-                    {isRecording ? <FiMicOff className="h-6 w-6" /> : <FiMic className="h-6 w-6" />}
-                  </button>
-                  <span className="text-[10px] font-bold text-slate-custom-500 uppercase">
-                    {isRecording ? "Transcribing voice in real-time..." : "Click to speak your response"}
-                  </span>
-                </div>
-              )}
-
-              <label className="block space-y-1.5">
-                <span className="snx-label">Your response</span>
-                <textarea
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  className="snx-textarea min-h-[160px] text-xs leading-relaxed"
-                  placeholder="Formulate your response as though explaining it directly to a senior recruiter..."
-                />
-              </label>
-
-              {/* Actions panel */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={goToPrevQuestion}
-                    disabled={currentIndex === 0}
-                    className="snx-btn-secondary snx-btn-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                  >
-                    <FiChevronLeft className="h-4 w-4" /> Previous
-                  </button>
-                  <button
-                    onClick={goToNextQuestion}
-                    disabled={currentIndex === interviewQuestions.length - 1}
-                    className="snx-btn-secondary snx-btn-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                  >
-                    Next <FiChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleEvaluateAnswer}
-                    disabled={evalLoading || !answer.trim()}
-                    className="snx-btn-secondary snx-btn-sm bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 cursor-pointer disabled:opacity-50"
-                  >
-                    {evalLoading ? "Grading..." : "Submit Answer"}
-                  </button>
-
-                  {/* Finish report compilation button */}
-                  {currentIndex === interviewQuestions.length - 1 && (
-                    <button
-                      onClick={handleFinishInterview}
-                      disabled={submittingSession}
-                      className="snx-btn-primary snx-btn-sm flex items-center gap-1 cursor-pointer"
-                    >
-                      <FiZap className="h-3.5 w-3.5" />
-                      {submittingSession ? "Compiling..." : "Finish & Compile Report"}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Dynamic feedback panel below */}
-              {evaluation && (
-                <div className="pt-4 border-t border-slate-custom-100 dark:border-slate-custom-800">
-                  <AnswerEvaluationCard
-                    evaluation={evaluation}
-                    loading={evalLoading}
-                    error={evalError}
-                    onRetry={handleEvaluateAnswer}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Setup details details cards */}
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
-            <div className="snx-card space-y-4">
-              <span className="snx-kicker">Evaluations Info</span>
-              <h4 className="font-bold text-sm text-slate-custom-900 dark:text-white uppercase tracking-wider">Evaluation Focus</h4>
-              <p className="text-[11px] leading-relaxed text-slate-custom-500">
-                {currentQuestion.evaluationFocus || "Assess structure, definitions, clarity, complexity, and metrics."}
-              </p>
-              <div className="border-t border-slate-custom-100 dark:border-slate-custom-800 pt-3 space-y-1.5">
-                <span className="text-[10px] font-bold text-slate-custom-400 uppercase">Follow-up hint</span>
-                <p className="text-[11px] italic text-slate-custom-500">"{currentQuestion.followUpHint}"</p>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
     </div>
   );
 };
