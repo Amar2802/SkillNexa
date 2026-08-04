@@ -178,17 +178,24 @@ Each object must include these string fields:
 Make the flow feel like a real hiring process with different rounds and realistic interviewer wording.`;
   }
 
-  const completion = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    messages: [{ role: "user", content: systemPrompt }]
-  });
-
   try {
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      messages: [{ role: "user", content: systemPrompt }]
+    });
+
     const output_text = completion.choices[0].message.content;
     const parsed = JSON.parse(output_text);
     res.json({ source: "openai", questions: normalizeQuestionPayload(parsed) });
-  } catch {
-    res.json({ source: "openai", questions: normalizeQuestionPayload(await fallbackQuestions({ count: safeCount, roundType })) });
+  } catch (error) {
+    console.error("OpenAI Question Generation failed, using offline heuristics:", error.message || error);
+    try {
+      const fallback = await fallbackQuestions({ count: safeCount, roundType });
+      res.json({ source: "fallback", questions: normalizeQuestionPayload(fallback) });
+    } catch (fallbackErr) {
+      console.error("Fallback questions generation also failed:", fallbackErr.message || fallbackErr);
+      res.status(500).json({ message: "Failed to generate mock interview questions." });
+    }
   }
 };
 
