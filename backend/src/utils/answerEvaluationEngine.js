@@ -1,4 +1,5 @@
 import openai from "../config/openai.js";
+import Prompt from "../models/Prompt.js";
 
 const clamp = (value, min = 0, max = 10) => Math.max(min, Math.min(max, Number(value) || 0));
 
@@ -94,7 +95,24 @@ export const runAnswerEvaluation = async (payload = {}) => {
     return buildFallbackEvaluation({ question, userAnswer: combinedAnswer, topic, difficulty, interviewType });
   }
 
-  const prompt = `You are a senior technical recruiter evaluating interview answers.
+  let systemPrompt = "";
+  try {
+    const dbPrompt = await Prompt.findOne({ key: "answer_evaluation" });
+    if (dbPrompt) {
+      systemPrompt = dbPrompt.content
+        .replace(/\{\{role\}\}/g, role)
+        .replace(/\{\{topic\}\}/g, topic)
+        .replace(/\{\{difficulty\}\}/g, difficulty)
+        .replace(/\{\{interviewType\}\}/g, interviewType)
+        .replace(/\{\{question\}\}/g, question)
+        .replace(/\{\{combinedAnswer\}\}/g, combinedAnswer);
+    }
+  } catch (err) {
+    console.error("Error loading prompt from DB:", err);
+  }
+
+  if (!systemPrompt) {
+    systemPrompt = `You are a senior technical recruiter evaluating interview answers.
 Return valid JSON only with this exact shape:
 {
   "score": number 0-100,
@@ -125,11 +143,12 @@ ${question}
 
 Candidate answer:
 ${combinedAnswer}`;
+  }
 
   try {
     const completion = await openai.responses.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      input: prompt
+      input: systemPrompt
     });
 
     const parsed = JSON.parse(completion.output_text);

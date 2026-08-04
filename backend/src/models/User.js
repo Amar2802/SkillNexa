@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema(
     targetField: { type: String, enum: FIELD_OPTIONS, default: "Software" },
     interests: [String],
     bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
+    completedRoadmapTopics: [{ type: String, default: [] }],
+    recentlyViewed: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question", default: [] }],
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     progress: {
       testsTaken: { type: Number, default: 0 },
       accuracy: { type: Number, default: 0 },

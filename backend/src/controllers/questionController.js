@@ -1,4 +1,5 @@
 import Question from "../models/Question.js";
+import User from "../models/User.js";
 import seedQuestions from "../data/seedQuestions.js";
 
 const SOFTWARE_FIELD = "Software";
@@ -31,7 +32,7 @@ const filterSeedQuestions = (query = {}) => {
     if (query.company && !toRegex(query.company).test(question.company || "")) return false;
     if (query.type && query.type !== "all" && question.type !== query.type) return false;
     if (query.search) {
-      const haystack = `${question.title} ${question.description} ${question.topic}`;
+      const haystack = `${question.title} ${question.description} ${question.topic} ${question.company} ${question.difficulty} ${question.category} ${(question.tags || []).join(" ")}`;
       if (!toRegex(query.search).test(haystack)) return false;
     }
     return true;
@@ -45,11 +46,17 @@ const buildDbQuery = (query = {}) => {
   if (query.topic) dbQuery.topic = toRegex(query.topic);
   if (query.company) dbQuery.company = toRegex(query.company);
   if (query.type && query.type !== "all") dbQuery.type = query.type;
-  if (query.search) dbQuery.$or = [
-    { title: toRegex(query.search) },
-    { description: toRegex(query.search) },
-    { topic: toRegex(query.search) }
-  ];
+  if (query.search) {
+    dbQuery.$or = [
+      { title: toRegex(query.search) },
+      { description: toRegex(query.search) },
+      { topic: toRegex(query.search) },
+      { company: toRegex(query.search) },
+      { difficulty: toRegex(query.search) },
+      { category: toRegex(query.search) },
+      { tags: toRegex(query.search) }
+    ];
+  }
   return dbQuery;
 };
 
@@ -149,4 +156,30 @@ export const evaluateQuestion = async (req, res) => {
 
   const { answer, timeSpent = 0 } = req.body;
   return res.json(evaluateAnswer(question, answer, timeSpent));
+};
+
+export const recordQuestionView = async (req, res) => {
+  try {
+    const qId = req.params.id;
+    // Check if question exists in DB or is seed
+    let questionExists = await Question.exists({ _id: qId });
+    if (!questionExists) {
+      const isSeed = getSeedQuestionById(qId);
+      if (!isSeed) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.recentlyViewed = [qId, ...user.recentlyViewed.filter((id) => String(id) !== String(qId))].slice(0, 10);
+    await user.save();
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("recordQuestionView error:", error.message || error);
+    return res.status(500).json({ message: "Error recording view" });
+  }
 };

@@ -20,6 +20,9 @@ const AIInterviewerPage = lazy(() => import("../pages/AIInterviewerPage"));
 const BookmarksPage = lazy(() => import("../pages/BookmarksPage"));
 const HistoryPage = lazy(() => import("../pages/HistoryPage"));
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
+const RoadmapsPage = lazy(() => import("../pages/RoadmapsPage"));
+const RevisionPage = lazy(() => import("../pages/RevisionPage"));
+const AdminDashboardPage = lazy(() => import("../pages/AdminDashboardPage"));
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
 
@@ -159,6 +162,13 @@ const AppRoutes = () => {
           <Route path="/bookmarks" element={<BookmarksPage bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} />} />
           <Route path="/history" element={<HistoryPage history={history} refreshHistory={refreshHistory} />} />
           <Route path="/profile" element={<ProfilePage profile={profile || user} refreshProfile={refreshProfile} />} />
+          <Route path="/roadmaps" element={<RoadmapsPage refreshProfile={refreshProfile} />} />
+          <Route path="/revision" element={<RevisionPage />} />
+          <Route path="/admin" element={
+            user && (user.role === "admin" || String(user.email).toLowerCase().includes("admin")) 
+              ? <AdminDashboardPage /> 
+              : <Navigate to="/dashboard" replace />
+          } />
         </Route>
 
         <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />

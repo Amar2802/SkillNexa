@@ -44,3 +44,11 @@ export const protect = async (req, res, next) => {
     return unauthorized(res, "Invalid token", AUTH_ERROR_CODES.INVALID);
   }
 };
+
+export const isAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === "admin" || String(req.user.email).toLowerCase().includes("admin"))) {
+    next();
+  } else {
+    res.status(403).json({ message: "Forbidden: Admin access required" });
+  }
+};

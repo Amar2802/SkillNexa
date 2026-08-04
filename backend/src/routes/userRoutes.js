@@ -8,7 +8,8 @@ import {
   toggleBookmark,
   updateAvatar,
   updateInterests,
-  updateTargetField
+  updateTargetField,
+  getRevisionData
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -23,5 +24,6 @@ router.put("/users/profile/field", protect, updateTargetField);
 router.get("/users/bookmarks", protect, getBookmarks);
 router.post("/users/bookmarks/:questionId", protect, toggleBookmark);
 router.get("/users/history", protect, getHistory);
+router.get("/users/revision", protect, getRevisionData);
 
 export default router;

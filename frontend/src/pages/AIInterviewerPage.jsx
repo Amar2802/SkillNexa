@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { FiChevronLeft, FiChevronRight, FiMic, FiZap } from "react-icons/fi";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { FiChevronLeft, FiChevronRight, FiMic, FiMicOff, FiZap, FiCheckCircle, FiAward, FiAlertCircle, FiTrendingUp } from "react-icons/fi";
 import api from "../api/client";
 import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
 import EmptyState from "../components/ui/EmptyState";
@@ -7,17 +7,17 @@ import PageHeader from "../components/ui/PageHeader";
 import { useToast } from "../components/ui/ToastProvider";
 import useAnswerEvaluation from "../hooks/useAnswerEvaluation";
 
-const roundOptions = ["Full Loop", "Technical", "HR", "Mixed"];
+const roundOptions = ["Mixed", "Technical", "HR"];
 const companyOptions = ["General", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
 const roleOptions = ["Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer", "Data Analyst", "QA Engineer"];
 const experienceOptions = ["Fresher", "1-2 Years", "3-5 Years", "5+ Years"];
-const skillOptions = ["React", "Node.js", "JavaScript", "DSA", "System Design", "SQL", "DBMS", "Operating Systems", "Aptitude", "Behavioral"];
+const domainOptions = ["DSA", "JavaScript", "React", "Node", "MongoDB", "DBMS", "OS", "CN", "SQL", "Mixed"];
+const difficultyOptions = ["Easy", "Medium", "Hard"];
 
 const steps = [
-  { id: 1, title: "Select role" },
-  { id: 2, title: "Experience" },
-  { id: 3, title: "Skills" },
-  { id: 4, title: "Generate" }
+  { id: 1, title: "Select Role & Domain" },
+  { id: 2, title: "Difficulty & Settings" },
+  { id: 3, title: "Generate Flow" }
 ];
 
 const AIInterviewerPage = ({ refreshProfile }) => {
@@ -28,54 +28,126 @@ const AIInterviewerPage = ({ refreshProfile }) => {
     role: "Software Engineer",
     company: "General",
     experienceLevel: "Fresher",
-    roundType: "Full Loop",
+    difficulty: "Medium",
+    domain: "Mixed",
+    roundType: "Mixed",
     count: 5,
-    skills: ["React", "Node.js", "DSA"]
+    mode: "Text" // Text or Voice
   });
+
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
-  const [voiceNote, setVoiceNote] = useState("");
+  const [submittingSession, setSubmittingSession] = useState(false);
+
+  // Store completed question evaluations in frontend state
+  const [sessionAnswers, setSessionAnswers] = useState({}); // map of questionIndex -> { userAnswer, evaluation }
+  const [sessionReport, setSessionReport] = useState(null); // hold final consolidated report
+
+  // Voice Speech Recognition State
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    // Setup Speech Recognition if supported
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = "en-US";
+
+      rec.onresult = (event) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setAnswer((current) => current + (current ? " " : "") + finalTranscript);
+        }
+      };
+
+      rec.onerror = (e) => {
+        console.error("Speech recognition error:", e);
+        setIsRecording(false);
+      };
+
+      rec.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+  }, []);
+
+  const handleToggleRecording = () => {
+    if (!recognitionRef.current) {
+      showToast("Speech recognition is not supported in this browser.", "error");
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      showToast("Voice recording stopped.", "info");
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsRecording(true);
+        showToast("Listening... Speak your answer clearly.", "success");
+      } catch (err) {
+        console.error("Failed to start speech recognition:", err);
+      }
+    }
+  };
 
   const currentQuestion = interviewQuestions[currentIndex];
   const roundSummary = useMemo(() => interviewQuestions.map((item) => item.round), [interviewQuestions]);
 
-  const toggleSkill = (skill) => {
-    setConfig((current) => ({
-      ...current,
-      skills: current.skills.includes(skill)
-        ? current.skills.filter((item) => item !== skill)
-        : [...current.skills, skill].slice(0, 6)
-    }));
-  };
-
   const generateInterview = async () => {
     try {
       setLoading(true);
+      setSessionAnswers({});
+      setSessionReport(null);
+      
       const { data } = await api.post("/ai/questions", {
         role: config.role,
-        focus: config.skills.join(", "),
+        focus: config.domain === "Mixed" ? "General Full Stack" : config.domain,
         count: config.count,
         roundType: config.roundType,
         experienceLevel: config.experienceLevel,
         company: config.company
       });
-      setInterviewQuestions(data.questions || []);
+
+      // Force difficulties on questions based on config difficulty
+      const updatedQuestions = (data.questions || []).map((q) => ({
+        ...q,
+        difficulty: config.difficulty
+      }));
+
+      setInterviewQuestions(updatedQuestions);
       setCurrentIndex(0);
       setAnswer("");
       resetEvaluation();
-      setVoiceNote("");
-      showToast("AI interview generated successfully.", "success");
+      showToast("AI mock interview sequence loaded.", "success");
     } catch (error) {
-      showToast(error.response?.data?.message || "Unable to generate interview right now.", "error");
+      showToast(error.response?.data?.message || "Unable to generate interview sequence.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const evaluateAnswer = async () => {
+  const handleEvaluateAnswer = async () => {
     if (!currentQuestion || !answer.trim()) return;
+    
     const data = await evaluate({
       questionId: currentQuestion.id,
       question: currentQuestion.question,
@@ -85,337 +157,593 @@ const AIInterviewerPage = ({ refreshProfile }) => {
       difficulty: currentQuestion.difficulty,
       category: currentQuestion.category,
       module: "ai-interviewer",
-      voiceTranscript: voiceNote
+      voiceTranscript: config.mode === "Voice" ? answer : ""
     });
-    if (data) showToast("AI feedback is ready.", "success");
+
+    if (data) {
+      setSessionAnswers((prev) => ({
+        ...prev,
+        [currentIndex]: {
+          userAnswer: answer,
+          evaluation: data
+        }
+      }));
+      showToast("Answer evaluation recorded.", "success");
+    }
+  };
+
+  const handleFinishInterview = async () => {
+    // Collect all answers
+    const questionsPayload = interviewQuestions.map((q, idx) => {
+      const saved = sessionAnswers[idx] || {};
+      return {
+        questionId: q.id,
+        round: q.round,
+        question: q.question,
+        category: q.category,
+        difficulty: q.difficulty,
+        userAnswer: saved.userAnswer || "No answer submitted.",
+        evaluation: saved.evaluation || null
+      };
+    });
+
+    try {
+      setSubmittingSession(true);
+      const { data } = await api.post("/ai/finish", {
+        role: config.role,
+        company: config.company,
+        difficulty: config.difficulty,
+        domain: config.domain,
+        interviewType: config.roundType,
+        mode: config.mode,
+        questions: questionsPayload
+      });
+
+      setSessionReport(data);
+      refreshProfile?.();
+      showToast("Mock Interview Report compiled successfully!", "success");
+    } catch (error) {
+      showToast("Failed to compile interview report.", "error");
+    } finally {
+      setSubmittingSession(false);
+    }
   };
 
   const goToNextQuestion = () => {
-    const score = evaluation?.score || 0;
-    if (score < 55 && currentQuestion?.difficulty !== "Hard") {
-      showToast("Next question difficulty increased based on your score.", "info");
+    if (isRecording) {
+      recognitionRef.current?.stop();
     }
+    
+    // Save current answer state in case they didn't hit evaluate but we want to carry it over
+    if (answer.trim() && !sessionAnswers[currentIndex]) {
+      setSessionAnswers(prev => ({
+        ...prev,
+        [currentIndex]: { userAnswer: answer, evaluation: null }
+      }));
+    }
+
     setCurrentIndex((index) => Math.min(index + 1, interviewQuestions.length - 1));
-    setAnswer("");
+    const nextSaved = sessionAnswers[currentIndex + 1] || {};
+    setAnswer(nextSaved.userAnswer || "");
     resetEvaluation();
-    setVoiceNote("");
   };
+
+  const goToPrevQuestion = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+    }
+    
+    setCurrentIndex((index) => Math.max(index - 1, 0));
+    const prevSaved = sessionAnswers[currentIndex - 1] || {};
+    setAnswer(prevSaved.userAnswer || "");
+    resetEvaluation();
+  };
+
+  const handleSelectQuestionIndex = (index) => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+    }
+    setCurrentIndex(index);
+    const saved = sessionAnswers[index] || {};
+    setAnswer(saved.userAnswer || "");
+    resetEvaluation();
+  };
+
+  const activeSavedState = sessionAnswers[currentIndex];
+
+  // RENDER: Final Performance Report
+  if (sessionReport) {
+    return (
+      <div className="space-y-6 snx-fade-in">
+        <PageHeader
+          kicker="Evaluation Report"
+          title="Interview Loop Results"
+          description={`Consolidated assessment report for ${sessionReport.role} mock interview loop.`}
+          actions={
+            <button
+              onClick={() => {
+                setSessionReport(null);
+                setInterviewQuestions([]);
+                setSessionAnswers({});
+                setStep(1);
+              }}
+              className="snx-btn-primary cursor-pointer"
+            >
+              Start New Mock Loop
+            </button>
+          }
+        />
+
+        {/* Scoring Grid */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[
+            { label: "Overall Score", value: `${sessionReport.overallScore}%`, color: "text-brand-600 dark:text-brand-400" },
+            { label: "Technical Score", value: `${sessionReport.technicalScore}/10`, color: "text-indigo-600 dark:text-indigo-400" },
+            { label: "Communication Score", value: `${sessionReport.communicationScore}/10`, color: "text-green-600 dark:text-green-400" },
+            { label: "Confidence Score", value: `${sessionReport.confidenceScore}/10`, color: "text-purple-600 dark:text-purple-400" }
+          ].map((score) => (
+            <div key={score.label} className="snx-stat snx-card-elevated text-center">
+              <div className="snx-label">{score.label}</div>
+              <div className={`mt-3 text-3xl font-extrabold ${score.color}`}>{score.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Strengths & Weaknesses Detail */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="snx-panel-muted space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-green-600 dark:text-green-400 flex items-center gap-2">
+              <FiCheckCircle className="h-5 w-5" /> Demonstrated Strengths
+            </h3>
+            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-custom-600 dark:text-slate-custom-300">
+              {sessionReport.strengths && sessionReport.strengths.map((str, idx) => (
+                <li key={idx}>{str}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="snx-panel-muted space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-red-500 flex items-center gap-2">
+              <FiAlertCircle className="h-5 w-5" /> Core Weaknesses
+            </h3>
+            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-custom-600 dark:text-slate-custom-300">
+              {sessionReport.weaknesses && sessionReport.weaknesses.map((weak, idx) => (
+                <li key={idx}>{weak}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Areas of Improvement */}
+        <div className="snx-panel-muted space-y-4">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-2">
+            <FiTrendingUp className="h-5 w-5" /> Key Areas of Improvement
+          </h3>
+          <ol className="list-decimal pl-5 space-y-2 text-xs text-slate-custom-600 dark:text-slate-custom-300">
+            {sessionReport.improvementAreas && sessionReport.improvementAreas.map((imp, idx) => (
+              <li key={idx}>{imp}</li>
+            ))}
+          </ol>
+        </div>
+
+        {/* Suggested Topics & Questions */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="snx-panel-muted space-y-3">
+            <h4 className="font-bold text-sm text-slate-custom-900 dark:text-white uppercase tracking-wider">Suggested Topics</h4>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {sessionReport.suggestedTopics && sessionReport.suggestedTopics.map((topic) => (
+                <span key={topic} className="snx-badge-primary text-[10px] font-bold">
+                  {topic}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="snx-panel-muted space-y-3">
+            <h4 className="font-bold text-sm text-slate-custom-900 dark:text-white uppercase tracking-wider">Follow-up Preparation Questions</h4>
+            <ul className="list-disc pl-5 space-y-1.5 text-xs text-slate-custom-600 dark:text-slate-custom-400">
+              {sessionReport.suggestedQuestions && sessionReport.suggestedQuestions.map((qText, idx) => (
+                <li key={idx}>{qText}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Questions Log review */}
+        <div className="snx-panel-muted space-y-4">
+          <h3 className="font-bold text-slate-custom-900 dark:text-white text-base border-b pb-2">Completed Questions Log</h3>
+          <div className="space-y-4 divide-y divide-slate-custom-100 dark:divide-slate-custom-800">
+            {sessionReport.questions && sessionReport.questions.map((q, idx) => (
+              <div key={idx} className="pt-4 first:pt-0 space-y-2">
+                <div className="flex justify-between items-baseline gap-2">
+                  <h4 className="font-bold text-xs text-slate-custom-850 dark:text-white">{idx+1}. {q.round}</h4>
+                  <span className="text-[10px] font-bold text-brand-600 bg-brand-50 dark:bg-brand-950/20 px-2 py-0.5 rounded">Score: {q.score}%</span>
+                </div>
+                <p className="text-xs text-slate-custom-500 italic">"{q.question}"</p>
+                <div className="text-xs text-slate-custom-700 dark:text-slate-custom-300 bg-slate-custom-50 dark:bg-slate-custom-850 p-3 rounded-lg leading-relaxed">
+                  <strong>Your Answer:</strong> {q.userAnswer}
+                </div>
+                {q.feedback && (
+                  <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
+                    <strong>Feedback:</strong> {q.feedback}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 snx-fade-in">
       <PageHeader
         kicker="AI Interview Studio"
-        title="Build a mock interview in four steps"
-        description="Set role, experience, skills, and company — then generate your AI interview."
-        actions={(
-          <button type="button" className="snx-btn-primary" onClick={generateInterview} disabled={loading}>
-            {loading ? "Generating..." : "Generate Interview"}
-          </button>
-        )}
-        aside={(
-          <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-            {[
-              { label: "Role", value: config.role },
-              { label: "Experience", value: config.experienceLevel },
-              { label: "Skills", value: config.skills.length }
-            ].map((item) => (
-              <div key={item.label} className="snx-stat !p-3">
-                <div className="snx-label">{item.label}</div>
-                <div className="mt-1 truncate text-sm font-semibold text-slate-custom-900 dark:text-white">{item.value}</div>
-              </div>
-            ))}
-          </div>
-        )}
+        title="Redesigned Adaptive Mock Interview"
+        description="Set role, difficulty, skills, and choose between Voice and Text mode to test yourself."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+        
+        {/* Setup Workflow */}
         <div className="snx-panel-muted space-y-5">
           <div>
             <span className="snx-kicker">Interview setup</span>
-            <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Four-step workflow</h2>
+            <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Configure Loop</h2>
           </div>
           <div className="space-y-3">
             {steps.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className={`flex w-full items-center gap-3 rounded-lg border px-4 py-4 text-left transition-all duration-300 ${
+                className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3.5 text-left transition-all duration-300 cursor-pointer ${
                   step === item.id
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-900 shadow-md-soft"
+                    ? "border-indigo-500 bg-indigo-50/50 text-indigo-900 dark:bg-indigo-950/20 dark:text-indigo-200"
                     : step > item.id
-                      ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                      : "border-slate-custom-200 bg-white text-slate-custom-600 hover:border-indigo-200"
+                      ? "border-indigo-200 bg-indigo-50/20 text-indigo-700 dark:bg-indigo-950/10 dark:text-indigo-300"
+                      : "border-slate-custom-200 bg-white text-slate-custom-600 hover:border-indigo-250 dark:border-slate-custom-750 dark:bg-slate-custom-800"
                 }`}
                 onClick={() => setStep(item.id)}
               >
-                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold ${
-                  step === item.id ? "bg-indigo-600 text-white" : step > item.id ? "bg-indigo-600 text-white" : "bg-slate-custom-100 text-slate-custom-700"
+                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold ${
+                  step === item.id ? "bg-indigo-600 text-white" : step > item.id ? "bg-indigo-600 text-white" : "bg-slate-custom-100 text-slate-custom-700 dark:bg-slate-custom-700 dark:text-slate-custom-150"
                 }`}>
                   {step > item.id ? "✓" : item.id}
                 </span>
-                <span className="font-medium">{item.title}</span>
+                <span className="font-medium text-xs">{item.title}</span>
               </button>
             ))}
           </div>
           <div className="snx-stat">
-            <div className="snx-label">Configuration</div>
+            <div className="snx-label">Setup Summary</div>
             <div className="mt-3 space-y-2 snx-body-sm text-slate-custom-600">
-              <div><strong>Company:</strong> {config.company}</div>
-              <div><strong>Flow:</strong> {config.roundType}</div>
-              <div><strong>Questions:</strong> {config.count}</div>
-              <div><strong>Skills:</strong> {config.skills.join(", ")}</div>
+              <div><strong>Role:</strong> {config.role}</div>
+              <div><strong>Domain:</strong> {config.domain}</div>
+              <div><strong>Type:</strong> {config.roundType}</div>
+              <div><strong>Difficulty:</strong> {config.difficulty}</div>
+              <div><strong>Mode:</strong> {config.mode} Mode</div>
             </div>
           </div>
         </div>
 
+        {/* Steps Forms */}
         <div className="snx-panel-muted space-y-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <span className="snx-kicker">Conversational setup</span>
-              <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Step {step} of 4</h2>
+              <span className="snx-kicker">Interactive Setup</span>
+              <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Step {step} of 3</h2>
             </div>
-            <div className="snx-badge-primary">{config.roundType}</div>
+            <div className="snx-badge-primary">{config.roundType} Flow</div>
           </div>
 
-          {step === 1 ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {roleOptions.map((role) => (
-                <button key={role} type="button" className={`snx-card border transition-all duration-300 cursor-pointer ${
-                  config.role === role ? "border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50" : "hover:border-indigo-200"
-                }`} onClick={() => setConfig((current) => ({ ...current, role }))}>
-                  <div className={`font-semibold ${config.role === role ? "text-indigo-900" : "text-slate-custom-900"}`}>{role}</div>
-                  <div className={`mt-2 snx-body-sm ${config.role === role ? "text-indigo-700" : "text-slate-custom-600"}`}>Use this role to drive AI-generated prompts and follow-up emphasis.</div>
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          {step === 2 ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {experienceOptions.map((level) => (
-                <button key={level} type="button" className={`snx-card border transition-all duration-300 cursor-pointer ${
-                  config.experienceLevel === level ? "border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50" : "hover:border-indigo-200"
-                }`} onClick={() => setConfig((current) => ({ ...current, experienceLevel: level }))}>
-                  <div className={`font-semibold ${config.experienceLevel === level ? "text-indigo-900" : "text-slate-custom-900"}`}>{level}</div>
-                  <div className={`mt-2 snx-body-sm ${config.experienceLevel === level ? "text-indigo-700" : "text-slate-custom-600"}`}>Adjusts tone, expectations, and AI interviewer depth.</div>
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          {step === 3 ? (
+          {step === 1 && (
             <div className="space-y-4">
-              <p className="snx-body-sm text-slate-custom-600">Choose up to six focus areas so the interview feels relevant and company-ready.</p>
-              <div className="flex flex-wrap gap-3">
-                {skillOptions.map((skill) => (
-                  <button
-                    key={skill}
-                    type="button"
-                    className={`snx-badge transition-all duration-300 cursor-pointer ${
-                      config.skills.includes(skill)
-                        ? "snx-badge-primary ring-2 ring-indigo-200"
-                        : "border border-slate-custom-200 bg-white text-slate-custom-700 hover:border-indigo-200 hover:bg-indigo-50"
-                    }`}
-                    onClick={() => toggleSkill(skill)}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="snx-label">Role Category</span>
+                  <select
+                    className="snx-input"
+                    value={config.role}
+                    onChange={(e) => setConfig({ ...config, role: e.target.value })}
                   >
-                    {skill}
+                    {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
+                  </select>
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="snx-label">Interview Domain</span>
+                  <select
+                    className="snx-input"
+                    value={config.domain}
+                    onChange={(e) => setConfig({ ...config, domain: e.target.value })}
+                  >
+                    {domainOptions.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 pt-2">
+                {experienceOptions.map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => setConfig({ ...config, experienceLevel: lvl })}
+                    className={`p-4 border rounded-xl text-left transition-all duration-300 cursor-pointer ${
+                      config.experienceLevel === lvl
+                        ? "border-brand-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                        : "border-slate-custom-200 hover:border-indigo-300 dark:border-slate-custom-700"
+                    }`}
+                  >
+                    <div className="font-bold text-xs text-slate-custom-850 dark:text-white">{lvl}</div>
+                    <div className="text-[10px] text-slate-custom-500 mt-1">Adjusts assessment metrics and follow-up complexity.</div>
                   </button>
                 ))}
               </div>
             </div>
-          ) : null}
+          )}
 
-          {step === 4 ? (
-            <div className="grid gap-4 md:grid-cols-3">
-              <label className="block space-y-2">
-                <span className="snx-label">Company</span>
-                <select className="snx-select" value={config.company} onChange={(event) => setConfig((current) => ({ ...current, company: event.target.value }))}>
-                  {companyOptions.map((company) => <option key={company} value={company}>{company}</option>)}
-                </select>
-              </label>
-              <label className="block space-y-2">
-                <span className="snx-label">Interview flow</span>
-                <select className="snx-select" value={config.roundType} onChange={(event) => setConfig((current) => ({ ...current, roundType: event.target.value }))}>
-                  {roundOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                </select>
-              </label>
-              <label className="block space-y-2">
-                <span className="snx-label">Question count</span>
-                <select className="snx-select" value={config.count} onChange={(event) => setConfig((current) => ({ ...current, count: Number(event.target.value) }))}>
-                  {[3, 4, 5, 6, 7].map((count) => <option key={count} value={count}>{count}</option>)}
-                </select>
-              </label>
-            </div>
-          ) : null}
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="snx-label">Difficulty Tier</span>
+                  <select
+                    className="snx-input"
+                    value={config.difficulty}
+                    onChange={(e) => setConfig({ ...config, difficulty: e.target.value })}
+                  >
+                    {difficultyOptions.map((diff) => <option key={diff} value={diff}>{diff}</option>)}
+                  </select>
+                </label>
 
-          {loading ? (
-            <div className="snx-panel-dark space-y-3 text-white">
-              <div className="flex items-center gap-3">
-                <div className="flex gap-2">
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-400" />
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-300 [animation-delay:150ms]" />
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-200 [animation-delay:300ms]" />
-                </div>
-                <span className="snx-label text-white/70">Generating</span>
+                <label className="block space-y-2">
+                  <span className="snx-label">Interview Type</span>
+                  <select
+                    className="snx-input"
+                    value={config.roundType}
+                    onChange={(e) => setConfig({ ...config, roundType: e.target.value })}
+                  >
+                    {roundOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </label>
               </div>
-              <p className="snx-body-sm text-slate-300">Building your interview flow with company context, round pacing, and skill-aware prompts.</p>
-            </div>
-          ) : null}
 
+              <div className="grid gap-3 sm:grid-cols-2 pt-2">
+                {[
+                  { mode: "Text", desc: "Type your answers. Ideal for detailed technical code structures." },
+                  { mode: "Voice", desc: "Speak your answers. Leverages speech-to-text to grade communication style." }
+                ].map((item) => (
+                  <button
+                    key={item.mode}
+                    onClick={() => setConfig({ ...config, mode: item.mode })}
+                    className={`p-4 border rounded-xl text-left transition-all duration-300 cursor-pointer ${
+                      config.mode === item.mode
+                        ? "border-brand-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                        : "border-slate-custom-200 hover:border-indigo-300 dark:border-slate-custom-700"
+                    }`}
+                  >
+                    <div className="font-bold text-xs text-slate-custom-850 dark:text-white">{item.mode} Interview</div>
+                    <div className="text-[10px] text-slate-custom-500 mt-1">{item.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="snx-label">Target Company (Context)</span>
+                  <select
+                    className="snx-input"
+                    value={config.company}
+                    onChange={(e) => setConfig({ ...config, company: e.target.value })}
+                  >
+                    {companyOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="snx-label">Question Count</span>
+                  <select
+                    className="snx-input"
+                    value={config.count}
+                    onChange={(e) => setConfig({ ...config, count: Number(e.target.value) })}
+                  >
+                    {[5, 10, 15].map((cnt) => <option key={cnt} value={cnt}>{cnt} Questions</option>)}
+                  </select>
+                </label>
+              </div>
+
+              <div className="bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-200 dark:border-indigo-900/40 p-4 rounded-xl text-xs space-y-2 leading-relaxed">
+                <h4 className="font-bold text-slate-custom-900 dark:text-white">AI Generation Ready!</h4>
+                <p className="text-slate-custom-600 dark:text-slate-custom-300">We will configure a dynamic mock loop matching {config.role} requirements focusing on {config.domain}. It runs with {config.difficulty} difficulty in {config.mode} mode.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation buttons inside setup */}
+          <div className="flex justify-between items-center pt-2">
+            <button
+              onClick={() => setStep(s => Math.max(1, s-1))}
+              disabled={step === 1}
+              className="snx-btn-secondary snx-btn-sm disabled:opacity-50 cursor-pointer"
+            >
+              Back
+            </button>
+            {step < 3 ? (
+              <button
+                onClick={() => setStep(s => Math.min(3, s+1))}
+                className="snx-btn-primary snx-btn-sm cursor-pointer"
+              >
+                Continue
+              </button>
+            ) : (
+              <button
+                onClick={generateInterview}
+                disabled={loading}
+                className="snx-btn-primary snx-btn-sm cursor-pointer shrink-0"
+              >
+                {loading ? "Generating Loop..." : "Generate & Start"}
+              </button>
+            )}
+          </div>
         </div>
+
       </div>
 
-      <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-card border border-slate-custom-200 bg-white/95 p-4 shadow-lg-soft backdrop-blur-md dark:border-slate-custom-600 dark:bg-slate-custom-900/95">
-        <button type="button" className="snx-btn-secondary" onClick={() => setStep((c) => Math.max(1, c - 1))} disabled={step === 1}>
-          Back
-        </button>
-        {step < 4 ? (
-          <button type="button" className="snx-btn-primary min-w-[140px]" onClick={() => setStep((c) => Math.min(4, c + 1))}>
-            Continue
-          </button>
-        ) : (
-          <button type="button" className="snx-btn-primary min-w-[180px]" onClick={generateInterview} disabled={loading}>
-            {loading ? "Generating..." : "Generate Interview"}
-          </button>
-        )}
-      </div>
-
-      {interviewQuestions.length ? (
-        <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+      {/* Active Interview Panel */}
+      {interviewQuestions.length > 0 && currentQuestion && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-6">
-            <div className="snx-panel-muted">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span className="snx-kicker">Interview plan</span>
-                  <h2 className="snx-heading-3 mt-3 text-slate-custom-900">Your AI-generated round sequence</h2>
-                </div>
-                <span className="snx-badge-primary inline-flex items-center gap-2">
-                  <FiZap className="h-4 w-4" />
-                  AI adaptive
-                </span>
+            
+            {/* Horizontal Rounds sequence */}
+            <div className="snx-panel-muted space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="snx-kicker">Mock Sequence</span>
+                <span className="text-xs font-semibold text-brand-600">{config.mode} Mode</span>
               </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                {roundSummary.map((round, index) => (
-                  <button
-                    key={`${round}-${index}`}
-                    className={`snx-badge transition-all duration-300 cursor-pointer ${
-                      index === currentIndex ? "snx-badge-primary" : "border border-slate-custom-200 bg-white text-slate-custom-600 hover:border-indigo-200"
-                    }`}
-                    onClick={() => setCurrentIndex(index)}
-                  >
-                    {index + 1}. {round}
-                  </button>
-                ))}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {roundSummary.map((rnd, idx) => {
+                  const isActive = idx === currentIndex;
+                  const isEval = !!sessionAnswers[idx]?.evaluation;
+                  let style = "border-slate-custom-200 bg-white text-slate-custom-600 dark:border-slate-custom-700 dark:bg-slate-custom-850";
+                  if (isActive) style = "border-brand-500 bg-brand-50/50 text-brand-900 dark:bg-brand-950/20 dark:text-brand-300 ring-2 ring-brand-500/10";
+                  else if (isEval) style = "border-green-500 bg-green-50 text-green-800 dark:bg-green-950/15 dark:text-green-300";
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectQuestionIndex(idx)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer truncate max-w-[120px] transition duration-200 ${style}`}
+                    >
+                      {idx+1}. {rnd}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {currentQuestion ? (
-              <div className="snx-panel-muted space-y-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <span className="snx-kicker">Question {currentIndex + 1} of {interviewQuestions.length}</span>
-                    <h2 className="snx-heading-3 mt-3 text-slate-custom-900">{currentQuestion.round}</h2>
-                    <p className="mt-2 snx-body-sm text-slate-custom-600">{currentQuestion.category}</p>
-                  </div>
-                  <span className="snx-badge-primary text-xs">{currentQuestion.difficulty}</span>
+            {/* Active Question details */}
+            <div className="snx-panel-muted space-y-4">
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <span className="snx-kicker">Question {currentIndex + 1} of {interviewQuestions.length}</span>
+                  <h3 className="snx-heading-3 mt-1.5">{currentQuestion.round}</h3>
+                  <p className="text-[10px] text-slate-custom-500 font-bold uppercase tracking-wider mt-1">{currentQuestion.category} • {currentQuestion.difficulty}</p>
                 </div>
-
-                <div className="snx-panel-dark space-y-4 text-white">
-                  <p className="snx-body leading-8 text-slate-100">{currentQuestion.question}</p>
-                </div>
-
-                <div className="snx-grid-auto">
-                  {[
-                    { label: "Intent", value: currentQuestion.intent },
-                    { label: "Evaluation Focus", value: currentQuestion.evaluationFocus },
-                    { label: "Follow-up Hint", value: currentQuestion.followUpHint }
-                  ].map((item) => (
-                    <div key={item.label} className="snx-stat">
-                      <div className="snx-label">{item.label}</div>
-                      <p className="mt-3 snx-body-sm text-slate-custom-600">{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="snx-label">Your answer</label>
-                    <span className="inline-flex items-center gap-2 rounded-lg border border-slate-custom-200 bg-slate-custom-100 px-3 py-1 text-xs font-medium text-slate-custom-700">
-                      <FiMic className="h-3.5 w-3.5" />
-                      Voice UI placeholder
-                    </span>
-                  </div>
-                  <textarea
-                    className="snx-textarea min-h-[220px]"
-                    value={answer}
-                    onChange={(event) => setAnswer(event.target.value)}
-                    placeholder="Write your answer as though you are speaking to a senior interviewer in a real mock round..."
-                  />
-                  <label className="block space-y-2">
-                    <span className="snx-label">Voice transcript (optional)</span>
-                    <textarea
-                      className="snx-textarea min-h-[100px]"
-                      value={voiceNote}
-                      onChange={(event) => setVoiceNote(event.target.value)}
-                      placeholder="Paste speech-to-text transcript for communication scoring..."
-                    />
-                  </label>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <button type="button" className="snx-btn-primary" onClick={evaluateAnswer} disabled={evalLoading}>
-                    {evalLoading ? "Evaluating..." : "Evaluate Answer"}
-                  </button>
-                  <button type="button" className="snx-btn-secondary" onClick={() => { setCurrentIndex((index) => Math.max(index - 1, 0)); setAnswer(""); resetEvaluation(); setVoiceNote(""); }}>
-                    <FiChevronLeft className="h-4 w-4" />
-                    Previous
-                  </button>
-                  <button type="button" className="snx-btn-secondary" onClick={goToNextQuestion}>
-                    Next
-                    <FiChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <AnswerEvaluationCard
-                  evaluation={evaluation}
-                  loading={evalLoading}
-                  error={evalError}
-                  onRetry={() => currentQuestion && evaluate({
-                    questionId: currentQuestion.id,
-                    question: currentQuestion.question,
-                    userAnswer: answer,
-                    topic: currentQuestion.category,
-                    role: config.role,
-                    difficulty: currentQuestion.difficulty,
-                    category: currentQuestion.category,
-                    module: "ai-interviewer",
-                    voiceTranscript: voiceNote
-                  })}
-                />
+                {activeSavedState?.evaluation && (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950/25 px-2.5 py-1 rounded-full">
+                    ✓ Graded
+                  </span>
+                )}
               </div>
-            ) : null}
+
+              <p className="text-sm leading-relaxed text-slate-custom-850 dark:text-white bg-slate-custom-50 dark:bg-slate-custom-850 p-4 rounded-xl font-medium border-l-4 border-brand-500">
+                {currentQuestion.question}
+              </p>
+
+              {/* Speech input panel for Voice mode */}
+              {config.mode === "Voice" && (
+                <div className="flex flex-col items-center p-4 border border-indigo-100 bg-indigo-50/20 rounded-xl space-y-3 dark:border-indigo-900/20">
+                  <button
+                    onClick={handleToggleRecording}
+                    className={`h-14 w-14 rounded-full flex items-center justify-center text-white cursor-pointer shadow-md transition-all duration-300 ${
+                      isRecording
+                        ? "bg-red-500 animate-pulse hover:bg-red-650"
+                        : "bg-brand-500 hover:bg-brand-650"
+                    }`}
+                  >
+                    {isRecording ? <FiMicOff className="h-6 w-6" /> : <FiMic className="h-6 w-6" />}
+                  </button>
+                  <span className="text-[10px] font-bold text-slate-custom-500 uppercase">
+                    {isRecording ? "Transcribing voice in real-time..." : "Click to speak your response"}
+                  </span>
+                </div>
+              )}
+
+              <label className="block space-y-1.5">
+                <span className="snx-label">Your response</span>
+                <textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  className="snx-textarea min-h-[160px] text-xs leading-relaxed"
+                  placeholder="Formulate your response as though explaining it directly to a senior recruiter..."
+                />
+              </label>
+
+              {/* Actions panel */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={goToPrevQuestion}
+                    disabled={currentIndex === 0}
+                    className="snx-btn-secondary snx-btn-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    <FiChevronLeft className="h-4 w-4" /> Previous
+                  </button>
+                  <button
+                    onClick={goToNextQuestion}
+                    disabled={currentIndex === interviewQuestions.length - 1}
+                    className="snx-btn-secondary snx-btn-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    Next <FiChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleEvaluateAnswer}
+                    disabled={evalLoading || !answer.trim()}
+                    className="snx-btn-secondary snx-btn-sm bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 cursor-pointer disabled:opacity-50"
+                  >
+                    {evalLoading ? "Grading..." : "Submit Answer"}
+                  </button>
+
+                  {/* Finish report compilation button */}
+                  {currentIndex === interviewQuestions.length - 1 && (
+                    <button
+                      onClick={handleFinishInterview}
+                      disabled={submittingSession}
+                      className="snx-btn-primary snx-btn-sm flex items-center gap-1 cursor-pointer"
+                    >
+                      <FiZap className="h-3.5 w-3.5" />
+                      {submittingSession ? "Compiling..." : "Finish & Compile Report"}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Dynamic feedback panel below */}
+              {evaluation && (
+                <div className="pt-4 border-t border-slate-custom-100 dark:border-slate-custom-800">
+                  <AnswerEvaluationCard
+                    evaluation={evaluation}
+                    loading={evalLoading}
+                    error={evalError}
+                    onRetry={handleEvaluateAnswer}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          <aside className="snx-card space-y-4 lg:sticky lg:top-24 lg:h-fit">
-            <span className="snx-kicker">Follow-ups</span>
-            <h2 className="snx-heading-3 mt-1">Adaptive interview loop</h2>
-            {evaluation?.followUpQuestions?.length ? (
-              <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-custom-600 dark:text-slate-custom-300">
-                {evaluation.followUpQuestions.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ol>
-            ) : (
-              <p className="snx-body-sm">Evaluate your answer to unlock recruiter follow-up questions and difficulty adaptation.</p>
-            )}
+          {/* Setup details details cards */}
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+            <div className="snx-card space-y-4">
+              <span className="snx-kicker">Evaluations Info</span>
+              <h4 className="font-bold text-sm text-slate-custom-900 dark:text-white uppercase tracking-wider">Evaluation Focus</h4>
+              <p className="text-[11px] leading-relaxed text-slate-custom-500">
+                {currentQuestion.evaluationFocus || "Assess structure, definitions, clarity, complexity, and metrics."}
+              </p>
+              <div className="border-t border-slate-custom-100 dark:border-slate-custom-800 pt-3 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-custom-400 uppercase">Follow-up hint</span>
+                <p className="text-[11px] italic text-slate-custom-500">"{currentQuestion.followUpHint}"</p>
+              </div>
+            </div>
           </aside>
         </div>
-      ) : (
-        <EmptyState
-          title="No interviews yet"
-          description="Finish the four-step setup and generate a tailored interview loop to begin your AI-powered practice round."
-          action={<button className="snx-btn-primary" onClick={() => setStep(1)}>Start Setup</button>}
-        />
       )}
     </div>
   );

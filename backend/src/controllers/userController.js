@@ -6,6 +6,7 @@ import AnswerEvaluation from "../models/AnswerEvaluation.js";
 import { weakTopicsFromAnswers } from "../utils/analytics.js";
 import { buildEvaluationAnalytics } from "../utils/answerEvaluationEngine.js";
 import { FIELD_DEFAULT_TOPICS, FIELD_OPTIONS } from "../utils/prepFields.js";
+import roadmaps from "../data/roadmapData.js";
 
 const normalizeTargetField = (value) => (FIELD_OPTIONS.includes(value) ? value : "Software");
 
@@ -213,6 +214,116 @@ export const seedQuestionsIfNeeded = async (_req, res) => {
       total: seedQuestions.length,
       warning: error.message
     });
+  }
+};
+
+export const getRevisionData = async (req, res) => {
+  try {
+    // 1. Bookmarks and Recently Viewed populated
+    const user = await User.findById(req.user._id)
+      .populate("bookmarks")
+      .populate("recentlyViewed");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 2. Query wrong questions from Results & AnswerEvaluations
+    const [results, evaluations] = await Promise.all([
+      Result.find({ user: req.user._id }).populate("answers.question").lean(),
+      AnswerEvaluation.find({ user: req.user._id, score: { $lt: 60 } }).lean()
+    ]);
+
+    const wrongQuestionIds = new Set();
+    const wrongQuestionsMap = new Map();
+    const topicFailureCounts = {};
+
+    // Process failed questions in test results
+    results.forEach((resItem) => {
+      (resItem.answers || []).forEach((ans) => {
+        if (!ans.isCorrect && ans.question) {
+          const qId = String(ans.question._id);
+          wrongQuestionIds.add(qId);
+          wrongQuestionsMap.set(qId, ans.question);
+
+          const topic = ans.question.topic || "General";
+          topicFailureCounts[topic] = (topicFailureCounts[topic] || 0) + 1;
+        }
+      });
+    });
+
+    // Process failed evaluations
+    evaluations.forEach((evalItem) => {
+      if (evalItem.questionId) {
+        wrongQuestionIds.add(String(evalItem.questionId));
+      }
+      const topic = evalItem.topic || "General";
+      topicFailureCounts[topic] = (topicFailureCounts[topic] || 0) + 1;
+    });
+
+    // Fetch wrong questions details from DB if they were stored (for IDs we only have as keys)
+    const fetchedWrong = await Question.find({ _id: { $in: Array.from(wrongQuestionIds) } }).lean();
+    fetchedWrong.forEach((q) => {
+      wrongQuestionsMap.set(String(q._id), q);
+    });
+
+    const wrongQuestionsList = Array.from(wrongQuestionsMap.values());
+
+    // 3. Find frequently failed topics (failed >= 1 time)
+    const frequentlyFailedTopics = Object.entries(topicFailureCounts)
+      .map(([topic, count]) => ({ topic, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // 4. Create Revision Sheet content from roadmapData
+    const revisionSheet = [];
+    const failedTopicNames = frequentlyFailedTopics.map((item) => item.topic.toLowerCase());
+
+    roadmaps.forEach((roadmap) => {
+      (roadmap.topics || []).forEach((topicNode) => {
+        if (
+          failedTopicNames.includes(topicNode.name.toLowerCase()) ||
+          topicNode.name.toLowerCase().split(/\s+/).some((word) => failedTopicNames.some((tName) => tName.includes(word)))
+        ) {
+          revisionSheet.push({
+            topic: topicNode.name,
+            subject: roadmap.title,
+            level: topicNode.level,
+            cheatSheet: topicNode.cheatSheet,
+            flashcards: topicNode.revision || []
+          });
+        }
+      });
+    });
+
+    // If revision sheet is empty, seed it with recommended topics
+    if (!revisionSheet.length) {
+      const recs = user.progress?.recommendedTopics || ["Arrays & Sorting"];
+      roadmaps.forEach((roadmap) => {
+        (roadmap.topics || []).forEach((topicNode) => {
+          if (recs.some((rec) => topicNode.name.toLowerCase().includes(rec.toLowerCase()))) {
+            revisionSheet.push({
+              topic: topicNode.name,
+              subject: roadmap.title,
+              level: topicNode.level,
+              cheatSheet: topicNode.cheatSheet,
+              flashcards: topicNode.revision || []
+            });
+          }
+        });
+      });
+    }
+
+    res.json({
+      wrongQuestions: wrongQuestionsList,
+      bookmarkedQuestions: user.bookmarks || [],
+      recentlyViewed: user.recentlyViewed || [],
+      frequentlyFailedTopics,
+      revisionSheet: revisionSheet.slice(0, 6)
+    });
+  } catch (error) {
+    console.error("getRevisionData error:", error.message || error);
+    res.status(500).json({ message: "Error loading revision data" });
   }
 };
 

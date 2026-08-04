@@ -3,6 +3,8 @@ import openai from "../config/openai.js";
 import { heuristicInterviewEvaluation } from "../utils/analytics.js";
 import AnswerEvaluation from "../models/AnswerEvaluation.js";
 import { runAnswerEvaluation } from "../utils/answerEvaluationEngine.js";
+import Prompt from "../models/Prompt.js";
+import InterviewSession from "../models/InterviewSession.js";
 
 const ROUND_BLUEPRINTS = {
   "Full Loop": [
@@ -133,7 +135,25 @@ export const generateInterviewQuestions = async (req, res) => {
     .map((item, index) => `${index + 1}. ${item.round} (${item.category}) focusing on ${item.focus}`)
     .join("\n");
 
-  const prompt = `You are an expert interviewer simulating a realistic software interview loop.
+  let systemPrompt = "";
+  try {
+    const dbPrompt = await Prompt.findOne({ key: "interview_generation" });
+    if (dbPrompt) {
+      systemPrompt = dbPrompt.content
+        .replace(/\{\{safeCount\}\}/g, safeCount)
+        .replace(/\{\{role\}\}/g, role)
+        .replace(/\{\{focus\}\}/g, focus)
+        .replace(/\{\{roundType\}\}/g, roundType)
+        .replace(/\{\{experienceLevel\}\}/g, experienceLevel)
+        .replace(/\{\{company\}\}/g, company)
+        .replace(/\{\{roundPlan\}\}/g, roundPlan);
+    }
+  } catch (err) {
+    console.error("Error loading prompt from DB:", err);
+  }
+
+  if (!systemPrompt) {
+    systemPrompt = `You are an expert interviewer simulating a realistic software interview loop.
 Generate ${safeCount} interview questions for these settings:
 - Target role: ${role}
 - Focus area: ${focus}
@@ -156,10 +176,11 @@ Each object must include these string fields:
 - followUpHint
 
 Make the flow feel like a real hiring process with different rounds and realistic interviewer wording.`;
+  }
 
   const completion = await openai.responses.create({
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    input: prompt
+    input: systemPrompt
   });
 
   try {
@@ -227,4 +248,132 @@ export const evaluateInterviewAnswer = async (req, res) => {
 export const getRecommendations = async (req, res) => {
   const topics = req.body.weakTopics?.length ? req.body.weakTopics : ["Arrays", "DBMS", "Probability"];
   res.json(await Question.find({ topic: { $in: topics } }).limit(6));
+};
+
+export const finishInterviewSession = async (req, res) => {
+  const { role, company, difficulty, domain, interviewType, mode, questions } = req.body;
+
+  if (!questions || !questions.length) {
+    return res.status(400).json({ message: "Questions and answers are required" });
+  }
+
+  // Quick offline averages in case OpenAI fails
+  let totalScore = 0;
+  let totalComm = 0;
+  let totalTech = 0;
+  let totalConf = 0;
+
+  questions.forEach(q => {
+    const evalObj = q.evaluation || {};
+    totalScore += Number(evalObj.score) || 0;
+    totalComm += (Number(evalObj.communicationScore) || 0) * 10;
+    totalTech += (Number(evalObj.technicalScore) || 0) * 10;
+    totalConf += (Number(evalObj.confidenceScore) || 0) * 10;
+  });
+
+  const count = questions.length;
+  const avgScore = Math.round(totalScore / count);
+  const avgComm = Math.round(totalComm / count);
+  const avgTech = Math.round(totalTech / count);
+  const avgConf = Math.round(totalConf / count);
+
+  let consolidated = {
+    overallScore: avgScore,
+    communicationScore: avgComm,
+    technicalScore: avgTech,
+    confidenceScore: avgConf,
+    strengths: ["Shows basic knowledge in domain subject", "Responds to all questions"],
+    weaknesses: ["Needs deeper technical explanations", "Consider adding concrete project metrics"],
+    improvementAreas: ["Revise standard definitions", "Practice timed coding scenarios"],
+    suggestedTopics: [domain],
+    suggestedQuestions: ["Prepare standard conceptual questions for next round"]
+  };
+
+  if (openai) {
+    const questionsAndAnswersText = questions.map((q, idx) => `
+Question ${idx+1}: [${q.round}] ${q.question}
+Answer: ${q.userAnswer}
+Score: ${q.evaluation?.score || 'N/A'}
+Feedback: ${q.evaluation?.recruiterFeedback || q.evaluation?.feedback || 'N/A'}
+`).join("\n\n");
+
+    const systemPrompt = `You are a senior engineering manager and principal recruiter compiling a consolidated performance review for a candidate's mock interview session.
+Analyze the candidate's answers and technical details:
+- Role: ${role}
+- Company: ${company}
+- Domain: ${domain}
+- Difficulty: ${difficulty}
+- Interview Type: ${interviewType}
+
+Here is the log of questions and answers:
+${questionsAndAnswersText}
+
+Compile a comprehensive evaluation report.
+Return valid JSON only matching this shape:
+{
+  "overallScore": number (0-100),
+  "communicationScore": number (0-100),
+  "technicalScore": number (0-100),
+  "confidenceScore": number (0-100),
+  "strengths": string[],
+  "weaknesses": string[],
+  "improvementAreas": string[],
+  "suggestedTopics": string[],
+  "suggestedQuestions": string[]
+}
+`;
+
+    try {
+      const completion = await openai.responses.create({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        input: systemPrompt
+      });
+      const parsed = JSON.parse(completion.output_text);
+      if (parsed) {
+        consolidated = {
+          overallScore: Number(parsed.overallScore) || avgScore,
+          communicationScore: Number(parsed.communicationScore) || avgComm,
+          technicalScore: Number(parsed.technicalScore) || avgTech,
+          confidenceScore: Number(parsed.confidenceScore) || avgConf,
+          strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 5) : consolidated.strengths,
+          weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses.slice(0, 5) : consolidated.weaknesses,
+          improvementAreas: Array.isArray(parsed.improvementAreas) ? parsed.improvementAreas.slice(0, 5) : consolidated.improvementAreas,
+          suggestedTopics: Array.isArray(parsed.suggestedTopics) ? parsed.suggestedTopics.slice(0, 5) : consolidated.suggestedTopics,
+          suggestedQuestions: Array.isArray(parsed.suggestedQuestions) ? parsed.suggestedQuestions.slice(0, 5) : consolidated.suggestedQuestions
+        };
+      }
+    } catch (err) {
+      console.error("OpenAI consolidated report failed, using offline heuristics:", err);
+    }
+  }
+
+  try {
+    const session = await InterviewSession.create({
+      user: req.user._id,
+      role,
+      company,
+      difficulty,
+      domain,
+      interviewType,
+      mode,
+      questions: questions.map(q => ({
+        questionId: q.questionId,
+        round: q.round,
+        question: q.question,
+        category: q.category || domain,
+        difficulty: q.difficulty || difficulty,
+        userAnswer: q.userAnswer,
+        score: q.evaluation?.score || 0,
+        feedback: q.evaluation?.recruiterFeedback || q.evaluation?.feedback || "",
+        idealAnswer: q.evaluation?.idealAnswer || "",
+        followUpQuestions: q.evaluation?.followUpQuestions || []
+      })),
+      ...consolidated
+    });
+
+    res.status(201).json(session);
+  } catch (error) {
+    console.error("finishInterviewSession save failed:", error);
+    res.status(500).json({ message: "Error compiling and saving the interview session." });
+  }
 };

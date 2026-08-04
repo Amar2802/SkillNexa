@@ -2,6 +2,7 @@ import "./loadEnv.js";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import { syncSeedQuestions } from "./controllers/userController.js";
+import { seedDefaultPrompts } from "./controllers/adminController.js";
 import { requireJwtSecret, requireRefreshJwtSecret } from "./utils/generateToken.js";
 
 const start = async () => {
@@ -17,6 +18,14 @@ const start = async () => {
     console.log("Seed question sync complete");
   } catch (error) {
     console.error("Startup question sync skipped:", error?.message || error);
+  }
+
+  try {
+    console.log("Syncing default AI prompts...");
+    await seedDefaultPrompts();
+    console.log("Default AI prompts sync complete");
+  } catch (error) {
+    console.error("Startup prompts sync skipped:", error?.message || error);
   }
 
 const PORT = process.env.PORT || 5000;

@@ -10,20 +10,26 @@ import {
   FiMenu,
   FiSearch,
   FiUser,
-  FiX
+  FiX,
+  FiCompass,
+  FiBookOpen,
+  FiSettings
 } from "react-icons/fi";
 import SkillNexaLogo from "./SkillNexaLogo";
 import ThemeToggle from "./ThemeToggle";
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: FiGrid },
+  { label: "Learning Roadmaps", path: "/roadmaps", icon: FiCompass },
   { label: "Question Bank", path: "/questions", icon: FiSearch },
   { label: "Practice", path: "/practice", icon: FiCpu },
   { label: "Mock Tests", path: "/mock-tests", icon: FiBarChart2 },
   { label: "AI Interviewer", path: "/ai-interviewer", icon: FiCpu },
+  { label: "Revision Workspace", path: "/revision", icon: FiBookOpen },
   { label: "Bookmarks", path: "/bookmarks", icon: FiBookmark },
   { label: "History", path: "/history", icon: FiClock },
-  { label: "Profile", path: "/profile", icon: FiUser }
+  { label: "Profile", path: "/profile", icon: FiUser },
+  { label: "Admin Panel", path: "/admin", icon: FiSettings }
 ];
 
 const Avatar = ({ user }) => {
@@ -45,37 +51,46 @@ const Avatar = ({ user }) => {
   );
 };
 
-const SidebarNav = ({ closeMenu }) => (
-  <nav className="flex flex-col gap-1">
-    {navItems.map(({ label, path, icon: Icon }) => (
-      <NavLink
-        key={path}
-        to={path}
-        onClick={closeMenu}
-        className={({ isActive }) =>
-          `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-200 ${
-            isActive
-              ? "bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-elevation-1"
-              : "text-slate-custom-600 hover:bg-slate-custom-100 hover:text-slate-custom-900 dark:text-slate-custom-300 dark:hover:bg-slate-custom-800 dark:hover:text-white"
-          }`
-        }
-      >
-        {({ isActive }) => (
-          <>
-            <span
-              className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition duration-200 ${
-                isActive ? "bg-white/20 text-white" : "bg-slate-custom-100 text-slate-custom-700 group-hover:bg-white group-hover:text-slate-custom-900 dark:bg-slate-custom-700 dark:text-slate-custom-100"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-            </span>
-            <span className="truncate">{label}</span>
-          </>
-        )}
-      </NavLink>
-    ))}
-  </nav>
-);
+const SidebarNav = ({ closeMenu, user }) => {
+  const visibleItems = navItems.filter((item) => {
+    if (item.path === "/admin") {
+      return user && (user.role === "admin" || String(user.email).toLowerCase().includes("admin"));
+    }
+    return true;
+  });
+
+  return (
+    <nav className="flex flex-col gap-1">
+      {visibleItems.map(({ label, path, icon: Icon }) => (
+        <NavLink
+          key={path}
+          to={path}
+          onClick={closeMenu}
+          className={({ isActive }) =>
+            `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-200 ${
+              isActive
+                ? "bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-elevation-1"
+                : "text-slate-custom-600 hover:bg-slate-custom-100 hover:text-slate-custom-900 dark:text-slate-custom-300 dark:hover:bg-slate-custom-800 dark:hover:text-white"
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <span
+                className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition duration-200 ${
+                  isActive ? "bg-white/20 text-white" : "bg-slate-custom-100 text-slate-custom-700 group-hover:bg-white group-hover:text-slate-custom-900 dark:bg-slate-custom-700 dark:text-slate-custom-100"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="truncate">{label}</span>
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
+  );
+};
 
 const Navbar = ({ user, profile, logout }) => {
   const navigate = useNavigate();
@@ -140,7 +155,7 @@ const Navbar = ({ user, profile, logout }) => {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            <SidebarNav closeMenu={() => setMobileMenuOpen(false)} />
+            <SidebarNav closeMenu={() => setMobileMenuOpen(false)} user={currentUser} />
           </div>
 
           <div className="space-y-2 border-t border-slate-custom-200 pt-3 dark:border-slate-custom-700">

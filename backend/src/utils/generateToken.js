@@ -76,8 +76,7 @@ export const parseCookies = (cookieHeader) => String(cookieHeader || "")
   }, {});
 
 export const resolveRefreshCookieOptions = (rememberMe = true) => {
-  const clientUrl = sanitizeEnvValue(process.env.CLIENT_URL || "");
-  const secure = /^https:\/\//i.test(clientUrl) || process.env.NODE_ENV === "production";
+  const secure = process.env.NODE_ENV === "production";
 
   return {
     httpOnly: true,
