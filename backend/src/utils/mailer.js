@@ -36,6 +36,12 @@ const getTransporter = async () => {
 
 export const sendPasswordResetOtp = async ({ email, name, otp }) => {
   console.info("[Auth] Sending password reset OTP", { email });
+  if (!hasEmailConfig()) {
+    console.log("\n========================================================");
+    console.log(`[LOCAL DEV] PASSWORD RESET OTP FOR ${email}: ${otp}`);
+    console.log("========================================================\n");
+    return;
+  }
   const transporter = await getTransporter();
 
   await transporter.sendMail({

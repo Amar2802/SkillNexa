@@ -675,6 +675,26 @@ const AuthPage = ({ mode = "none" }) => {
                           </div>
                         ) : null}
 
+                        {!isLogin ? (
+                          <div className="space-y-2">
+                            <span className="snx-label">Confirm Password</span>
+                            <div className="relative">
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                className="snx-input pr-10"
+                                value={form.confirmPassword}
+                                onChange={(e) =>
+                                  setForm({
+                                    ...form,
+                                    confirmPassword: e.target.value
+                                  })
+                                }
+                                required
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+
                         <div className="flex flex-wrap items-center gap-3 text-xs">
                           <label className="flex items-center gap-2 text-slate-custom-600">
                             <input
