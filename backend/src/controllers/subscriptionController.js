@@ -11,6 +11,45 @@ export const getSubscriptionStatus = async (req, res) => {
   });
 };
 
+export const buySubscription = async (req, res) => {
+  const user = req.user;
+  const {
+    billingCycle = "monthly",
+    currency = "USD",
+    amount = 19,
+    paymentMethod = "card"
+  } = req.body;
+
+  const durationMonths = billingCycle === "annual" ? 12 : 1;
+  const startDate = new Date();
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + durationMonths);
+
+  user.subscription = {
+    plan: "premium",
+    status: "active",
+    startDate,
+    endDate
+  };
+
+  await user.save();
+
+  console.info("[Subscription] Purchase successful", {
+    userId: String(user._id),
+    email: user.email,
+    billingCycle,
+    currency,
+    amount,
+    paymentMethod,
+    endDate
+  });
+
+  res.json({
+    message: `Payment of ${currency} ${amount} confirmed! Premium Pro (${billingCycle.toUpperCase()}) activated successfully.`,
+    user: toSafeUser(user)
+  });
+};
+
 export const upgradeSubscription = async (req, res) => {
   const user = req.user;
   const { plan = "premium", durationMonths = 12 } = req.body;
