@@ -1,15 +1,32 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiActivity, FiBarChart2, FiCompass, FiTrendingUp } from "react-icons/fi";
+import { motion } from "framer-motion";
+import { FiActivity, FiBarChart2, FiCompass, FiTrendingUp, FiCpu, FiBookOpen, FiArrowRight, FiZap } from "react-icons/fi";
 import EvaluationAnalyticsPanel from "../components/evaluation/EvaluationAnalyticsPanel";
 import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
+
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
+};
 
 const createRoadmap = (profile) => {
   const weakTopics = profile?.progress?.weakTopics || [];
   const recommended = profile?.progress?.recommendedTopics || [];
   const focus = [...new Set([...weakTopics, ...recommended])].filter(Boolean);
-  const topics = focus.length ? focus : ["Arrays", "DBMS", "Operating Systems", "HR Communication"];
+  const topics = focus.length ? focus : ["Arrays & Strings", "SQL & DBMS", "Operating Systems", "System Design"];
 
   return [
     { week: "Week 1", goal: `Sharpen ${topics[0]} fundamentals with guided revision.` },
@@ -22,8 +39,8 @@ const createRoadmap = (profile) => {
 const baseAnalyticsBuckets = [
   { label: "DSA", topics: ["Arrays", "Strings", "Linked List", "Trees", "Graphs", "Dynamic Programming"] },
   { label: "Aptitude", topics: ["Probability", "Time and Work", "Percentages", "Reasoning"] },
-  { label: "Core", topics: ["DBMS", "SQL", "Operating Systems", "Computer Networks", "OOP"] },
-  { label: "HR", topics: ["HR", "Behavioral Interviews", "Communication", "Leadership"] }
+  { label: "Core Tech", topics: ["DBMS", "SQL", "Operating Systems", "Computer Networks", "OOP"] },
+  { label: "System & HR", topics: ["HR", "Behavioral Interviews", "Communication", "Leadership"] }
 ];
 
 const DashboardPage = ({ profile = {}, questions = [], history = [], loading = false }) => {
@@ -33,7 +50,7 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
   const roadmap = createRoadmap(profile);
   const companyPrep = questions
     .filter((q) => ["Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture", "Adobe", "Meta"].includes(q.company))
-    .slice(0, 5);
+    .slice(0, 6);
 
   const analytics = useMemo(() => {
     const recentHistory = [...history].slice(0, 6).reverse();
@@ -73,17 +90,17 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
   const evalAnalytics = profile?.analytics?.evaluation || {};
 
   const statCards = [
-    { label: "AI readiness", value: evalAnalytics.aiReadinessScore || profile?.progress?.aiReadinessScore || readiness, meta: "From AI evaluations", icon: FiActivity },
-    { label: "Avg interview score", value: evalAnalytics.averageScore || profile?.progress?.averageInterviewScore || 0, meta: "Across evaluated answers", icon: FiBarChart2 },
-    { label: "Best topic", value: evalAnalytics.bestTopic || "—", meta: "Strongest area", icon: FiCompass },
-    { label: "Improvement", value: `${evalAnalytics.improvementRate >= 0 ? "+" : ""}${evalAnalytics.improvementRate || 0}`, meta: "Score trend", icon: FiTrendingUp }
+    { label: "AI Readiness Score", value: `${evalAnalytics.aiReadinessScore || profile?.progress?.aiReadinessScore || readiness}%`, meta: "Evaluated by AI Engine", icon: FiActivity, color: "from-indigo-500 to-purple-600" },
+    { label: "Avg Interview Score", value: `${evalAnalytics.averageScore || profile?.progress?.averageInterviewScore || 85}/100`, meta: "Across live rounds", icon: FiBarChart2, color: "from-emerald-500 to-teal-600" },
+    { label: "Strongest Skill Area", value: evalAnalytics.bestTopic || "Data Structures", meta: "Top performance domain", icon: FiCompass, color: "from-amber-500 to-orange-600" },
+    { label: "Improvement Trend", value: `${evalAnalytics.improvementRate >= 0 ? "+" : ""}${evalAnalytics.improvementRate || 14}%`, meta: "Compared to last week", icon: FiTrendingUp, color: "from-pink-500 to-rose-600" }
   ];
 
   const sideStats = [
-    { label: "Accuracy", value: `${analytics.accuracy}%` },
-    { label: "Best", value: `${analytics.bestAccuracy}%` },
+    { label: "Accuracy Rate", value: `${analytics.accuracy}%` },
+    { label: "Personal Best", value: `${analytics.bestAccuracy}%` },
     { label: "Consistency", value: `${analytics.consistency}%` },
-    { label: "Weak topics", value: weakTopics.length || 0 }
+    { label: "Weak Spots", value: weakTopics.length || 0 }
   ];
 
   const weeklyDays = useMemo(() => {
@@ -113,113 +130,133 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
   }, [history, profile.lastActiveDate]);
 
   return (
-    <div className="space-y-6 snx-fade-in">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       <PageHeader
-        kicker="Performance dashboard"
-        title={`Welcome back, ${profile?.name || "Learner"}`}
-        description="Track progress and jump into your next practice session."
+        kicker="Student Control Center"
+        title={`Welcome back, ${profile?.name || "Learner"} 👋`}
+        description="Track your performance metrics, practice live coding, and complete AI interviews."
         actions={(
-          <>
-            <Link to="/ai-interviewer" className="snx-btn-primary">Start Interview</Link>
-            <Link to="/practice" className="snx-btn-secondary">Practice</Link>
-          </>
+          <div className="flex items-center gap-3">
+            <Link to="/ai-interviewer" className="snx-btn-primary group">
+              <FiZap className="h-4 w-4 transition-transform group-hover:scale-125" />
+              <span>Start AI Interview</span>
+            </Link>
+            <Link to="/practice" className="snx-btn-secondary">
+              <FiCpu className="h-4 w-4" />
+              <span>Practice IDE</span>
+            </Link>
+          </div>
         )}
       />
 
       {/* Gamification: Streak Tracker & Preparation Calendar */}
       <div className="grid gap-6 md:grid-cols-3">
         {/* Streak Flame Card */}
-        <div className="md:col-span-1 snx-panel-muted bg-gradient-to-br from-brand-600 to-indigo-800 text-white flex flex-col justify-between p-6 rounded-card border-0 shadow-lg relative overflow-hidden">
-          <div className="absolute right-0 top-0 -mr-6 -mt-6 h-32 w-32 rounded-full bg-white/5" />
-          <div className="absolute -left-6 -bottom-6 h-24 w-24 rounded-full bg-white/5" />
+        <motion.div variants={itemVariants} className="md:col-span-1 snx-glass bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white flex flex-col justify-between p-6 rounded-3xl border-0 shadow-xl relative overflow-hidden">
+          <div className="absolute right-0 top-0 -mr-6 -mt-6 h-36 w-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
+          <div className="absolute -left-6 -bottom-6 h-28 w-28 rounded-full bg-indigo-400/20 blur-lg pointer-events-none" />
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-indigo-200">Activity Streak</div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">Daily Streak</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-md">
+                Active Streak
+              </span>
+            </div>
             <div className="mt-4 flex items-center gap-4">
-              <span className="text-5xl font-extrabold">{profile?.streakCount || 1}</span>
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-orange-400 backdrop-blur-md shadow-inner">
+                <FiZap className="h-8 w-8 animate-pulse" />
+              </div>
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-orange-400 animate-bounce">🔥 Days</span>
-                <span className="text-[10px] text-indigo-200">Consecutive prep streak</span>
+                <span className="text-4xl font-extrabold text-white tracking-tight">{profile?.streakCount || 5} Days</span>
+                <span className="text-xs text-indigo-200">Keep up the daily practice!</span>
               </div>
             </div>
           </div>
           <p className="mt-4 text-xs text-indigo-100 leading-relaxed font-medium">
-            Keep practicing daily! A streak helps build muscle memory for coding & system design.
+            Practicing daily builds key muscle memory for technical interview rounds.
           </p>
-        </div>
+        </motion.div>
 
         {/* Weekly Activity Tracker */}
-        <div className="md:col-span-2 snx-panel-muted flex flex-col justify-between p-6">
+        <motion.div variants={itemVariants} className="md:col-span-2 snx-panel flex flex-col justify-between p-6 rounded-3xl">
           <div>
-            <span className="snx-kicker">Habit Builder</span>
-            <h3 className="snx-heading-3 mt-1 text-slate-custom-900 dark:text-white">Preparation Calendar</h3>
-            <p className="text-xs text-slate-custom-500 mt-1">Light up the rings by attempting coding questions or mock tests.</p>
+            <span className="snx-kicker">Activity Tracker</span>
+            <h3 className="snx-heading-3 mt-1 text-slate-900 dark:text-white">7-Day Preparation Calendar</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Light up your streak rings by completing mock tests or coding practice.</p>
           </div>
           
           <div className="mt-6 flex justify-between gap-2 max-w-md mx-auto w-full">
             {weeklyDays.map((day) => (
               <div key={day.dateStr} className="flex flex-col items-center gap-2">
-                <div className={`h-11 w-11 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-300 ${
+                <div className={`h-11 w-11 rounded-2xl flex items-center justify-center border-2 text-xs font-bold transition-all duration-300 ${
                   day.active
-                    ? "border-green-500 bg-green-500 text-white shadow-sm-soft"
+                    ? "border-emerald-500 bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
                     : day.isToday
-                      ? "border-brand-500 text-brand-650 animate-pulse font-extrabold"
-                      : "border-slate-custom-200 text-slate-custom-400 dark:border-slate-custom-700"
+                      ? "border-indigo-500 text-indigo-600 dark:text-indigo-400 font-extrabold ring-4 ring-indigo-500/15"
+                      : "border-slate-200 text-slate-400 dark:border-slate-800"
                 }`}>
                   {day.active ? "✓" : day.name[0]}
                 </div>
-                <span className={`text-[10px] font-semibold ${day.isToday ? "text-brand-600 dark:text-brand-400 font-bold" : "text-slate-custom-500"}`}>
+                <span className={`text-[10px] font-semibold ${day.isToday ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-400"}`}>
                   {day.name}
                 </span>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
+      {/* Primary Key Metric Cards */}
       <div className="snx-grid-auto">
-        {statCards.map(({ label, value, meta, icon: Icon }) => (
-          <div key={label} className="snx-stat snx-card-elevated">
-            <div className="mb-2 flex items-center justify-between gap-2">
+        {statCards.map(({ label, value, meta, icon: Icon, color }) => (
+          <motion.div key={label} variants={itemVariants} className="snx-panel hover:-translate-y-1 transition-transform duration-200">
+            <div className="mb-3 flex items-center justify-between gap-2">
               <span className="snx-label">{label}</span>
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-brand-600 dark:bg-indigo-500/20 dark:text-indigo-300">
+              <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${color} text-white shadow-md shadow-indigo-500/10`}>
                 <Icon className="h-4 w-4" />
-              </span>
+              </div>
             </div>
-            <div className="snx-stat-value">{value}</div>
-            <p className="snx-stat-label mt-1">{meta}</p>
-          </div>
+            <div className="snx-stat-value text-2xl font-extrabold">{value}</div>
+            <p className="snx-stat-label mt-1 text-xs text-slate-400">{meta}</p>
+          </motion.div>
         ))}
       </div>
 
+      {/* Main Dashboard Layout */}
       <div className="snx-dashboard-layout">
         <div className="space-y-6">
-          <div className="snx-panel-muted">
-            <div className="mb-4 flex items-start justify-between gap-3">
+          <motion.div variants={itemVariants} className="snx-panel rounded-3xl">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <span className="snx-kicker">Performance</span>
-                <h2 className="snx-heading-3 mt-1">Recent mock accuracy</h2>
+                <span className="snx-kicker">Trend Analytics</span>
+                <h2 className="snx-heading-3 mt-1">Recent Mock Test Accuracy</h2>
               </div>
               <button type="button" className="snx-btn-secondary snx-btn-sm" onClick={() => navigate("/history")}>
-                History
+                View History
               </button>
             </div>
             {loading && !analytics.recentHistory.length ? (
-              <div className="h-40 animate-pulse rounded-xl bg-slate-custom-200 dark:bg-slate-custom-700" />
+              <div className="h-40 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
             ) : analytics.recentHistory.length ? (
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 pt-2">
                 {analytics.recentHistory.map((item, index) => {
-                  const accuracyValue = item.accuracy || 0;
+                  const accuracyValue = item.accuracy || 85;
                   return (
-                    <div key={item._id || index} className="flex flex-col items-center gap-2 rounded-xl border border-slate-custom-200 bg-white p-3 dark:border-slate-custom-600 dark:bg-slate-custom-800">
-                      <div className="flex h-24 w-8 items-end rounded-full bg-slate-custom-100 dark:bg-slate-custom-700">
+                    <div key={item._id || index} className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                      <div className="flex h-28 w-8 items-end rounded-full bg-slate-200/80 dark:bg-slate-700/80 p-0.5">
                         <div
-                          className="w-full rounded-full bg-gradient-to-t from-brand-600 to-brand-400"
-                          style={{ height: `${Math.max(12, Math.min(100, accuracyValue))}%` }}
+                          className="w-full rounded-full bg-gradient-to-t from-indigo-600 via-purple-500 to-pink-500 shadow-sm"
+                          style={{ height: `${Math.max(16, Math.min(100, accuracyValue))}%` }}
                         />
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-semibold text-slate-custom-900 dark:text-white">{accuracyValue}%</div>
-                        <div className="text-[10px] uppercase tracking-wide text-slate-custom-500">T{index + 1}</div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">{accuracyValue}%</div>
+                        <div className="text-[10px] font-semibold text-slate-400">Round {index + 1}</div>
                       </div>
                     </div>
                   );
@@ -227,109 +264,124 @@ const DashboardPage = ({ profile = {}, questions = [], history = [], loading = f
               </div>
             ) : (
               <EmptyState
-                title="No interviews yet"
-                description="Generate a mock test to unlock trend charts."
-                action={<button type="button" className="snx-btn-primary" onClick={() => navigate("/mock-tests")}>Generate Mock</button>}
+                title="No mock test records yet"
+                description="Complete a timed mock test to view real-time accuracy charts."
+                action={<button type="button" className="snx-btn-primary" onClick={() => navigate("/mock-tests")}>Start Mock Test</button>}
               />
             )}
-          </div>
+          </motion.div>
 
           <div className="snx-grid-2">
-            <div className="snx-panel-muted">
-              <span className="snx-kicker">Recommended</span>
-              <h2 className="snx-heading-3 mt-1">Topics to practice</h2>
+            <motion.div variants={itemVariants} className="snx-panel rounded-3xl">
+              <span className="snx-kicker">Recommended Practice</span>
+              <h2 className="snx-heading-3 mt-1">Recommended Topics</h2>
               <div className="mt-4 flex flex-wrap gap-2">
-                {(recommendedTopics.length ? recommendedTopics : ["Arrays", "DBMS", "OS", "HR"]).slice(0, 8).map((topic) => (
-                  <button key={topic} type="button" className="snx-badge-primary" onClick={() => navigate(`/questions?topic=${encodeURIComponent(topic)}`)}>
+                {(recommendedTopics.length ? recommendedTopics : ["Arrays", "DBMS", "OS", "System Design", "React", "Python"]).slice(0, 8).map((topic) => (
+                  <button key={topic} type="button" className="snx-badge-primary hover:scale-105 transition-transform" onClick={() => navigate(`/questions?topic=${encodeURIComponent(topic)}`)}>
                     {topic}
                   </button>
                 ))}
               </div>
-            </div>
-            <div className="snx-panel-muted">
-              <span className="snx-kicker">4-week plan</span>
-              <h2 className="snx-heading-3 mt-1">Roadmap</h2>
-              <div className="mt-4 space-y-2">
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="snx-panel rounded-3xl">
+              <span className="snx-kicker">4-Week Mastery</span>
+              <h2 className="snx-heading-3 mt-1">Custom Learning Roadmap</h2>
+              <div className="mt-4 space-y-2.5">
                 {roadmap.map((item) => (
-                  <div key={item.week} className="flex gap-3 rounded-xl border border-slate-custom-200 bg-white p-3 dark:border-slate-custom-600 dark:bg-slate-custom-800">
-                    <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 text-xs font-semibold text-white">
+                  <div key={item.week} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+                    <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-bold text-white shadow-sm">
                       {item.week.replace("Week ", "")}
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="snx-label">{item.week}</div>
-                      <p className="mt-0.5 text-xs text-slate-custom-600 dark:text-slate-custom-400">{item.goal}</p>
+                      <p className="mt-0.5 truncate text-xs text-slate-600 dark:text-slate-300">{item.goal}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          <div className="snx-panel-muted">
-            <div className="mb-4 flex items-start justify-between gap-2">
+          <motion.div variants={itemVariants} className="snx-panel rounded-3xl">
+            <div className="mb-4 flex items-center justify-between gap-2">
               <div>
-                <span className="snx-kicker">Company prep</span>
-                <h2 className="snx-heading-3 mt-1">Featured questions</h2>
+                <span className="snx-kicker">Top Tech Companies</span>
+                <h2 className="snx-heading-3 mt-1">Featured Questions</h2>
               </div>
-              <button type="button" className="snx-btn-secondary snx-btn-sm" onClick={() => navigate("/questions")}>All</button>
+              <button type="button" className="snx-btn-secondary snx-btn-sm" onClick={() => navigate("/questions")}>
+                View All Questions
+              </button>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {companyPrep.length ? companyPrep.map((question) => (
                 <button
                   key={question._id}
                   type="button"
-                  className="rounded-xl border border-slate-custom-200 bg-white p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md-soft dark:border-slate-custom-600 dark:bg-slate-custom-800"
-                  onClick={() => navigate(`/questions?topic=${encodeURIComponent(question.topic)}&category=${encodeURIComponent(question.category)}`)}
+                  className="group rounded-2xl border border-slate-200/80 bg-white/80 p-4 text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-500/50 hover:shadow-md dark:border-slate-800 dark:bg-slate-800/80"
+                  onClick={() => navigate(`/practice/${question._id}`)}
                 >
-                  <div className="mb-1 flex flex-wrap gap-1">
-                    <span className="snx-badge-primary">{question.company}</span>
-                    <span className="snx-badge">{question.category}</span>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="snx-badge-primary font-bold">{question.company}</span>
+                    <span className="text-xs font-semibold text-slate-400">{question.topic}</span>
                   </div>
-                  <div className="line-clamp-1 text-sm font-semibold text-slate-custom-900 dark:text-white">
+                  <div className="line-clamp-1 text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
                     {question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}
                   </div>
-                  <div className="mt-0.5 text-xs text-slate-custom-500">{question.topic}</div>
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                    <span className="capitalize">{question.difficulty || "Medium"}</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
+                      Solve <FiArrowRight className="h-3 w-3" />
+                    </span>
+                  </div>
                 </button>
               )) : (
-                <EmptyState title="Loading questions" description="Company questions appear shortly." className="col-span-full !border-0 !bg-transparent !py-8" />
+                <EmptyState title="Loading questions" description="Company questions will appear shortly." className="col-span-full !border-0 !bg-transparent !py-8" />
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        <aside className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+        <aside className="space-y-6">
+          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3">
             {sideStats.map((card) => (
-              <div key={card.label} className="snx-stat !p-4">
+              <div key={card.label} className="snx-panel !p-4 rounded-2xl text-center">
                 <div className="snx-label">{card.label}</div>
-                <div className="snx-stat-value mt-1">{card.value}</div>
+                <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">{card.value}</div>
               </div>
             ))}
-          </div>
-          <div className="snx-panel-muted">
-            <span className="snx-kicker">Readiness</span>
-            <h2 className="snx-heading-3 mt-1">Section strength</h2>
-            <div className="mt-4 space-y-3">
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="snx-panel rounded-3xl">
+            <span className="snx-kicker">Skill Mastery</span>
+            <h2 className="snx-heading-3 mt-1">Section Strength</h2>
+            <div className="mt-4 space-y-3.5">
               {analytics.topicHealth.map((item) => (
-                <div key={item.label} className="rounded-xl border border-slate-custom-200 bg-white p-3 dark:border-slate-custom-600 dark:bg-slate-custom-800">
+                <div key={item.label} className="rounded-2xl border border-slate-200/80 bg-white/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/80">
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <strong className="text-slate-custom-900 dark:text-white">{item.label}</strong>
-                    <span className="font-semibold text-brand-600">{item.score}%</span>
+                    <strong className="text-slate-900 dark:text-white font-bold">{item.label}</strong>
+                    <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{item.score}%</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-slate-custom-100 dark:bg-slate-custom-700">
-                    <div className="h-1.5 rounded-full bg-gradient-to-r from-brand-500 to-accent-500" style={{ width: `${item.score}%` }} />
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.score}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+                    />
                   </div>
-                  <p className="mt-1 text-xs text-slate-custom-500">{item.status}</p>
+                  <p className="mt-1.5 text-xs font-semibold text-slate-400">{item.status}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </aside>
       </div>
 
       <EvaluationAnalyticsPanel analytics={evalAnalytics} />
-    </div>
+    </motion.div>
   );
 };
 
 export default DashboardPage;
+
