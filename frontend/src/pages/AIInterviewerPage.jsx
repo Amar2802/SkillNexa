@@ -7,6 +7,8 @@ import EmptyState from "../components/ui/EmptyState";
 import PageHeader from "../components/ui/PageHeader";
 import { useToast } from "../components/ui/ToastProvider";
 import useAnswerEvaluation from "../hooks/useAnswerEvaluation";
+import { useAuth } from "../context/AuthContext";
+import { PremiumBadge, SubscriptionLockBanner, UpgradeModal } from "../components/ui/SubscriptionComponents";
 
 const roundOptions = ["Mixed", "Technical", "HR"];
 const companyOptions = ["General", "Amazon", "Microsoft", "Google", "Infosys", "TCS", "Accenture"];
@@ -52,9 +54,13 @@ const steps = [
 ];
 
 const AIInterviewerPage = ({ refreshProfile }) => {
+  const { user, hasAccess } = useAuth();
   const { showToast } = useToast();
   const { evaluation, loading: evalLoading, error: evalError, evaluate, reset: resetEvaluation } = useAnswerEvaluation({ refreshProfile });
   const [step, setStep] = useState(1);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const isPremiumUser = hasAccess("ADVANCED_AI_INTERVIEW");
   const [config, setConfig] = useState({
     role: "Software Engineer",
     company: "General",
@@ -824,6 +830,16 @@ const AIInterviewerPage = ({ refreshProfile }) => {
                 </p>
               </div>
 
+              {!isPremiumUser && (
+                <div className="pt-4">
+                  <SubscriptionLockBanner
+                    title="Unlock Premium AI Interview Studio"
+                    description="Get unlimited AI voice simulation, company-specific interview loops (Google, Amazon, Meta), and in-depth performance radar scorecards."
+                    onUpgradeClick={() => setShowUpgradeModal(true)}
+                  />
+                </div>
+              )}
+
               <div className="flex justify-center gap-3 pt-2">
                 <button onClick={() => setStep(2)} className="snx-btn-secondary font-bold">
                   ← Edit Settings
@@ -831,7 +847,7 @@ const AIInterviewerPage = ({ refreshProfile }) => {
                 <button
                   onClick={generateInterview}
                   disabled={loading}
-                  className="snx-btn-primary font-bold shadow-xl shadow-indigo-500/25"
+                  className="snx-btn-primary font-bold shadow-xl shadow-indigo-500/25 cursor-pointer"
                 >
                   <FiZap className="h-4 w-4" />
                   {loading ? "Generating Loop..." : "Launch Interview Studio"}
@@ -841,6 +857,7 @@ const AIInterviewerPage = ({ refreshProfile }) => {
           )}
         </div>
       </div>
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </div>
   );
 };

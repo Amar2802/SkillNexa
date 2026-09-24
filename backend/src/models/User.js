@@ -23,6 +23,12 @@ const userSchema = new mongoose.Schema(
       weakTopics: [String],
       recommendedTopics: [String]
     },
+    subscription: {
+      plan: { type: String, enum: ["free", "premium"], default: "free" },
+      status: { type: String, enum: ["active", "expired", "cancelled"], default: "active" },
+      startDate: { type: Date, default: Date.now },
+      endDate: { type: Date }
+    },
     passwordResetOtp: String,
     passwordResetOtpHash: String,
     passwordResetOtpExpiresAt: Date,

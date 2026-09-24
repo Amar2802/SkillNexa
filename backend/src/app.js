@@ -13,6 +13,7 @@ import analysisRoutes from "./routes/analysisRoutes.js";
 import evaluationRoutes from "./routes/evaluationRoutes.js";
 import roadmapRoutes from "./routes/roadmapRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
 const app = express();
@@ -58,6 +59,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api", userRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/tests", testRoutes);
 app.use("/api/ai", aiRoutes);

@@ -15,5 +15,6 @@ export const toSafeUser = (user) => {
   delete source.refreshTokenHash;
   delete source.refreshTokenExpiresAt;
   delete source.refreshSessionId;
+  source.subscription = source.subscription || { plan: "free", status: "active", startDate: source.createdAt || new Date() };
   return source;
 };

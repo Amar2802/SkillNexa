@@ -8,12 +8,16 @@ import {
   setAuthSession,
   setAuthNotice
 } from "../utils/authStorage";
+import { hasFeatureAccess } from "../utils/subscription";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => getStoredUser());
   const [profile, setProfile] = useState(() => getStoredUser());
+  
+  // Explicit auth states: 'restoring' | 'authenticated' | 'unauthenticated'
+  const [authStatus, setAuthStatus] = useState(() => (getStoredUser() ? "authenticated" : "restoring"));
   const [authReady, setAuthReady] = useState(() => Boolean(getStoredUser()));
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -26,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     });
     setUser(safeUser);
     setProfile(safeUser);
+    setAuthStatus(safeUser ? "authenticated" : "unauthenticated");
     setAuthReady(true);
   }, []);
 
@@ -33,6 +38,7 @@ export const AuthProvider = ({ children }) => {
     setAuthSession({ user: nextUser });
     setUser(nextUser);
     setProfile(nextUser);
+    setAuthStatus(nextUser ? "authenticated" : "unauthenticated");
     setAuthReady(true);
   }, []);
 
@@ -41,6 +47,7 @@ export const AuthProvider = ({ children }) => {
     clearAuthSession();
     setUser(null);
     setProfile(null);
+    setAuthStatus("unauthenticated");
     setAuthReady(true);
   }, []);
 
@@ -66,11 +73,14 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       if (error?.response?.status === 401) {
         clearSessionState();
+      } else {
+        // Network timeout / server waking up: retain cached state if available
+        setAuthStatus(getStoredUser() ? "authenticated" : "unauthenticated");
+        setAuthReady(true);
       }
       throw error;
     } finally {
       setAuthLoading(false);
-      setAuthReady(true);
     }
   }, [applyAuth, clearSessionState]);
 
@@ -96,6 +106,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, [applyAuth]);
 
+  const hasAccess = useCallback((featureKey) => {
+    return hasFeatureAccess(user, featureKey);
+  }, [user]);
+
   useEffect(() => {
     registerAuthHandlers({
       onAuthRefresh: (session) => {
@@ -103,6 +117,7 @@ export const AuthProvider = ({ children }) => {
           setAuthSession({ accessToken: session.accessToken || "", user: session.user });
           setUser(session.user);
           setProfile(session.user);
+          setAuthStatus("authenticated");
           setAuthReady(true);
         }
       },
@@ -118,11 +133,11 @@ export const AuthProvider = ({ children }) => {
     };
   }, [clearSessionState]);
 
+  // Background silent authentication restoration on app boot
   useEffect(() => {
     let active = true;
     const bootstrapAuth = async () => {
       try {
-        setAuthLoading(true);
         const session = await authService.restoreSession();
         if (!active) return;
         applyAuth({ ...session, rememberMe: getRememberMePreference() });
@@ -130,10 +145,8 @@ export const AuthProvider = ({ children }) => {
         if (!active) return;
         if (error?.response?.status === 401) {
           clearSessionState();
-        }
-      } finally {
-        if (active) {
-          setAuthLoading(false);
+        } else {
+          setAuthStatus(getStoredUser() ? "authenticated" : "unauthenticated");
           setAuthReady(true);
         }
       }
@@ -151,6 +164,7 @@ export const AuthProvider = ({ children }) => {
     setUser,
     profile,
     setProfile,
+    authStatus,
     authReady,
     authLoading,
     applyAuth,
@@ -158,8 +172,9 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    restoreSession
-  }), [applyAuth, authLoading, authReady, hydrateAuth, login, logout, profile, restoreSession, signup, user]);
+    restoreSession,
+    hasAccess
+  }), [applyAuth, authLoading, authReady, authStatus, hydrateAuth, login, logout, profile, restoreSession, signup, user, hasAccess]);
 
   return (
     <AuthContext.Provider value={value}>

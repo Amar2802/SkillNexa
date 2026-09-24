@@ -38,7 +38,7 @@ const normalizeQuestions = (questionList = []) => questionList.map((question, in
 const RouteLoader = () => <LoadingScreen title="Loading SkillNexa..." subtitle="Preparing your interview workspace" />;
 
 const AppRoutes = () => {
-  const { user, profile, authReady, hydrateAuth, logout } = useAuth();
+  const { user, profile, authStatus, authReady, hydrateAuth, logout } = useAuth();
   const [questions, setQuestions] = useState([]);
   const [tests, setTests] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
@@ -112,13 +112,11 @@ const AppRoutes = () => {
   };
 
   useEffect(() => {
-    if (!authReady || !user) {
-      if (!user) {
-        setQuestions([]);
-        setTests([]);
-        setBookmarks([]);
-        setHistory([]);
-      }
+    if (!user || authStatus === "unauthenticated") {
+      setQuestions([]);
+      setTests([]);
+      setBookmarks([]);
+      setHistory([]);
       return;
     }
 
@@ -128,7 +126,6 @@ const AppRoutes = () => {
         setLoadingApp(true);
         setAppError("");
         await Promise.allSettled([
-          refreshProfile(),
           refreshBookmarks(),
           refreshHistory(),
           refreshTests(),
@@ -149,7 +146,7 @@ const AppRoutes = () => {
     return () => {
       active = false;
     };
-  }, [authReady, user?.email]);
+  }, [user?.email, authStatus]);
 
   const dashboardRecommendations = useMemo(() => {
     const recommendedTopics = profile?.progress?.recommendedTopics || [];
@@ -157,10 +154,6 @@ const AppRoutes = () => {
     const matched = questions.filter((question) => recommendedTopics.includes(question.topic));
     return matched.length ? matched.slice(0, 6) : questions.slice(0, 6);
   }, [profile?.progress?.recommendedTopics, questions]);
-
-  if (!authReady) {
-    return <LoadingScreen title="Verifying authentication..." subtitle="Blocking protected pages until your session is confirmed" />;
-  }
 
   return (
     <Suspense fallback={<RouteLoader />}>
@@ -175,7 +168,7 @@ const AppRoutes = () => {
 
         <Route
           element={(
-            <ProtectedRoute user={user} authReady={authReady}>
+            <ProtectedRoute user={user} authReady={authReady} authStatus={authStatus}>
               <AppLayout user={user} profile={profile} logout={logout} appError={appError} />
             </ProtectedRoute>
           )}

@@ -220,7 +220,14 @@ const Navbar = ({ user, profile, logout }) => {
             className="hidden items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-3.5 py-1.5 shadow-sm transition duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-800/90 md:flex"
           >
             <div className="text-right">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Account</div>
+              <div className="flex items-center gap-1.5 justify-end">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Account</span>
+                {currentUser?.subscription?.plan === "premium" ? (
+                  <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-black text-amber-600 dark:text-amber-400">PRO</span>
+                ) : (
+                  <span className="rounded-full bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">FREE</span>
+                )}
+              </div>
               <div className="max-w-[110px] truncate text-xs font-bold text-slate-900 dark:text-white">
                 {currentUser?.name || "User"}
               </div>
