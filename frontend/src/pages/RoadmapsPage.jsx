@@ -143,6 +143,25 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
 
+  const handleSelectTopic = (topic) => {
+    setActiveTopic(topic);
+    setSelectedMcqAnswers({});
+    setSubmittedMcqs({});
+    setFlippedCards({});
+    
+    // Smooth scroll to topic details drawer on mobile viewports
+    setTimeout(() => {
+      const drawerEl = document.getElementById("topic-details-drawer");
+      if (drawerEl) {
+        drawerEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, 50);
+  };
+
+  const handleStartPractice = (topicName) => {
+    navigate("/practice", { state: { search: topicName } });
+  };
+
   if (loading) {
     return <LoadingScreen title="Loading Learning Roadmaps..." subtitle="Building your interview preparation paths" />;
   }
@@ -251,14 +270,10 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
 
                               {/* Main Topic Node Card */}
                               <div
-                                onClick={() => {
-                                  setActiveTopic(topic);
-                                  setSelectedMcqAnswers({});
-                                  setSubmittedMcqs({});
-                                }}
+                                onClick={() => handleSelectTopic(topic)}
                                 className={`flex-1 snx-panel !p-4 cursor-pointer flex items-center justify-between transition-all duration-200 rounded-2xl ${
                                   isActive
-                                    ? "border-indigo-500 ring-2 ring-indigo-500/20 shadow-md"
+                                    ? "border-indigo-500 ring-2 ring-indigo-500/20 shadow-md bg-indigo-50/30 dark:bg-indigo-950/20"
                                     : "hover:border-slate-300 dark:hover:border-slate-700"
                                 }`}
                               >
@@ -274,7 +289,17 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
                                       <FiCheckCircle className="h-3.5 w-3.5" /> Completed
                                     </span>
                                   ) : (
-                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1">Study <FiArrowRight className="h-3.5 w-3.5" /></span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSelectTopic(topic);
+                                      }}
+                                      className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
+                                    >
+                                      <span>Study</span>
+                                      <FiArrowRight className="h-3.5 w-3.5" />
+                                    </button>
                                   )}
                                 </div>
                               </div>
@@ -290,7 +315,7 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
           </div>
 
           {/* Right Topic Details Sidebar Drawer */}
-          <aside className="space-y-6">
+          <aside className="space-y-6" id="topic-details-drawer">
             <AnimatePresence mode="wait">
               {activeTopic ? (
                 <motion.div
@@ -299,10 +324,10 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
                   exit={{ opacity: 0, x: 20 }}
                   className="snx-panel rounded-3xl space-y-6 sticky top-24 max-h-[82vh] overflow-y-auto snx-scrollbar"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-slate-800">
                     <div>
                       <span className="snx-kicker">{activeTopic.level}</span>
-                      <h3 className="snx-heading-3 mt-1.5">{activeTopic.name}</h3>
+                      <h3 className="snx-heading-3 mt-1">{activeTopic.name}</h3>
                     </div>
                     <button
                       onClick={() => setActiveTopic(null)}
@@ -312,18 +337,28 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
                     </button>
                   </div>
 
-                  {/* Progress Toggle */}
-                  <button
-                    onClick={() => toggleTopicComplete(selectedSubject.id, activeTopic.name)}
-                    className={`w-full py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 ${
-                      isCompleted(selectedSubject.id, activeTopic.name)
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900"
-                        : "snx-btn-primary"
-                    }`}
-                  >
-                    <FiCheckCircle className="h-4 w-4" />
-                    {isCompleted(selectedSubject.id, activeTopic.name) ? "Mark Incomplete" : "Mark Node as Completed"}
-                  </button>
+                  {/* Actions Bar: Mark Complete & Start Practice IDE */}
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <button
+                      onClick={() => toggleTopicComplete(selectedSubject.id, activeTopic.name)}
+                      className={`py-2.5 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 ${
+                        isCompleted(selectedSubject.id, activeTopic.name)
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900"
+                          : "snx-btn-secondary"
+                      }`}
+                    >
+                      <FiCheckCircle className="h-4 w-4 text-emerald-500" />
+                      <span>{isCompleted(selectedSubject.id, activeTopic.name) ? "Completed" : "Mark Complete"}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleStartPractice(activeTopic.name)}
+                      className="snx-btn-primary py-2.5 px-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Practice in IDE</span>
+                      <FiArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
 
                   {/* Tab: Cheat Sheet */}
                   <div className="space-y-2.5">
@@ -341,7 +376,7 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 dark:border-slate-800">
                         <FiCompass className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">Quick Revision Cards</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">Quick Revision Cards (Click to Flip)</span>
                       </div>
                       <div className="grid gap-3">
                         {activeTopic.revision.map((rev, index) => {
@@ -350,12 +385,15 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
                             <div
                               key={index}
                               onClick={() => setFlippedCards((c) => ({ ...c, [index]: !c[index] }))}
-                              className="flashcard-container relative w-full min-h-[90px]"
+                              className={`flashcard-container relative w-full min-h-[90px] cursor-pointer ${isFlipped ? "flipped" : ""}`}
                             >
                               <div className="flashcard-inner w-full h-full relative min-h-[90px]">
                                 {/* FRONT */}
                                 <div className="flashcard-front border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-800 p-4 rounded-2xl flex flex-col justify-center shadow-sm hover:border-indigo-500 transition-all">
-                                  <div className="text-[9px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1">Question</div>
+                                  <div className="text-[9px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1 flex justify-between items-center">
+                                    <span>Question</span>
+                                    <span className="text-[9px] text-slate-400">Click to flip 🔄</span>
+                                  </div>
                                   <div className="text-xs font-bold text-slate-900 dark:text-white">{rev.question}</div>
                                 </div>
                                 {/* BACK */}
@@ -376,7 +414,7 @@ const RoadmapsPage = ({ cachedRoadmaps, cachedCompletedTopics, cachedOverallComp
                   <FiCompass className="h-12 w-12 text-slate-300 dark:text-slate-700 animate-pulse" />
                   <div className="font-bold text-sm text-slate-900 dark:text-white">Select a Topic Node</div>
                   <p className="text-xs text-slate-500 max-w-[280px]">
-                    Click on any node in the roadmap to view detailed cheat sheets and quick revision questions.
+                    Click on any node in the roadmap to view detailed cheat sheets, practice problems, and quick revision questions.
                   </p>
                 </div>
               )}
