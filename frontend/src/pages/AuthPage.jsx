@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiArrowRight, FiEye, FiEyeOff, FiMail, FiX } from "react-icons/fi";
+import { FiArrowRight, FiEye, FiEyeOff, FiMail, FiX, FiPlay } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { authService } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
@@ -250,6 +250,7 @@ const ForgotPasswordPanel = ({ onBack, standalone = false }) => {
 
           <div className="flex flex-wrap gap-3">
             <button
+              type="submit"
               className="snx-btn-accent flex-1"
               disabled={loading}
             >
@@ -292,7 +293,7 @@ const AuthPage = ({ mode = "none" }) => {
   const location = useLocation();
 
   const { showToast } = useToast();
-  const { login, signup, authLoading } = useAuth();
+  const { login, signup, loginAsDemo, authLoading } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -473,20 +474,20 @@ const AuthPage = ({ mode = "none" }) => {
             className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6"
           >
             <div
-              className="absolute inset-0 bg-slate-custom-950/50 backdrop-blur-sm transition-opacity"
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
               onClick={closeModal}
             />
 
-            <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/60 bg-white/95 shadow-elevation-3 backdrop-blur-xl">
+            <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl border border-[var(--snx-border)] bg-[var(--snx-surface)] shadow-2xl dark:border-slate-800 text-slate-900 dark:text-white">
               <div className="flex flex-col gap-6 p-6 sm:p-8">
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 rounded-lg bg-slate-custom-100 p-1 shadow-sm">
+                  <div className="flex items-center gap-1 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface-subtle)] p-1 dark:border-slate-800">
                     <button
                       type="button"
-                      className={`inline-flex min-w-[100px] items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                      className={`inline-flex min-w-[100px] items-center justify-center rounded-lg px-4 py-2 text-xs font-bold transition-all duration-200 ${
                         isLogin
-                          ? "bg-white text-slate-custom-900 shadow-sm"
-                          : "text-slate-custom-600 hover:text-slate-custom-900"
+                          ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400"
+                          : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       }`}
                       onClick={() => navigate("/login")}
                     >
@@ -495,10 +496,10 @@ const AuthPage = ({ mode = "none" }) => {
 
                     <button
                       type="button"
-                      className={`inline-flex min-w-[100px] items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                      className={`inline-flex min-w-[100px] items-center justify-center rounded-lg px-4 py-2 text-xs font-bold transition-all duration-200 ${
                         isSignup
-                          ? "bg-white text-slate-custom-900 shadow-sm"
-                          : "text-slate-custom-600 hover:text-slate-custom-900"
+                          ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400"
+                          : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                       }`}
                       onClick={() => navigate("/signup")}
                     >
@@ -508,7 +509,7 @@ const AuthPage = ({ mode = "none" }) => {
 
                   <button
                     type="button"
-                    className="snx-btn-secondary snx-btn-sm"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition"
                     onClick={closeModal}
                   >
                     <FiX className="h-4 w-4" />
@@ -518,13 +519,13 @@ const AuthPage = ({ mode = "none" }) => {
                 <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
                   <div className="space-y-4">
                     <div>
-                      <span className="snx-kicker">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 uppercase tracking-wider">
                         {isForgot
                           ? "Recover access"
                           : "Secure sign in"}
                       </span>
 
-                      <h2 className="snx-heading-2 mt-2">
+                      <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-2">
                         {isForgot
                           ? "Reset password"
                           : isLogin
@@ -533,7 +534,7 @@ const AuthPage = ({ mode = "none" }) => {
                       </h2>
                     </div>
 
-                    <p className="snx-body max-w-2xl">
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
                       {isForgot
                         ? "Restore access and return to your training dashboard with a secure OTP flow."
                         : isLogin
@@ -542,7 +543,7 @@ const AuthPage = ({ mode = "none" }) => {
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-slate-custom-200/60 bg-slate-custom-50 p-6 shadow-sm-soft">
+                  <div className="rounded-2xl border border-[var(--snx-border)] bg-[var(--snx-surface-subtle)] p-6 dark:border-slate-800 shadow-subtle">
                     {isForgot ? (
                       <ForgotPasswordPanel
                         onBack={() => navigate("/login")}
@@ -554,13 +555,13 @@ const AuthPage = ({ mode = "none" }) => {
                         className="space-y-4"
                       >
                         {!isLogin ? (
-                          <label className="block space-y-2">
-                            <span className="snx-label">
+                          <label className="block space-y-1.5">
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                               Full name
                             </span>
 
                             <input
-                              className="snx-input"
+                              className="w-full h-10 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] px-3 text-xs font-medium text-slate-900 dark:text-white dark:border-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                               value={form.name}
                               onChange={(e) =>
                                 setForm({
@@ -573,17 +574,17 @@ const AuthPage = ({ mode = "none" }) => {
                           </label>
                         ) : null}
 
-                        <label className="block space-y-2">
-                          <span className="snx-label">
+                        <label className="block space-y-1.5">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Email
                           </span>
 
                           <div className="relative">
-                            <FiMail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-custom-400" />
+                            <FiMail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
                             <input
                               type="email"
-                              className="snx-input pl-10"
+                              className="w-full h-10 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] pl-10 pr-3 text-xs font-medium text-slate-900 dark:text-white dark:border-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                               value={form.email}
                               onChange={(e) =>
                                 setForm({
@@ -596,16 +597,16 @@ const AuthPage = ({ mode = "none" }) => {
                           </div>
                         </label>
 
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="snx-label">
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                               Password
                             </span>
 
                             {isLogin ? (
                               <button
                                 type="button"
-                                className="snx-link text-xs"
+                                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer"
                                 onClick={() =>
                                   navigate("/forgot-password")
                                 }
@@ -622,7 +623,7 @@ const AuthPage = ({ mode = "none" }) => {
                                   ? "text"
                                   : "password"
                               }
-                              className="snx-input pr-10"
+                              className="w-full h-10 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] pl-3 pr-10 text-xs font-medium text-slate-900 dark:text-white dark:border-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                               value={form.password}
                               onChange={(e) =>
                                 setForm({
@@ -635,7 +636,7 @@ const AuthPage = ({ mode = "none" }) => {
 
                             <button
                               type="button"
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-custom-400 hover:text-slate-custom-600"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                               onClick={() =>
                                 setShowPassword(
                                   (current) => !current
@@ -652,18 +653,18 @@ const AuthPage = ({ mode = "none" }) => {
                         </div>
 
                         {!isLogin ? (
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="snx-label">
+                              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                                 Strength
                               </span>
 
-                              <span className="font-semibold text-slate-custom-600">
+                              <span className="font-semibold text-slate-600 dark:text-slate-400">
                                 {passwordStrength.label}
                               </span>
                             </div>
 
-                            <div className="h-1.5 rounded-full bg-slate-custom-200">
+                            <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700">
                               <div
                                 className={`h-1.5 rounded-full transition-all ${passwordStrength.tone}`}
                                 style={{
@@ -676,12 +677,12 @@ const AuthPage = ({ mode = "none" }) => {
                         ) : null}
 
                         {!isLogin ? (
-                          <div className="space-y-2">
-                            <span className="snx-label">Confirm Password</span>
+                          <div className="space-y-1.5">
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Confirm Password</span>
                             <div className="relative">
                               <input
                                 type={showPassword ? "text" : "password"}
-                                className="snx-input pr-10"
+                                className="w-full h-10 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] px-3 text-xs font-medium text-slate-900 dark:text-white dark:border-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                                 value={form.confirmPassword}
                                 onChange={(e) =>
                                   setForm({
@@ -696,11 +697,11 @@ const AuthPage = ({ mode = "none" }) => {
                         ) : null}
 
                         <div className="flex flex-wrap items-center gap-3 text-xs">
-                          <label className="flex items-center gap-2 text-slate-custom-600">
+                          <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer">
                             <input
                               id="rememberMe"
                               type="checkbox"
-                              className="h-4 w-4 rounded border-slate-custom-300 text-indigo-600"
+                              className="h-4 w-4 rounded border-slate-300 text-indigo-600"
                               checked={rememberMe}
                               onChange={(event) =>
                                 setRememberMe(
@@ -713,10 +714,10 @@ const AuthPage = ({ mode = "none" }) => {
                           </label>
 
                           {!isLogin ? (
-                            <label className="flex items-center gap-2 text-slate-custom-600">
+                            <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer">
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 rounded border-slate-custom-300 text-indigo-600"
+                                className="h-4 w-4 rounded border-slate-300 text-indigo-600"
                                 checked={
                                   form.agreeToTerms
                                 }
@@ -737,14 +738,15 @@ const AuthPage = ({ mode = "none" }) => {
                         </div>
 
                         {error ? (
-                          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
                             {error}
                           </div>
                         ) : null}
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 pt-1">
                           <button
-                            className="snx-btn-primary w-full"
+                            type="submit"
+                            className="w-full h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-subtle disabled:opacity-50"
                             disabled={authLoading}
                           >
                             {authLoading
@@ -760,7 +762,7 @@ const AuthPage = ({ mode = "none" }) => {
 
                           <button
                             type="button"
-                            className="snx-btn-secondary w-full"
+                            className="w-full h-10 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                             onClick={() =>
                               authService.beginGoogleSignIn(
                                 "Software"
@@ -771,19 +773,40 @@ const AuthPage = ({ mode = "none" }) => {
                             <FcGoogle className="h-5 w-5" />
                             Continue with Google
                           </button>
+
+                          <div className="relative my-3">
+                            <div className="absolute inset-0 flex items-center">
+                              <div className="w-full border-t border-[var(--snx-border)] dark:border-slate-700" />
+                            </div>
+                            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
+                              <span className="bg-[var(--snx-surface-subtle)] px-2 text-slate-400">or explore platform</span>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="w-full h-10 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 dark:text-indigo-300 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                            onClick={() => {
+                              loginAsDemo();
+                              navigate("/dashboard");
+                            }}
+                          >
+                            <FiPlay className="h-3.5 w-3.5" />
+                            <span>Launch Instant Demo (Zero Setup)</span>
+                          </button>
                         </div>
                       </form>
                     )}
 
                     {!isForgot ? (
-                      <p className="mt-4 text-xs text-slate-custom-600 text-center">
+                      <p className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
                         {isLogin
                           ? "Don't have an account?"
                           : "Already have an account?"}
 
                         <button
                           type="button"
-                          className="ml-1 font-semibold text-indigo-600 transition hover:text-indigo-700"
+                          className="ml-1 font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer"
                           onClick={() =>
                             navigate(
                               isLogin

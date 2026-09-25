@@ -1,38 +1,43 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FiClock, FiRefreshCw, FiZap } from "react-icons/fi";
+import { FiPlus, FiClock, FiCheckCircle, FiTarget, FiZap, FiLayers } from "react-icons/fi";
 import api from "../api/client";
-import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
+import {
+  TestCard,
+  TestInstructionsModal,
+  ActiveTestInterface,
+  TestResultsView
+} from "../components/mockTests";
+import PageContainer from "../components/layout/PageContainer";
+import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
-import PageHeader from "../components/ui/PageHeader";
-import SurfaceCard from "../components/ui/SurfaceCard";
 import { useToast } from "../components/ui/ToastProvider";
 import { submitAnswerEvaluation } from "../services/evaluationService";
 
-const formatTimer = (seconds) => {
-  const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
-  return `${mins}:${secs}`;
-};
-
-const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
+export const MockTestsPage = ({
+  tests = [],
+  refreshTests,
+  refreshProfile,
+  refreshHistory
+}) => {
   const { showToast } = useToast();
+
   const [activeTest, setActiveTest] = useState(null);
-  const [pendingTest, setPendingTest] = useState(null);
+  const [selectedInstructionTest, setSelectedInstructionTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
-  const [generationError, setGenerationError] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const autoSubmittedRef = useRef(false);
+
   const [evaluationByQuestionId, setEvaluationByQuestionId] = useState({});
   const [evaluationLoadingByQuestionId, setEvaluationLoadingByQuestionId] = useState({});
 
-  const questionCount = useMemo(() => activeTest ? activeTest.sections.flatMap((section) => section.questions).length : 0, [activeTest]);
-  const pendingQuestionCount = useMemo(() => pendingTest ? pendingTest.sections.flatMap((section) => section.questions).length : 0, [pendingTest]);
-
+  // Timer Countdown Effect
   useEffect(() => {
     if (!activeTest || submitting) return undefined;
+
     if (remainingSeconds <= 0) {
       if (!autoSubmittedRef.current) {
         autoSubmittedRef.current = true;
@@ -51,61 +56,32 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
   const generateTest = async () => {
     try {
       setLoading(true);
-      setGenerationError("");
       const { data } = await api.post("/tests", {});
-      setPendingTest(data);
-      setActiveTest(null);
-      setAnswers({});
-      setResult(null);
-      setEvaluationByQuestionId({});
-      setEvaluationLoadingByQuestionId({});
-      setRemainingSeconds(0);
-      autoSubmittedRef.current = false;
       await refreshTests?.().catch(() => undefined);
-      showToast("Mock test generated successfully.", "success");
+      showToast("Fresh mock test generated.", "success");
+      setSelectedInstructionTest(data);
     } catch (error) {
-      if (error?.response?.status === 401) {
-        return;
-      }
-      setGenerationError(error.response?.data?.message || "Unable to generate a mock test right now.");
-      showToast(error.response?.data?.message || "Unable to generate a mock test right now.", "error");
+      showToast(error.response?.data?.message || "Unable to generate mock test.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const startPendingTest = () => {
-    if (!pendingTest) return;
-    setActiveTest(pendingTest);
-    setPendingTest(null);
+  const startTestFromInstructions = () => {
+    if (!selectedInstructionTest) return;
+    const testToStart = selectedInstructionTest;
+    setSelectedInstructionTest(null);
     setAnswers({});
     setResult(null);
-    setRemainingSeconds((pendingTest.duration || 30) * 60);
+    setEvaluationByQuestionId({});
+    setEvaluationLoadingByQuestionId({});
+    setActiveTest(testToStart);
+    setRemainingSeconds((testToStart.duration || 30) * 60);
     autoSubmittedRef.current = false;
   };
 
-  const requestQuestionEvaluation = async (question) => {
-    const userAnswer = answers[question._id];
-    if (!String(userAnswer || "").trim()) return;
-
-    setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
-    try {
-      const data = await submitAnswerEvaluation({
-        questionId: question._id,
-        question: `${question.title}. ${question.description || ""}`,
-        userAnswer: String(userAnswer),
-        topic: question.topic,
-        difficulty: question.difficulty,
-        interviewType: "mock-interview",
-        module: "mock-test"
-      });
-      setEvaluationByQuestionId((current) => ({ ...current, [question._id]: data }));
-    } catch {
-      setEvaluationByQuestionId((current) => ({ ...current, [question._id]: null }));
-      showToast("Evaluation failed for this question.", "error");
-    } finally {
-      setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
-    }
+  const handleAnswerChange = (questionId, value) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
   const submitTest = async (autoSubmit = false) => {
@@ -115,12 +91,25 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
       setSubmitting(true);
       const totalDurationSeconds = (activeTest.duration || 30) * 60;
       const spentSeconds = Math.max(0, totalDurationSeconds - remainingSeconds);
-      const payload = Object.entries(answers).map(([questionId, submittedAnswer]) => ({ questionId, submittedAnswer, timeSpent: 0 }));
-      const { data } = await api.post(`/tests/${activeTest._id}/submit`, { answers: payload, totalTimeSpent: spentSeconds });
-      setResult({ ...data, autoSubmitted });
+
+      const payload = Object.entries(answers).map(([questionId, submittedAnswer]) => ({
+        questionId,
+        submittedAnswer,
+        timeSpent: 0
+      }));
+
+      const { data } = await api.post(`/tests/${activeTest._id}/submit`, {
+        answers: payload,
+        totalTimeSpent: spentSeconds
+      });
+
+      setResult({ ...data, autoSubmitted: autoSubmit });
+
+      // Run AI evaluation in background for each question
       (data?.answers || []).forEach((entry) => {
         const question = entry?.question;
         if (!question || typeof question !== "object") return;
+
         setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: true }));
         void submitAnswerEvaluation({
           questionId: question._id,
@@ -130,240 +119,198 @@ const MockTestsPage = ({ refreshTests, refreshProfile, refreshHistory }) => {
           difficulty: question.difficulty,
           interviewType: "mock-interview",
           module: "mock-test"
-        }).then((evaluation) => {
-          setEvaluationByQuestionId((current) => ({ ...current, [question._id]: evaluation }));
-        }).catch(() => undefined).finally(() => {
-          setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
-        });
+        })
+          .then((evaluation) => {
+            setEvaluationByQuestionId((current) => ({ ...current, [question._id]: evaluation }));
+          })
+          .catch(() => undefined)
+          .finally(() => {
+            setEvaluationLoadingByQuestionId((current) => ({ ...current, [question._id]: false }));
+          });
       });
+
       setActiveTest(null);
-      setPendingTest(null);
       setAnswers({});
       setRemainingSeconds(0);
       refreshProfile?.();
       refreshHistory?.();
-      showToast(autoSubmit ? "Mock test auto-submitted." : "Mock test submitted successfully.", "success");
+      showToast(
+        autoSubmit ? "Time expired! Test auto-submitted." : "Test submitted successfully.",
+        "success"
+      );
     } catch (error) {
-      if (error?.response?.status === 401) {
-        return;
-      }
-      showToast(error.response?.data?.message || "Unable to submit the mock test right now.", "error");
+      showToast(error.response?.data?.message || "Failed to submit test.", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        kicker="Mock interview tests"
-        title="Run timed software mock tests with clean pacing and production-style review."
-        description="Generate a balanced software round across DSA, aptitude, HR, and core subjects, then review your answer quality with structured post-test analysis."
-        actions={(
-          <button className="snx-btn-primary" onClick={generateTest} disabled={loading}>
-            {loading ? "Generating..." : "Generate Mock Test"}
-          </button>
-        )}
-        aside={(
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            {[
-              { label: "Format", value: "30 Q mix" },
-              { label: "Timer", value: activeTest ? formatTimer(remainingSeconds) : "Adaptive" },
-              { label: "Mode", value: activeTest ? "Live" : pendingTest ? "Ready" : "Idle" }
-            ].map((item) => (
-              <div key={item.label} className="snx-stat">
-                <div className="snx-label">{item.label}</div>
-                <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{item.value}</div>
-              </div>
-            ))}
-          </div>
-        )}
+  const availableTests = useMemo(() => {
+    if (categoryFilter === "all") return tests;
+    return tests.filter((t) =>
+      (t.sections || []).some((s) => s.category?.toLowerCase() === categoryFilter.toLowerCase())
+    );
+  }, [tests, categoryFilter]);
+
+  // 1. If currently in an Active Test, show full-screen focused interface
+  if (activeTest) {
+    return (
+      <ActiveTestInterface
+        test={activeTest}
+        remainingSeconds={remainingSeconds}
+        answers={answers}
+        onAnswerChange={handleAnswerChange}
+        onSubmit={submitTest}
+        submitting={submitting}
       />
+    );
+  }
 
-      {loading && !pendingTest && !activeTest ? (
-        <div className="snx-panel-muted flex items-center gap-3">
-          <FiZap className="h-5 w-5 text-indigo-600" />
-          <div>
-            <div className="font-semibold text-slate-custom-900">Generating your mock test...</div>
-            <div className="mt-1 snx-body-sm text-slate-custom-600">Preparing a balanced question set from your software interview bank.</div>
+  // 2. If viewing a Test Result
+  if (result) {
+    return (
+      <PageContainer
+        title="Assessment Results"
+        description="Detailed score analysis, strengths, weaknesses, and question reviews."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setResult(null)}
+          >
+            Back to Assessment Hub
+          </Button>
+        }
+      >
+        <TestResultsView
+          result={result}
+          evaluationByQuestionId={evaluationByQuestionId}
+          evaluationLoadingByQuestionId={evaluationLoadingByQuestionId}
+          onRetakeTest={() => {
+            setResult(null);
+            generateTest();
+          }}
+        />
+      </PageContainer>
+    );
+  }
+
+  // 3. Default: Assessment Hub / Test Listing
+  return (
+    <PageContainer
+      title="Mock Tests"
+      description="Test your software engineering knowledge under real timed interview conditions."
+      actions={
+        <Button
+          variant="primary"
+          size="md"
+          onClick={generateTest}
+          loading={loading}
+          icon={FiPlus}
+        >
+          Generate New Test
+        </Button>
+      }
+    >
+      <div className="space-y-6">
+        {/* Quick Highlights Banner */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-4 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] dark:border-slate-800">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Format
+            </span>
+            <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+              Balanced 30 Qs
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">Algorithms, Core CS & Aptitude</p>
+          </div>
+
+          <div className="p-4 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] dark:border-slate-800">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Duration
+            </span>
+            <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+              30 Minutes
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">~1 minute pacing per question</p>
+          </div>
+
+          <div className="p-4 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] dark:border-slate-800">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Grading & AI Feedback
+            </span>
+            <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              Instant Analysis
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">Deep answer evaluations & weak spots</p>
           </div>
         </div>
-      ) : null}
 
-      {generationError ? (
-        <div className="snx-panel-muted">
-          <div className="snx-body-sm font-medium text-rose-700">{generationError}</div>
-        </div>
-      ) : null}
-
-      {pendingTest ? (
-        <div className="snx-panel-muted space-y-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <span className="snx-kicker">Generated test</span>
-              <h2 className="snx-heading-3 mt-3 text-slate-custom-900">{pendingTest.title}</h2>
-              <p className="mt-3 snx-body text-slate-custom-600">Your software mock is ready. Review the format and start when you are ready.</p>
-            </div>
-            <div className="snx-stat bg-slate-custom-900 text-white">
-              <div className="snx-label text-white/70">Duration</div>
-              <div className="mt-2 text-2xl font-semibold">{formatTimer((pendingTest.duration || 30) * 60)}</div>
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="snx-stat">
-              <div className="snx-label">Questions</div>
-              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{pendingQuestionCount}</div>
-            </div>
-            <div className="snx-stat">
-              <div className="snx-label">Duration</div>
-              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{pendingTest.duration || 30} mins</div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button className="snx-btn-primary" onClick={startPendingTest}>Start Test</button>
-            <button className="snx-btn-secondary" onClick={generateTest} disabled={loading}>
-              <FiRefreshCw className="h-4 w-4" />
-              {loading ? "Generating..." : "Regenerate"}
+        {/* Category Filters */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          {[
+            { id: "all", label: "All Tests" },
+            { id: "dsa", label: "Algorithms (DSA)" },
+            { id: "core subjects", label: "Core CS & Systems" },
+            { id: "aptitude", label: "Quantitative Aptitude" },
+            { id: "hr", label: "Behavioral & HR" }
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`rounded-lg px-3 py-1.5 font-medium transition whitespace-nowrap ${
+                categoryFilter === cat.id
+                  ? "bg-indigo-600 text-white shadow-subtle font-semibold"
+                  : "bg-[var(--snx-surface)] border border-[var(--snx-border)] text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+              }`}
+            >
+              {cat.label}
             </button>
-          </div>
+          ))}
         </div>
-      ) : null}
 
-      {activeTest ? (
-        <div className="snx-panel-muted space-y-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="snx-heading-3 text-slate-custom-900">{activeTest.title}</h2>
-              <p className="mt-3 snx-body text-slate-custom-600">
-                Answer each question and submit any time, or let the test auto-submit when the timer reaches zero.
-              </p>
-            </div>
-            <div className="snx-stat bg-slate-custom-900 text-white">
-              <div className="snx-label text-white/70 inline-flex items-center gap-2">
-                <FiClock className="h-4 w-4" />
-                Time left
-              </div>
-              <div className="mt-2 text-2xl font-semibold">{formatTimer(remainingSeconds)}</div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="snx-stat">
-              <div className="snx-label">Questions</div>
-              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{questionCount}</div>
-            </div>
-            <div className="snx-stat">
-              <div className="snx-label">Duration</div>
-              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{activeTest.duration || 30} mins</div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {activeTest.sections.flatMap((section) => section.questions).map((question, index) => (
-              <div key={question._id} className="snx-card space-y-4 snx-fade-in">
-                <div className="flex items-start gap-4">
-                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-sm font-semibold text-white">
-                    {index + 1}
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="snx-heading-4 text-slate-custom-900">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h3>
-                    <p className="mt-2 snx-body-sm text-slate-custom-600">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="snx-badge-primary text-xs">{question.category}</span>
-                      <span className="snx-badge text-xs">{question.topic}</span>
-                      <span className="snx-badge text-xs">{question.type}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {question.type === "MCQ" ? (
-                  <div className="grid gap-3">
-                    {(question.options || []).map((option) => (
-                      <button key={option} className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all duration-300 ${
-                        answers[question._id] === option
-                          ? "border-indigo-500 bg-indigo-50 text-indigo-900 shadow-md-soft"
-                          : "border-slate-custom-200 bg-white text-slate-custom-700 hover:border-indigo-200 hover:bg-indigo-50"
-                      }`} onClick={() => setAnswers((current) => ({ ...current, [question._id]: option }))}>{option}</button>
-                    ))}
-                  </div>
-                ) : (
-                  <textarea
-                    className="snx-textarea min-h-[150px]"
-                    value={answers[question._id] || ""}
-                    onChange={(event) => setAnswers((current) => ({ ...current, [question._id]: event.target.value }))}
-                    placeholder={question.type === "Coding" ? "Write code or your approach here..." : "Write your answer here..."}
-                  />
-                )}
-
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    className="snx-btn-secondary"
-                    onClick={() => requestQuestionEvaluation(question)}
-                    disabled={!String(answers[question._id] || "").trim() || evaluationLoadingByQuestionId[question._id]}
-                  >
-                    {evaluationLoadingByQuestionId[question._id] ? "Analyzing..." : "Analyze Answer"}
-                  </button>
-                </div>
-                <AnswerEvaluationCard evaluation={evaluationByQuestionId[question._id]} loading={evaluationLoadingByQuestionId[question._id]} />
-              </div>
+        {/* Test Cards Grid */}
+        {availableTests.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availableTests.map((test, index) => (
+              <TestCard
+                key={test._id || index}
+                test={test}
+                isRecommended={index === 0}
+                onStart={(t) => setSelectedInstructionTest(t)}
+                loading={loading}
+              />
             ))}
           </div>
+        ) : (
+          <EmptyState
+            title="Ready for your first mock test?"
+            description="Generate a fresh software assessment covering algorithms, system concepts, and aptitude."
+            action={
+              <Button
+                variant="primary"
+                size="md"
+                onClick={generateTest}
+                loading={loading}
+                icon={FiPlus}
+              >
+                Generate Mock Test
+              </Button>
+            }
+          />
+        )}
+      </div>
 
-          <button className="snx-btn-primary" onClick={() => submitTest(false)} disabled={submitting}>
-            {submitting ? "Submitting..." : "Submit Test"}
-          </button>
-        </div>
-      ) : null}
-
-      {result ? (
-        <div className="snx-panel-muted space-y-6">
-          <div>
-            <span className="snx-kicker">Latest result</span>
-            <h2 className="snx-heading-3 mt-3 text-slate-custom-900">{result.autoSubmitted ? "Mock test auto-submitted when time ended" : "Mock test submitted successfully"}</h2>
-          </div>
-          <div className="snx-grid-auto">
-            <div className="snx-stat">
-              <div className="snx-label">Score</div>
-              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{result.score}</div>
-            </div>
-            <div className="snx-stat">
-              <div className="snx-label">Accuracy</div>
-              <div className="mt-3 text-2xl font-semibold text-slate-custom-900">{result.accuracy}%</div>
-            </div>
-            <div className="snx-stat">
-              <div className="snx-label">Weak Topics</div>
-              <div className="mt-3 snx-body-sm font-medium text-slate-custom-700">{(result.weakTopics || []).join(", ") || "None"}</div>
-            </div>
-            <div className="snx-stat">
-              <div className="snx-label">Strengths</div>
-              <div className="mt-3 snx-body-sm font-medium text-slate-custom-700">{(result.strengths || []).join(", ") || "None"}</div>
-            </div>
-          </div>
-          <div className="space-y-4">
-            {(result.answers || []).map((entry, index) => {
-              const question = entry?.question;
-              if (!question || typeof question !== "object") return null;
-              return (
-                <div key={question._id || index} className="snx-card">
-                  <h3 className="snx-heading-4 text-slate-custom-900">{question.title}</h3>
-                  <p className="mt-2 snx-body-sm text-slate-custom-600">{String(entry.submittedAnswer || "No answer submitted")}</p>
-                  <AnswerEvaluationCard evaluation={evaluationByQuestionId[question._id]} loading={evaluationLoadingByQuestionId[question._id]} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      {!activeTest && !pendingTest && !result ? (
-        <EmptyState
-          title="Ready for a fresh mock?"
-          description="Generate a new software mock test to practice DSA, aptitude, HR, and core subjects in one polished round."
-          action={<button className="snx-btn-primary" onClick={generateTest}>Generate Mock Test</button>}
-        />
-      ) : null}
-    </div>
+      {/* Instructions Modal */}
+      <TestInstructionsModal
+        isOpen={Boolean(selectedInstructionTest)}
+        onClose={() => setSelectedInstructionTest(null)}
+        test={selectedInstructionTest}
+        onStart={startTestFromInstructions}
+        loading={loading}
+      />
+    </PageContainer>
   );
 };
 

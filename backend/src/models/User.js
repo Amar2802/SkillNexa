@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, default: "" },
     googleId: String,
     avatar: String,
+    bio: { type: String, default: "", maxlength: 300 },
     targetField: { type: String, enum: FIELD_OPTIONS, default: "Software" },
     interests: [String],
     bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
@@ -22,6 +23,22 @@ const userSchema = new mongoose.Schema(
       accuracy: { type: Number, default: 0 },
       weakTopics: [String],
       recommendedTopics: [String]
+    },
+    preferences: {
+      theme: { type: String, enum: ["light", "dark", "system"], default: "system" },
+      preferredLanguage: { type: String, default: "javascript" },
+      learningGoalHoursPerWeek: { type: Number, default: 5 },
+      notifications: {
+        emailReminders: { type: Boolean, default: true },
+        practiceStreakAlerts: { type: Boolean, default: true },
+        mockInterviewFeedback: { type: Boolean, default: true },
+        weeklyProgressReport: { type: Boolean, default: true }
+      },
+      privacy: {
+        publicProfile: { type: Boolean, default: true },
+        showOnLeaderboard: { type: Boolean, default: true },
+        showActivityHeatmap: { type: Boolean, default: true }
+      }
     },
     subscription: {
       plan: { type: String, enum: ["free", "premium"], default: "free" },

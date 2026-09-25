@@ -20,7 +20,33 @@ import { OTP_TTL_MINUTES, sendPasswordResetOtp } from "../utils/mailer.js";
 const normalizeTargetField = (value) => (FIELD_OPTIONS.includes(value) ? value : "Software");
 const createOtp = () => `${Math.floor(100000 + Math.random() * 900000)}`;
 const looksHashedPassword = (value) => /^\$2[aby]\$/.test(String(value || ""));
-const getClientUrl = () => String(process.env.CLIENT_URL || "http://localhost:5173").trim().replace(/^['"]|['"]$/g, "");
+
+const parseOrigins = (value) =>
+  String(value || "")
+    .split(/[,\s]+/)
+    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, ""))
+    .filter(Boolean);
+
+const isAllowedOrigin = (url) => {
+  if (!url) return false;
+  try {
+    const origin = new URL(url).origin;
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
+    if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)) return true;
+    const configured = parseOrigins(process.env.CLIENT_URL);
+    return configured.some((c) => c.replace(/\/+$/, "") === origin);
+  } catch {
+    return false;
+  }
+};
+
+const getClientUrl = (preferredUrl) => {
+  if (preferredUrl && isAllowedOrigin(preferredUrl)) {
+    return preferredUrl.replace(/\/+$/, "");
+  }
+  const configured = parseOrigins(process.env.CLIENT_URL);
+  return configured[0] || "http://localhost:5173";
+};
 
 const sanitizeInterests = (interests) => {
   if (!Array.isArray(interests)) return [];
@@ -97,8 +123,8 @@ const findUserFromRefreshCookie = async (req) => {
   }
 };
 
-const buildOauthFailureRedirect = (message) =>
-  `${getClientUrl()}/login?oauthError=${encodeURIComponent(message)}`;
+const buildOauthFailureRedirect = (message, preferredClientUrl) =>
+  `${getClientUrl(preferredClientUrl)}/login?oauthError=${encodeURIComponent(message)}`;
 
 export const signup = async (req, res) => {
   try {
@@ -308,26 +334,58 @@ export const resetPasswordWithOtp = async (req, res) => {
 };
 
 export const googleAuth = (req, res, next) => {
+  const clientUrl = String(req.query.clientUrl || req.headers.referer || req.headers.origin || "").trim();
+
   if (!isGoogleOAuthConfigured) {
-    return res.redirect(buildOauthFailureRedirect("Google sign-in is not configured correctly on the server."));
+    return res.redirect(buildOauthFailureRedirect("Google sign-in is not configured correctly on the server.", clientUrl));
   }
 
   const safeField = normalizeTargetField(req.query.targetField);
+  const statePayload = Buffer.from(JSON.stringify({ targetField: safeField, clientUrl })).toString("base64url");
+
   passport.authenticate("google", {
     scope: ["profile", "email"],
     session: false,
-    state: safeField
+    state: statePayload
   })(req, res, next);
 };
 
 export const googleCallback = [
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: buildOauthFailureRedirect("Google authentication failed. Check client credentials and callback URL.")
-  }),
+  (req, res, next) => {
+    let clientUrl = "";
+    if (req.query.state) {
+      try {
+        const decoded = JSON.parse(Buffer.from(req.query.state, "base64url").toString("utf-8"));
+        if (decoded?.clientUrl && isAllowedOrigin(decoded.clientUrl)) {
+          clientUrl = decoded.clientUrl;
+        }
+      } catch {
+        // Plain string state
+      }
+    }
+    passport.authenticate("google", {
+      session: false,
+      failureRedirect: buildOauthFailureRedirect(
+        "Google authentication failed. Check client credentials and callback URL.",
+        clientUrl
+      )
+    })(req, res, next);
+  },
   async (req, res) => {
+    let clientUrl = "";
+    if (req.query.state) {
+      try {
+        const decoded = JSON.parse(Buffer.from(req.query.state, "base64url").toString("utf-8"));
+        if (decoded?.clientUrl && isAllowedOrigin(decoded.clientUrl)) {
+          clientUrl = decoded.clientUrl;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    const resolvedClientUrl = getClientUrl(clientUrl);
     const rememberMe = true;
     const session = await issueAuthSession({ res, user: req.user, rememberMe });
-    res.redirect(`${getClientUrl()}/oauth-success?accessToken=${encodeURIComponent(session.accessToken)}`);
+    res.redirect(`${resolvedClientUrl}/oauth-success?accessToken=${encodeURIComponent(session.accessToken)}`);
   }
 ];

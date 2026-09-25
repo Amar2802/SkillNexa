@@ -5,6 +5,43 @@ export default {
   theme: {
     extend: {
       colors: {
+        // SkillNexa Semantic Design Tokens
+        primary: {
+          DEFAULT: "#4F46E5", // Indigo 600
+          hover: "#4338CA",   // Indigo 700
+          light: "#EEF2FF",   // Indigo 50
+          dark: "#3730A3",    // Indigo 800
+          subtle: "rgba(79, 70, 229, 0.08)",
+          glow: "rgba(79, 70, 229, 0.25)"
+        },
+        secondary: {
+          DEFAULT: "#0F172A", // Slate 900
+          hover: "#1E293B",
+          subtle: "rgba(15, 23, 42, 0.04)"
+        },
+        surface: {
+          DEFAULT: "var(--snx-surface)",
+          elevated: "var(--snx-surface-elevated)",
+          subtle: "var(--snx-surface-subtle)",
+          card: "var(--snx-surface-card)"
+        },
+        border: {
+          DEFAULT: "var(--snx-border)",
+          subtle: "var(--snx-border-subtle)",
+          strong: "var(--snx-border-strong)"
+        },
+        text: {
+          primary: "var(--snx-text-primary)",
+          secondary: "var(--snx-text-secondary)",
+          muted: "var(--snx-text-muted)"
+        },
+        status: {
+          success: "#10B981",
+          warning: "#F59E0B",
+          error: "#EF4444",
+          info: "#0EA5E9"
+        },
+        // Existing Brand Compatibility Palettes
         brand: {
           50: "#EEF2FF",
           100: "#E0E7FF",
@@ -47,16 +84,26 @@ export default {
           900: "#0F172A"
         }
       },
-      maxWidth: { app: "1400px" },
+      maxWidth: {
+        app: "1400px",
+        content: "1280px"
+      },
       boxShadow: {
+        "subtle": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        "card": "0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06)",
+        "card-hover": "0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04)",
+        "dropdown": "0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05)",
         "sm-soft": "0 2px 8px rgba(15, 23, 42, 0.05)",
         "md-soft": "0 8px 24px rgba(15, 23, 42, 0.08)",
         "lg-soft": "0 16px 40px rgba(15, 23, 42, 0.12)",
-        "elevation-1": "0 4px 14px rgba(79, 70, 229, 0.2)",
-        "elevation-2": "0 8px 28px rgba(79, 70, 229, 0.28)"
+        "elevation-1": "0 4px 14px rgba(79, 70, 229, 0.15)",
+        "elevation-2": "0 8px 28px rgba(79, 70, 229, 0.22)"
       },
-      borderRadius: { card: "20px" },
-      transitionDuration: { DEFAULT: "200ms" }
+      borderRadius: {
+        card: "14px",
+        snx: "10px"
+      },
+      transitionDuration: { DEFAULT: "180ms" }
     }
   },
   plugins: []

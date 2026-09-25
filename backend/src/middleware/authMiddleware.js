@@ -45,6 +45,25 @@ export const protect = async (req, res, next) => {
   }
 };
 
+export const optionalProtect = async (req, res, next) => {
+  const authHeader = String(req.headers.authorization || "").trim();
+  if (!authHeader) return next();
+
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) return next();
+
+  try {
+    const decoded = verifyAccessToken(token);
+    req.user = await User.findById(decoded.id);
+    if (req.user) {
+      req.auth = { userId: String(req.user._id), email: req.user.email };
+    }
+  } catch {
+    // Continue unauthenticated if token expired/invalid
+  }
+  next();
+};
+
 export const isAdmin = (req, res, next) => {
   if (req.user && (req.user.role === "admin" || String(req.user.email).toLowerCase().includes("admin"))) {
     next();

@@ -385,3 +385,200 @@ Return valid JSON only matching this shape:
     res.status(500).json({ message: "Error compiling and saving the interview session." });
   }
 };
+
+export const getInterviewSessions = async (req, res) => {
+  try {
+    const sessions = await InterviewSession.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(10);
+    res.json(sessions);
+  } catch (error) {
+    res.status(500).json({ message: "Unable to retrieve interview sessions." });
+  }
+};
+
+export const chatWithMentor = async (req, res) => {
+  const { messages = [], context = null, mode = "general" } = req.body;
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ message: "Messages array is required." });
+  }
+
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content || "";
+  if (!lastUserMessage.trim()) {
+    return res.status(400).json({ message: "User message content is required." });
+  }
+
+  let systemPrompt = `You are the SkillNexa AI Developer Mentor, an experienced principal software engineer and supportive technical coach.
+Your mission is to help candidates master software engineering, data structures & algorithms (DSA), system design, code debugging, and technical interview preparation.
+
+Core Style Guidelines:
+- Write clear, structured, readable responses using clean Markdown.
+- Use headings (## Approach, ## Complexity, ## Key Takeaways) where appropriate for technical clarity.
+- For code snippets, always specify the language in markdown code blocks (\`\`\`javascript, \`\`\`python, \`\`\`cpp, \`\`\`java).
+- Provide concise, developer-grade code with comments on non-obvious lines.
+- Always include Time Complexity and Space Complexity analysis when discussing algorithmic solutions.`;
+
+  if (mode === "hint") {
+    systemPrompt += `\nMode: HINT GENERATION
+The user is asking for guidance on a problem. DO NOT immediately provide the full solution code.
+Instead, provide progressive, layered hints:
+1. High-level intuition or mental model.
+2. Recommended data structure or technique.
+3. Edge case or key transition without spoiling the entire code.`;
+  } else if (mode === "debug") {
+    systemPrompt += `\nMode: CODE DEBUGGING
+Analyze the code and error provided by the user.
+Structure your reply into:
+1. What went wrong (the bug/root cause).
+2. Why it occurred (language/runtime behavior).
+3. How to fix it (conceptual resolution).
+4. Corrected code snippet with changes clearly marked.`;
+  } else if (mode === "interview") {
+    systemPrompt += `\nMode: TECHNICAL INTERVIEW COACHING
+Conduct a realistic technical interview dialogue.
+Offer insightful feedback on communication, time/space trade-offs, and recommend follow-up questions.`;
+  } else if (mode === "plan") {
+    systemPrompt += `\nMode: STUDY PLANNING
+Generate a structured, actionable study schedule with realistic milestones, topic sequencing, and practice problem recommendations.`;
+  }
+
+  if (context) {
+    systemPrompt += `\n\nActive User Context:
+Type: ${context.type || "General"}
+Title: ${context.title || "N/A"}
+Topic/Category: ${context.topic || context.course || "N/A"}
+Difficulty: ${context.difficulty || "N/A"}
+${context.code ? `Current User Code:\n\`\`\`\n${context.code}\n\`\`\`` : ""}
+${context.cheatSheet ? `Reference Syllabus / Notes:\n${context.cheatSheet}` : ""}`;
+  }
+
+  if (openai) {
+    try {
+      const formattedMessages = [
+        { role: "system", content: systemPrompt },
+        ...messages.slice(-10).map((m) => ({
+          role: m.role === "assistant" ? "assistant" : "user",
+          content: String(m.content)
+        }))
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        messages: formattedMessages,
+        temperature: 0.7,
+        max_tokens: 1500
+      });
+
+      const replyContent = completion.choices[0]?.message?.content || "I'm here to help. Could you rephrase your question?";
+      return res.json({
+        role: "assistant",
+        content: replyContent,
+        timestamp: new Date().toISOString()
+      });
+    } catch (apiError) {
+      console.error("OpenAI chatWithMentor error:", apiError?.message || apiError);
+      // Fall through to heuristic fallback
+    }
+  }
+
+  const lowerMsg = lastUserMessage.toLowerCase();
+  let fallbackReply = "";
+
+  if (mode === "hint" || lowerMsg.includes("hint")) {
+    fallbackReply = `### Progressive Hint for ${context?.title || "Your Problem"}
+
+**Hint 1 — Mental Model:**
+Notice whether the problem requires frequent lookups or sorted order. If you need instantaneous lookups, consider using a **Hash Map** or **Hash Set**.
+
+**Hint 2 — Invariant & Strategy:**
+As you iterate through the input, ask yourself: *"What element or state complements the current value to satisfy the condition?"* Storing values or indices seen so far allows you to verify matches in a single $O(N)$ pass.
+
+**Hint 3 — Edge Cases:**
+Check for empty inputs, negative numbers, and duplicate entries. Try dry-running with a minimal test case before writing full code.
+
+Would you like to see a starter template or the complete optimal solution?`;
+  } else if (mode === "debug" || lowerMsg.includes("error") || lowerMsg.includes("debug") || lowerMsg.includes("fix")) {
+    fallbackReply = `### Debugging Analysis
+
+**1. Potential Root Cause:**
+Common issues in this scenario include:
+- Off-by-one errors in loop boundaries (\`i <= n\` vs \`i < n\`).
+- Unhandled null or undefined references when accessing properties on uninitialized objects.
+- Time Limit Exceeded ($O(N^2)$ brute force instead of $O(N)$ or $O(N \\log N)$).
+
+**2. Recommended Fix:**
+Ensure variables are defensively checked before access and that the loop termination condition cleanly handles boundary elements.
+
+\`\`\`javascript
+// Recommended defensive structure
+function solve(input) {
+  if (!input || input.length === 0) return 0;
+  
+  // Use optimal lookup structure
+  const seen = new Map();
+  for (let i = 0; i < input.length; i++) {
+    // Process element with bounds safety
+    seen.set(input[i], i);
+  }
+  return seen.size;
+}
+\`\`\`
+
+Would you like me to analyze a specific error message or code snippet?`;
+  } else if (mode === "plan" || lowerMsg.includes("plan") || lowerMsg.includes("schedule")) {
+    fallbackReply = `### 4-Week Technical Preparation Blueprint
+
+#### Week 1: Foundations & Linear Structures
+- **Topics**: Arrays, Two-Pointer technique, Sliding Window, Strings.
+- **Goal**: Solve 15 Easy + 10 Medium problems.
+- **Milestone**: Master Prefix Sums and Hash Map lookups.
+
+#### Week 2: Linked Lists, Stacks & Queues
+- **Topics**: Fast & Slow pointers, Monotonic Stacks, BFS queues.
+- **Goal**: 12 Medium problems.
+- **Milestone**: Implement LRU Cache and Valid Parentheses variations.
+
+#### Week 3: Trees, Graphs & Recursion
+- **Topics**: Binary Search Trees, DFS traversal, BFS level order, Topological Sort.
+- **Goal**: 15 Medium + 3 Hard problems.
+- **Milestone**: Comfortable with graph cycle detection and shortest path basics.
+
+#### Week 4: Dynamic Programming & Mock Rounds
+- **Topics**: 1D/2D DP, Memoization vs Tabulation, Timed Mock Assessments.
+- **Goal**: Complete 2 full-length SkillNexa Mock Tests and review mistakes.
+
+Which track would you like to customize first?`;
+  } else {
+    fallbackReply = `### Developer Mentor Guidance
+
+To tackle **${context?.title || "this technical challenge"}**, here is the recommended approach:
+
+1. **Clarify Constraints**: Ask about input size ($N \\le 10^5$ requires $O(N)$ or $O(N \\log N)$ time; $N \\le 10^3$ can tolerate $O(N^2)$).
+2. **Identify Core Pattern**: Determine whether the solution benefits from Divide & Conquer, Greedy selection, Dynamic Programming, or standard Two-Pointer scanning.
+3. **Analyze Complexity**:
+   - **Time Complexity**: Aim for optimal bounds relative to input constraints.
+   - **Space Complexity**: Minimize auxiliary memory when possible ($O(1)$ in-place).
+
+\`\`\`javascript
+// Example idiomatic solution template
+function solution(data) {
+  let result = 0;
+  // Initialize state tracking
+  for (const item of data) {
+    // Core logic
+    result += item;
+  }
+  return result;
+}
+\`\`\`
+
+What specific aspect of this would you like to explore deeper?`;
+  }
+
+  return res.json({
+    role: "assistant",
+    content: fallbackReply,
+    timestamp: new Date().toISOString()
+  });
+};

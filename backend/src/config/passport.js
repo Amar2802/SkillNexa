@@ -5,6 +5,19 @@ import { signAccessToken } from "../utils/generateToken.js";
 import { FIELD_DEFAULT_TOPICS, FIELD_OPTIONS } from "../utils/prepFields.js";
 
 const normalizeTargetField = (value) => (FIELD_OPTIONS.includes(value) ? value : "Software");
+const extractTargetFieldFromState = (rawState) => {
+  if (!rawState) return "Software";
+  try {
+    const jsonStr = rawState.startsWith("{")
+      ? rawState
+      : Buffer.from(rawState, "base64url").toString("utf-8");
+    const parsed = JSON.parse(jsonStr);
+    return normalizeTargetField(parsed?.targetField);
+  } catch {
+    return normalizeTargetField(rawState);
+  }
+};
+
 const sanitizeEnvValue = (value) => String(value || "").trim().replace(/^['"]|['"]$/g, "");
 const isPlaceholderCredential = (value) => !value || /^your_google_client_(id|secret)$/i.test(value);
 const googleClientId = sanitizeEnvValue(process.env.GOOGLE_CLIENT_ID);
@@ -41,7 +54,7 @@ if (isGoogleOAuthConfigured) {
           if (!email) {
             return done(new Error("Google account email is unavailable"), null);
           }
-          const requestedField = normalizeTargetField(req.query.state);
+          const requestedField = extractTargetFieldFromState(req.query.state);
           let user = await User.findOne({ $or: [{ email }, { googleId: profile.id }] });
 
           if (!user) {

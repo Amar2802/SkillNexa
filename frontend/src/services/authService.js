@@ -1,12 +1,12 @@
 import api, { performTokenRefresh } from "./api";
 
 const resolveServerUrl = () => {
-  const envServerUrl = String(import.meta.env.VITE_SERVER_URL || "").trim();
-  if (envServerUrl) return envServerUrl.replace(/\/+$/, "");
-
   if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
     return "http://localhost:5000";
   }
+
+  const envServerUrl = String(import.meta.env.VITE_SERVER_URL || "").trim();
+  if (envServerUrl) return envServerUrl.replace(/\/+$/, "");
 
   return "https://skillnexa-backend.onrender.com";
 };
@@ -35,6 +35,11 @@ export const authService = {
   },
   beginGoogleSignIn(targetField = "Software") {
     const serverUrl = resolveServerUrl();
-    window.location.assign(`${serverUrl}/api/auth/google?targetField=${encodeURIComponent(targetField)}`);
+    const clientUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const params = new URLSearchParams({
+      targetField,
+      ...(clientUrl ? { clientUrl } : {})
+    });
+    window.location.assign(`${serverUrl}/api/auth/google?${params.toString()}`);
   }
 };

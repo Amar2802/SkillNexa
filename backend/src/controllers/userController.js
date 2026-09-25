@@ -1,6 +1,8 @@
 import Question from "../models/Question.js";
 import Result from "../models/Result.js";
 import User from "../models/User.js";
+import Notification from "../models/Notification.js";
+import bcrypt from "bcryptjs";
 import { toSafeUser } from "../utils/auth.js";
 import AnswerEvaluation from "../models/AnswerEvaluation.js";
 import { weakTopicsFromAnswers } from "../utils/analytics.js";
@@ -199,6 +201,222 @@ export const updateTargetField = async (req, res) => {
   await req.user.save();
 
   res.json({ message: "Target field updated", targetField: req.user.targetField, user: toSafeUser(req.user) });
+};
+
+export const updateProfile = async (req, res) => {
+  const { name, bio, targetField, interests } = req.body;
+
+  if (name && typeof name === "string") {
+    req.user.name = name.trim().slice(0, 80);
+  }
+  if (bio !== undefined && typeof bio === "string") {
+    req.user.bio = bio.trim().slice(0, 300);
+  }
+  if (targetField && FIELD_OPTIONS.includes(targetField)) {
+    req.user.targetField = targetField;
+  }
+  if (Array.isArray(interests)) {
+    req.user.interests = interests.map((item) => String(item).trim()).filter(Boolean).slice(0, 16);
+  }
+
+  await req.user.save();
+  res.json({ message: "Profile updated successfully", user: toSafeUser(req.user) });
+};
+
+export const updatePreferences = async (req, res) => {
+  try {
+    const { theme, preferredLanguage, learningGoalHoursPerWeek, notifications, privacy } = req.body;
+
+    if (!req.user.preferences) {
+      req.user.preferences = {};
+    }
+
+    if (theme && ["light", "dark", "system"].includes(theme)) {
+      req.user.preferences.theme = theme;
+    }
+    if (preferredLanguage && typeof preferredLanguage === "string") {
+      req.user.preferences.preferredLanguage = preferredLanguage;
+    }
+    if (typeof learningGoalHoursPerWeek === "number") {
+      req.user.preferences.learningGoalHoursPerWeek = Math.max(1, Math.min(40, learningGoalHoursPerWeek));
+    }
+    if (notifications && typeof notifications === "object") {
+      req.user.preferences.notifications = {
+        ...(req.user.preferences.notifications || {}),
+        ...notifications
+      };
+    }
+    if (privacy && typeof privacy === "object") {
+      req.user.preferences.privacy = {
+        ...(req.user.preferences.privacy || {}),
+        ...privacy
+      };
+    }
+
+    await req.user.save();
+    res.json({ message: "Preferences updated successfully", user: toSafeUser(req.user) });
+  } catch (error) {
+    console.error("updatePreferences error:", error.message || error);
+    res.status(500).json({ message: "Failed to update preferences" });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+
+    // If user already has a password, verify currentPassword
+    if (req.user.password) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: "Current password is required" });
+      }
+      const isMatch = await bcrypt.compare(currentPassword, req.user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+    }
+
+    req.user.password = newPassword; // Will be hashed by pre-save hook
+    await req.user.save();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("changePassword error:", error.message || error);
+    res.status(500).json({ message: "Failed to update password" });
+  }
+};
+
+export const deleteAccount = async (req, res) => {
+  try {
+    const { confirmationText, password } = req.body;
+
+    if (confirmationText !== "DELETE") {
+      return res.status(400).json({ message: "Please type DELETE to confirm account removal" });
+    }
+
+    if (req.user.password) {
+      if (!password) {
+        return res.status(400).json({ message: "Password is required to confirm account deletion" });
+      }
+      const isMatch = await bcrypt.compare(password, req.user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Incorrect password" });
+      }
+    }
+
+    const userId = req.user._id;
+
+    // Remove user records
+    await Promise.allSettled([
+      Result.deleteMany({ user: userId }),
+      AnswerEvaluation.deleteMany({ user: userId }),
+      Notification.deleteMany({ user: userId }),
+      User.findByIdAndDelete(userId)
+    ]);
+
+    res.clearCookie("refreshToken");
+    res.json({ message: "Your SkillNexa account has been permanently removed" });
+  } catch (error) {
+    console.error("deleteAccount error:", error.message || error);
+    res.status(500).json({ message: "Failed to delete account" });
+  }
+};
+
+export const getLeaderboard = async (req, res) => {
+  try {
+    const users = await User.find({}, "name avatar bio targetField streakCount progress preferences createdAt").lean();
+    const results = await Result.find({}, "user answers score accuracy").lean();
+
+    const statsByUser = {};
+    results.forEach((r) => {
+      const uId = String(r.user);
+      if (!statsByUser[uId]) statsByUser[uId] = { solved: 0, tests: 0, totalScore: 0 };
+      statsByUser[uId].tests += 1;
+      statsByUser[uId].totalScore += r.score || 0;
+      (r.answers || []).forEach((a) => {
+        if (a.isCorrect) statsByUser[uId].solved += 1;
+      });
+    });
+
+    // Filter out users who opted out of the public leaderboard
+    const eligibleUsers = users.filter((u) => u.preferences?.privacy?.showOnLeaderboard !== false);
+
+    const entries = eligibleUsers.map((u) => {
+      const uId = String(u._id);
+      const stats = statsByUser[uId] || { solved: 0, tests: u.progress?.testsTaken || 0, totalScore: 0 };
+      const solved = stats.solved;
+      const tests = stats.tests;
+      const points = (solved * 10) + (tests * 25) + ((u.streakCount || 0) * 5);
+
+      return {
+        _id: u._id,
+        name: u.name,
+        avatar: u.avatar || "",
+        bio: u.bio || "",
+        targetField: u.targetField || "Software",
+        streakCount: u.streakCount || 0,
+        problemsSolved: solved,
+        testsCompleted: tests,
+        points
+      };
+    }).sort((a, b) => b.points - a.points || b.problemsSolved - a.problemsSolved);
+
+    entries.forEach((item, index) => {
+      item.rank = index + 1;
+    });
+
+    const currentUserId = String(req.user?._id || "");
+    const currentUserRank = entries.find((e) => String(e._id) === currentUserId) || null;
+
+    res.json({
+      leaderboard: entries.slice(0, 100),
+      totalParticipants: entries.length,
+      currentUserRank
+    });
+  } catch (error) {
+    console.error("getLeaderboard error:", error.message || error);
+    res.status(500).json({ message: "Error fetching leaderboard data" });
+  }
+};
+
+export const getPublicProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id, "name avatar bio targetField interests streakCount progress preferences createdAt").lean();
+    if (!user) {
+      return res.status(404).json({ message: "Developer profile not found" });
+    }
+
+    if (user.preferences?.privacy?.publicProfile === false) {
+      return res.status(403).json({ message: "This developer profile is private." });
+    }
+
+    const results = await Result.find({ user: user._id }, "answers score").lean();
+    let problemsSolved = 0;
+    results.forEach((r) => {
+      (r.answers || []).forEach((a) => {
+        if (a.isCorrect) problemsSolved += 1;
+      });
+    });
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      avatar: user.avatar || "",
+      bio: user.bio || "",
+      targetField: user.targetField || "Software",
+      interests: user.interests || [],
+      streakCount: user.streakCount || 0,
+      testsCompleted: results.length,
+      problemsSolved,
+      memberSince: user.createdAt
+    });
+  } catch {
+    res.status(404).json({ message: "Profile not found" });
+  }
 };
 
 export const getBookmarks = async (req, res) => {

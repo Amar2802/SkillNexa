@@ -1,10 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiBookOpen, FiBookmark, FiClock, FiFileText, FiAlertCircle, FiChevronRight, FiPrinter, FiRotateCw, FiCheckCircle } from "react-icons/fi";
+import {
+  FiBookOpen,
+  FiBookmark,
+  FiClock,
+  FiFileText,
+  FiAlertCircle,
+  FiChevronRight,
+  FiPrinter,
+  FiCheckCircle,
+  FiCompass,
+  FiCode
+} from "react-icons/fi";
+import PageContainer from "../components/layout/PageContainer";
 import PageHeader from "../components/ui/PageHeader";
+import Card, { CardHeader, CardTitle, CardContent } from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
 import LoadingScreen from "../components/ui/LoadingScreen";
-import EmptyState from "../components/ui/EmptyState";
 import { useToast } from "../components/ui/ToastProvider";
 
 const fallbackRevisionData = {
@@ -28,7 +41,7 @@ const fallbackRevisionData = {
       topic: "Data Structures & Algorithms",
       subject: "Computer Science",
       level: "Intermediate",
-      cheatSheet: "Arrays store contiguous memory blocks (`O(1)` access). Hash Maps provide average `O(1)` lookups. Use two pointers for sorted pair searches and sliding window for continuous subarray constraints.",
+      cheatSheet: "Arrays store contiguous memory blocks (O(1) access). Hash Maps provide average O(1) lookups. Use two pointers for sorted pair searches and sliding window for continuous subarray constraints.",
       flashcards: [
         { question: "What is the time complexity of searching in a Balanced BST?", answer: "O(log N) for search, insert, and delete operations." },
         { question: "When should you prefer a Linked List over an Array?", answer: "When frequent insertions and deletions at arbitrary positions are needed without memory reallocation." }
@@ -38,7 +51,7 @@ const fallbackRevisionData = {
       topic: "Frontend System Architecture",
       subject: "Web Development",
       level: "Advanced",
-      cheatSheet: "React's Reconciliation algorithm diffs virtual DOM trees using key props to minimize actual DOM updates (`O(N)` heuristic). Use `useCallback` to cache function instances across renders.",
+      cheatSheet: "React's Reconciliation algorithm diffs virtual DOM trees using key props to minimize actual DOM updates. Use useCallback and useMemo to cache function and value instances across renders.",
       flashcards: [
         { question: "What causes unnecessary React re-renders?", answer: "Passing new object reference literals or un-memoized callbacks as prop values to child components." },
         { question: "Explain the difference between useEffect and useLayoutEffect.", answer: "useEffect fires asynchronously after browser paint, while useLayoutEffect fires synchronously before paint." }
@@ -47,10 +60,10 @@ const fallbackRevisionData = {
   ]
 };
 
-const RevisionPage = ({ cachedRevisionData, refreshRevisionData }) => {
+export const RevisionPage = ({ cachedRevisionData, refreshRevisionData }) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
-  
+
   const [data, setData] = useState(cachedRevisionData || fallbackRevisionData);
   const [loading, setLoading] = useState(false);
   const [flippedCards, setFlippedCards] = useState({});
@@ -79,224 +92,296 @@ const RevisionPage = ({ cachedRevisionData, refreshRevisionData }) => {
   };
 
   const handleRateFlashcard = (cardKey, rating) => {
-    showToast?.(`Marked as ${rating}! Card scheduled for next review cycle.`, "success");
+    showToast?.(`Marked as ${rating}! Scheduled for spaced repetition review.`, "success");
     setFlippedCards((prev) => ({ ...prev, [cardKey]: false }));
   };
 
   if (loading) {
-    return <LoadingScreen title="Loading Revision Workspace..." subtitle="Assembling wrong answers, bookmarks, and revision notes" />;
+    return <LoadingScreen title="Loading Revision Studio..." subtitle="Assembling wrong answers, bookmarks, and revision notes" />;
   }
 
   return (
-    <div className="space-y-6 snx-fade-in print:bg-white print:text-black">
+    <PageContainer maxWidth="7xl" className="space-y-8 print:bg-white print:text-black">
+      {/* Header */}
       <div className="print:hidden">
         <PageHeader
-          kicker="Track & Retain"
-          title="Spaced Repetition & Revision Studio"
-          description="Review recently viewed questions, target weak topic flashcards, and print custom cheat sheets."
+          kicker="Spaced Repetition & Revision"
+          title="Revision Studio"
+          description="Review mistakes from past test results, revisit bookmarked questions, and study personalized flashcards."
           actions={
-            <button onClick={handlePrint} className="snx-btn-primary flex items-center gap-2 cursor-pointer shadow-md">
-              <FiPrinter className="h-4 w-4" /> Print Cheat Sheet
-            </button>
+            <div className="flex items-center gap-3">
+              <Link to="/learn">
+                <Button variant="outline" size="sm" iconLeft={FiBookOpen}>
+                  Learning Hub
+                </Button>
+              </Link>
+              <Button
+                variant="primary"
+                size="sm"
+                iconLeft={FiPrinter}
+                onClick={handlePrint}
+              >
+                Print Cheat Sheet
+              </Button>
+            </div>
           }
         />
       </div>
 
-      {/* Grid: Wrong, Bookmarked, and Recent */}
-      <div className="grid gap-6 md:grid-cols-3 print:hidden">
-        
-        {/* Wrong Questions Panel */}
-        <div className="snx-panel rounded-3xl space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3 dark:border-slate-800">
-            <FiAlertCircle className="h-5 w-5 text-rose-500" />
-            <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Wrong Questions ({data.wrongQuestions?.length || 0})</h3>
-          </div>
-          {data.wrongQuestions?.length > 0 ? (
-            <div className="space-y-2 max-h-[380px] overflow-y-auto snx-scrollbar pr-1">
-              {data.wrongQuestions.map((q) => (
-                <Link
-                  key={q._id}
-                  to={`/practice/${q._id}`}
-                  className="block p-3.5 rounded-2xl border border-slate-200/80 bg-white/80 hover:border-rose-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-800/80 transition duration-150"
-                >
-                  <div className="font-bold text-xs text-slate-900 dark:text-white truncate">{q.title}</div>
-                  <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
-                    <span>{q.topic} • {q.difficulty}</span>
-                    <span className="text-rose-500 font-bold flex items-center gap-1">Resolve <FiChevronRight className="h-3 w-3" /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 italic">No wrong answers found. High accuracy!</p>
-          )}
-        </div>
-
-        {/* Bookmarked Questions Panel */}
-        <div className="snx-panel rounded-3xl space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3 dark:border-slate-800">
-            <FiBookmark className="h-5 w-5 text-indigo-500" />
-            <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Bookmarked ({data.bookmarkedQuestions?.length || 0})</h3>
-          </div>
-          {data.bookmarkedQuestions?.length > 0 ? (
-            <div className="space-y-2 max-h-[380px] overflow-y-auto snx-scrollbar pr-1">
-              {data.bookmarkedQuestions.map((q) => (
-                <Link
-                  key={q._id}
-                  to={`/practice/${q._id}`}
-                  className="block p-3.5 rounded-2xl border border-slate-200/80 bg-white/80 hover:border-indigo-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-800/80 transition duration-150"
-                >
-                  <div className="font-bold text-xs text-slate-900 dark:text-white truncate">{q.title}</div>
-                  <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
-                    <span>{q.topic} • {q.difficulty}</span>
-                    <span className="text-indigo-500 font-bold flex items-center gap-1">Practice <FiChevronRight className="h-3 w-3" /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 italic">No bookmarked questions yet.</p>
-          )}
-        </div>
-
-        {/* Recently Viewed Panel */}
-        <div className="snx-panel rounded-3xl space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3 dark:border-slate-800">
-            <FiClock className="h-5 w-5 text-purple-500" />
-            <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Recently Viewed ({data.recentlyViewed?.length || 0})</h3>
-          </div>
-          {data.recentlyViewed?.length > 0 ? (
-            <div className="space-y-2 max-h-[380px] overflow-y-auto snx-scrollbar pr-1">
-              {data.recentlyViewed.map((q) => (
-                <Link
-                  key={q._id}
-                  to={`/practice/${q._id}`}
-                  className="block p-3.5 rounded-2xl border border-slate-200/80 bg-white/80 hover:border-purple-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-800/80 transition duration-150"
-                >
-                  <div className="font-bold text-xs text-slate-900 dark:text-white truncate">{q.title}</div>
-                  <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
-                    <span>{q.topic} • {q.difficulty}</span>
-                    <span className="text-purple-500 font-bold flex items-center gap-1">Revisit <FiChevronRight className="h-3 w-3" /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 italic">No recent view history recorded.</p>
-          )}
-        </div>
-
-      </div>
-
       {/* Frequently Failed Topics Alert */}
       {data.frequentlyFailedTopics?.length > 0 && (
-        <div className="snx-panel !p-4 bg-gradient-to-r from-rose-50 to-pink-50 border-rose-200 dark:from-rose-950/20 dark:to-pink-950/20 dark:border-rose-900/40 flex flex-wrap items-center justify-between gap-4 rounded-3xl print:hidden">
-          <div className="flex gap-3 items-center">
-            <FiAlertCircle className="h-6 w-6 text-rose-500 shrink-0" />
+        <div className="p-4 rounded-2xl border border-rose-200 bg-rose-50/50 dark:border-rose-900/40 dark:bg-rose-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-400">
+              <FiAlertCircle className="h-5 w-5" />
+            </div>
             <div>
-              <h4 className="text-sm font-bold text-rose-900 dark:text-rose-300">Target Weakness Alert</h4>
-              <p className="text-xs text-rose-700 dark:text-rose-400 mt-0.5">We detected repeated incorrect responses in these subtopics. Revise the flashcards below.</p>
+              <h4 className="text-sm font-bold text-rose-900 dark:text-rose-200">
+                Targeted Weakness Alert
+              </h4>
+              <p className="text-xs text-rose-700 dark:text-rose-300">
+                Repeated errors were detected in these subtopics across your mock tests. Focus your revision here.
+              </p>
             </div>
           </div>
+
           <div className="flex flex-wrap gap-2">
             {data.frequentlyFailedTopics.map((item) => (
-              <span key={item.topic} className="px-3 py-1 rounded-full text-xs font-bold bg-white text-rose-700 border border-rose-200 shadow-sm dark:bg-slate-800 dark:text-rose-300 dark:border-rose-900">
-                {item.topic} ({item.count} fails)
+              <span
+                key={item.topic}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-rose-700 border border-rose-200 dark:bg-slate-800 dark:text-rose-300 dark:border-rose-900 shadow-subtle"
+              >
+                {item.topic} ({item.count} errors)
               </span>
             ))}
           </div>
         </div>
       )}
 
+      {/* Three Panel Grid: Wrong Questions, Bookmarked, Recently Viewed */}
+      <div className="grid gap-6 md:grid-cols-3 print:hidden">
+        {/* Wrong Questions */}
+        <Card className="p-5 border border-[var(--snx-border)] bg-[var(--snx-surface)] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--snx-border)]">
+            <div className="flex items-center gap-2">
+              <FiAlertCircle className="h-4 w-4 text-rose-500" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Incorrect Answers ({data.wrongQuestions?.length || 0})
+              </h3>
+            </div>
+            <Badge variant="danger" size="sm">
+              Needs Review
+            </Badge>
+          </div>
+
+          {data.wrongQuestions?.length > 0 ? (
+            <div className="space-y-2 max-h-[360px] overflow-y-auto snx-scrollbar pr-1">
+              {data.wrongQuestions.map((q) => (
+                <Link
+                  key={q._id}
+                  to={`/practice/${q._id}`}
+                  className="block p-3 rounded-xl border border-[var(--snx-border)] bg-white dark:bg-slate-800/60 hover:border-rose-400 transition-all"
+                >
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {q.title}
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>{q.topic} • {q.difficulty}</span>
+                    <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-0.5">
+                      Solve <FiChevronRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 py-6 text-center italic">
+              No incorrect answers recorded. High accuracy!
+            </p>
+          )}
+        </Card>
+
+        {/* Bookmarked Questions */}
+        <Card className="p-5 border border-[var(--snx-border)] bg-[var(--snx-surface)] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--snx-border)]">
+            <div className="flex items-center gap-2">
+              <FiBookmark className="h-4 w-4 text-indigo-500" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Saved Bookmarks ({data.bookmarkedQuestions?.length || 0})
+              </h3>
+            </div>
+            <Badge variant="primary" size="sm">
+              Saved
+            </Badge>
+          </div>
+
+          {data.bookmarkedQuestions?.length > 0 ? (
+            <div className="space-y-2 max-h-[360px] overflow-y-auto snx-scrollbar pr-1">
+              {data.bookmarkedQuestions.map((q) => (
+                <Link
+                  key={q._id}
+                  to={`/practice/${q._id}`}
+                  className="block p-3 rounded-xl border border-[var(--snx-border)] bg-white dark:bg-slate-800/60 hover:border-indigo-400 transition-all"
+                >
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {q.title}
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>{q.topic} • {q.difficulty}</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-0.5">
+                      Practice <FiChevronRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 py-6 text-center italic">
+              No bookmarked questions yet.
+            </p>
+          )}
+        </Card>
+
+        {/* Recently Viewed */}
+        <Card className="p-5 border border-[var(--snx-border)] bg-[var(--snx-surface)] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--snx-border)]">
+            <div className="flex items-center gap-2">
+              <FiClock className="h-4 w-4 text-purple-500" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Recently Viewed ({data.recentlyViewed?.length || 0})
+              </h3>
+            </div>
+            <Badge variant="neutral" size="sm">
+              History
+            </Badge>
+          </div>
+
+          {data.recentlyViewed?.length > 0 ? (
+            <div className="space-y-2 max-h-[360px] overflow-y-auto snx-scrollbar pr-1">
+              {data.recentlyViewed.map((q) => (
+                <Link
+                  key={q._id}
+                  to={`/practice/${q._id}`}
+                  className="block p-3 rounded-xl border border-[var(--snx-border)] bg-white dark:bg-slate-800/60 hover:border-purple-400 transition-all"
+                >
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {q.title}
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>{q.topic} • {q.difficulty}</span>
+                    <span className="text-purple-600 dark:text-purple-400 font-bold flex items-center gap-0.5">
+                      Revisit <FiChevronRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 py-6 text-center italic">
+              No recent practice history.
+            </p>
+          )}
+        </Card>
+      </div>
+
       {/* Automated Study Revision Sheet */}
-      <div className="snx-panel rounded-3xl space-y-6 print:border-0 print:shadow-none print:p-0">
-        <div className="flex items-center justify-between border-b border-slate-200/80 pb-4 dark:border-slate-800">
+      <Card className="p-6 border border-[var(--snx-border)] bg-[var(--snx-surface)] space-y-6 print:border-0 print:shadow-none print:p-0">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--snx-border)]">
           <div className="flex items-center gap-2.5">
-            <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
               <FiFileText className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-900 dark:text-white text-base">3D Interactive Flashcards & Cheat Sheet Notes</h3>
-              <p className="text-xs text-slate-400">Click any flashcard to flip and self-assess your retention score.</p>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                Interactive Flashcards & Cheat Sheet Notes
+              </h3>
+              <p className="text-xs text-slate-400">
+                Click any flashcard to flip and self-assess your retention.
+              </p>
             </div>
           </div>
         </div>
 
         {data.revisionSheet?.length > 0 ? (
-          <div className="space-y-8">
-            {data.revisionSheet.map((sheet, index) => (
-              <div key={sheet.topic} className="space-y-4">
-                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200/60 pb-2 dark:border-slate-800">
-                  <h4 className="text-lg font-extrabold text-slate-900 dark:text-white print:text-black">{sheet.topic}</h4>
-                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                    {sheet.subject} • {sheet.level}
-                  </span>
+          <div className="space-y-6">
+            {data.revisionSheet.map((sheet, sIdx) => (
+              <div
+                key={sIdx}
+                className="p-5 rounded-2xl border border-[var(--snx-border)] bg-slate-50/50 dark:bg-slate-800/40 space-y-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[var(--snx-border)]">
+                  <div>
+                    <Badge variant="primary" size="sm">
+                      {sheet.level || "Core"} Level
+                    </Badge>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white mt-1">
+                      {sheet.topic}
+                    </h4>
+                    <span className="text-xs text-slate-400">{sheet.subject}</span>
+                  </div>
+
+                  <Link to="/practice" state={{ search: sheet.topic }}>
+                    <Button variant="outline" size="sm" iconRight={FiCode}>
+                      Practice Topic
+                    </Button>
+                  </Link>
                 </div>
 
-                <div className="space-y-2">
-                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                    <FiBookOpen className="h-3.5 w-3.5 text-indigo-500" /> Summary Cheat Sheet
-                  </h5>
-                  <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-                    {sheet.cheatSheet}
-                  </p>
+                {/* Cheat sheet text */}
+                <div className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 p-4 rounded-xl bg-white dark:bg-slate-800 border border-[var(--snx-border)]">
+                  {sheet.cheatSheet}
                 </div>
 
-                {sheet.flashcards && sheet.flashcards.length > 0 && (
-                  <div className="space-y-3 pt-2">
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                      <FiRotateCw className="h-3.5 w-3.5 text-indigo-500" /> Click Flashcard to Reveal Answer
-                    </h5>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                {/* Flashcards */}
+                {sheet.flashcards?.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Topic Flashcards
+                    </span>
+                    <div className="grid gap-3 sm:grid-cols-2">
                       {sheet.flashcards.map((fc, fcIdx) => {
-                        const cardKey = `${sheet.topic}-${fcIdx}`;
+                        const cardKey = `${sIdx}-${fcIdx}`;
                         const isFlipped = !!flippedCards[cardKey];
 
                         return (
                           <div
                             key={fcIdx}
-                            onClick={() => setFlippedCards((c) => ({ ...c, [cardKey]: !c[cardKey] }))}
-                            className="flashcard-container relative min-h-[160px] w-full"
+                            onClick={() =>
+                              setFlippedCards((prev) => ({ ...prev, [cardKey]: !prev[cardKey] }))
+                            }
+                            className="cursor-pointer rounded-xl border border-[var(--snx-border)] p-4 bg-white dark:bg-slate-800 hover:border-indigo-400 transition-all duration-150 min-h-[110px] flex flex-col justify-between"
                           >
-                            <motion.div
-                              animate={{ rotateY: isFlipped ? 180 : 0 }}
-                              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                              className="flashcard-inner w-full h-full min-h-[160px]"
-                            >
-                              {/* FRONT */}
-                              <div className="flashcard-front border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-800 p-5 rounded-2xl flex flex-col justify-between shadow-sm hover:border-indigo-500 hover:shadow-md transition-all">
-                                <div>
-                                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                                    Question Card
-                                  </span>
-                                  <p className="text-sm font-bold text-slate-900 dark:text-white mt-2 leading-snug">
-                                    {fc.question}
-                                  </p>
-                                </div>
-                                <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold mt-4">
-                                  <span>Tap to reveal answer</span>
-                                  <FiRotateCw className="h-3.5 w-3.5 text-indigo-500" />
-                                </div>
+                            <div>
+                              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1">
+                                <span>{isFlipped ? "Answer" : "Question"}</span>
+                                <span className="text-slate-400 font-normal">Click to flip 🔄</span>
                               </div>
+                              <p className={`text-xs ${isFlipped ? "text-emerald-700 dark:text-emerald-400 font-semibold" : "text-slate-800 dark:text-slate-200 font-medium"} leading-relaxed`}>
+                                {isFlipped ? fc.answer : fc.question}
+                              </p>
+                            </div>
 
-                              {/* BACK */}
-                              <div className="flashcard-back border border-indigo-500/80 bg-slate-900 text-white p-5 rounded-2xl flex flex-col justify-between shadow-xl">
-                                <div>
-                                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">
-                                    Answer & Explanation
-                                  </span>
-                                  <p className="text-xs text-slate-200 leading-relaxed font-medium mt-2">
-                                    {fc.answer}
-                                  </p>
-                                </div>
-                                <div className="flex items-center justify-between gap-1.5 pt-3 border-t border-slate-800 text-[10px]" onClick={(e) => e.stopPropagation()}>
-                                  <button onClick={() => handleRateFlashcard(cardKey, "Again")} className="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-300 font-bold hover:bg-rose-500/30">Again</button>
-                                  <button onClick={() => handleRateFlashcard(cardKey, "Hard")} className="px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-bold hover:bg-amber-500/30">Hard</button>
-                                  <button onClick={() => handleRateFlashcard(cardKey, "Good")} className="px-2 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold hover:bg-indigo-500/30">Good</button>
-                                  <button onClick={() => handleRateFlashcard(cardKey, "Easy")} className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold hover:bg-emerald-500/30">Easy</button>
-                                </div>
+                            {isFlipped && (
+                              <div
+                                className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-end gap-2"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => handleRateFlashcard(cardKey, "Hard")}
+                                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300"
+                                >
+                                  Hard
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRateFlashcard(cardKey, "Good")}
+                                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                >
+                                  Good ✓
+                                </button>
                               </div>
-                            </motion.div>
+                            )}
                           </div>
                         );
                       })}
@@ -307,12 +392,13 @@ const RevisionPage = ({ cachedRevisionData, refreshRevisionData }) => {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic text-center py-6">No revision cards found.</p>
+          <div className="p-8 text-center text-xs text-slate-400">
+            Complete mock tests to generate personalized revision sheets targeting your improvement areas.
+          </div>
         )}
-      </div>
-    </div>
+      </Card>
+    </PageContainer>
   );
 };
 
 export default RevisionPage;
-

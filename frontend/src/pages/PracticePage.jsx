@@ -1,48 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import Editor from "@monaco-editor/react";
-import { FiArrowLeft, FiArrowRight, FiBookmark, FiCode, FiPlay, FiSend } from "react-icons/fi";
+import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
+import { FiArrowLeft, FiCode, FiFileText, FiTerminal, FiCheck, FiSend, FiPlay } from "react-icons/fi";
 import api from "../api/client";
-import AnswerEvaluationCard from "../components/evaluation/AnswerEvaluationCard";
+import { CodingHeader, ProblemDescriptionPanel, CodeEditorPanel, TestConsolePanel } from "../components/coding";
 import EmptyState from "../components/ui/EmptyState";
-import PageHeader from "../components/ui/PageHeader";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
 import { useToast } from "../components/ui/ToastProvider";
 import useAnswerEvaluation from "../hooks/useAnswerEvaluation";
 import { buildDetailedSolution } from "../utils/answerHelpers";
 
-const formatTime = (seconds) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${String(secs).padStart(2, "0")}`;
-};
-
-const typeOptions = [
-  { id: "all", label: "All Questions" },
-  { id: "Coding", label: "Coding" },
-  { id: "Subjective", label: "Descriptive" },
-  { id: "MCQ", label: "MCQ" }
-];
-const softwareCategoryOptions = ["DSA", "Aptitude", "Core Subjects", "HR", "Behavioral"];
-
-const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, refreshProfile, targetField = "Software", loadQuestions }) => {
+export const PracticePage = ({
+  questions = [],
+  bookmarks = [],
+  refreshBookmarks,
+  refreshProfile,
+  targetField = "Software",
+  loadQuestions
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { questionId } = useParams();
   const { showToast } = useToast();
-  const params = new URLSearchParams(location.search);
 
-  const [selectedCategory, setSelectedCategory] = useState(params.get("category") || "");
-  const [selectedType, setSelectedType] = useState(params.get("type") || "all");
-  const [search, setSearch] = useState(params.get("search") || "");
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState(null);
   const [language, setLanguage] = useState("python");
+  const [stdin, setStdin] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [runningCode, setRunningCode] = useState(false);
   const [startedAt, setStartedAt] = useState(Date.now());
   const [codingExplanation, setCodingExplanation] = useState("");
-  const { evaluation, loading: evalLoading, error: evalError, evaluate, retry, reset: resetEvaluation } = useAnswerEvaluation({ refreshProfile });
+  const [mobileTab, setMobileTab] = useState("editor"); // 'problem' | 'editor' | 'console'
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const { evaluation, loading: evalLoading, evaluate, reset: resetEvaluation } = useAnswerEvaluation({ refreshProfile });
 
   useEffect(() => {
     if (questions.length || !loadQuestions) return;
@@ -58,44 +51,13 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, refres
     };
   }, [questions.length, loadQuestions]);
 
-  useEffect(() => {
-    const nextParams = new URLSearchParams();
-    if (selectedCategory) nextParams.set("category", selectedCategory);
-    if (selectedType && selectedType !== "all") nextParams.set("type", selectedType);
-    if (search) nextParams.set("search", search);
-    const nextSearch = nextParams.toString();
-    const currentSearch = location.search.replace(/^\?/, "");
-    if (nextSearch !== currentSearch) {
-      navigate(`${questionId ? `/practice/${questionId}` : "/practice"}${nextSearch ? `?${nextSearch}` : ""}`, { replace: true });
-    }
-  }, [navigate, location.search, questionId, search, selectedCategory, selectedType]);
-
-  const matchesCategory = (question, category) => {
-    if (!category) return true;
-    if (category === "Behavioral") {
-      return question.category === "HR" && /behavioral/i.test(question.topic || "");
-    }
-    return question.category === category;
-  };
-
-  const filteredQuestions = useMemo(() => questions.filter((question) => {
-    if (!matchesCategory(question, selectedCategory)) return false;
-    if (selectedType !== "all" && question.type !== selectedType) return false;
-    if (search) {
-      const haystack = `${question.title} ${question.topic} ${question.description}`.toLowerCase();
-      if (!haystack.includes(search.toLowerCase())) return false;
-    }
-    return true;
-  }), [questions, search, selectedCategory, selectedType]);
-
   const question = useMemo(() => {
     if (!questionId) return null;
-    return filteredQuestions.find((item) => item._id === questionId) || questions.find((item) => item._id === questionId) || null;
-  }, [filteredQuestions, questionId, questions]);
+    return questions.find((item) => String(item._id) === String(questionId)) || null;
+  }, [questions, questionId]);
 
-  const navigationPool = questionId && filteredQuestions.length ? filteredQuestions : questions;
-  const currentIndex = question ? navigationPool.findIndex((item) => item._id === question._id) : -1;
-  const isBookmarked = bookmarks.some((item) => item._id === questionId);
+  const currentIndex = question ? questions.findIndex((item) => String(item._id) === String(question._id)) : -1;
+  const isBookmarked = bookmarks.some((item) => String(item._id) === String(questionId));
 
   useEffect(() => {
     if (!question) return;
@@ -106,24 +68,28 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, refres
     setAnswer(question.type === "Coding" ? question.starterCode?.[language] || "" : "");
   }, [question, language, resetEvaluation]);
 
-  const openQuestion = (id) => {
-    navigate(`/practice/${id}${location.search}`);
-  };
-
-  const goBackToList = () => {
-    navigate(`/practice${location.search}`);
+  const resetToStarterCode = () => {
+    if (question && question.type === "Coding") {
+      setAnswer(question.starterCode?.[language] || "");
+      showToast("Reset to starter code template.", "info");
+    }
   };
 
   const submit = async () => {
     if (!question) return;
     try {
       setSubmitting(true);
-      const { data } = await api.post(`/questions/${question._id}/evaluate`, {
-        answer,
-        timeSpent: Math.round((Date.now() - startedAt) / 1000)
-      }, { timeout: 25000 });
+      const { data } = await api.post(
+        `/questions/${question._id}/evaluate`,
+        {
+          answer,
+          timeSpent: Math.round((Date.now() - startedAt) / 1000)
+        },
+        { timeout: 25000 }
+      );
       setFeedback(data);
-      const questionText = `${question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}. ${String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}`;
+
+      const questionText = `${question.title}. ${String(question.description || "").trim()}`;
       await evaluate({
         questionId: question._id,
         question: questionText,
@@ -134,34 +100,33 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, refres
         module: "practice",
         codingExplanation: question.type === "Coding" ? codingExplanation : ""
       });
-      showToast("Answer evaluated successfully.", "success");
+
+      setMobileTab("console");
+      showToast("Solution submitted & evaluated.", "success");
     } catch (error) {
-      showToast(error.response?.data?.message || "Unable to evaluate your answer right now.", "error");
+      showToast(error.response?.data?.message || "Unable to evaluate answer right now.", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const timeElapsed = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
-  const lastPayload = question ? {
-    questionId: question._id,
-    question: `${question.title}. ${question.description || ""}`,
-    userAnswer: answer,
-    topic: question.topic,
-    difficulty: question.difficulty,
-    category: question.category,
-    module: "practice",
-    codingExplanation
-  } : null;
-
   const runCode = async () => {
     try {
       setRunningCode(true);
-      const { data } = await api.post("/code/run", { code: answer, language }, { timeout: 25000 });
-      setFeedback((current) => ({ ...current, codeOutput: data.output, codeStatus: data.status }));
+      const { data } = await api.post(
+        "/code/run",
+        { code: answer, language, stdin },
+        { timeout: 25000 }
+      );
+      setFeedback((current) => ({
+        ...current,
+        codeOutput: data.output,
+        codeStatus: data.status
+      }));
+      setMobileTab("console");
       showToast("Code executed successfully.", "success");
     } catch (error) {
-      showToast(error.response?.data?.message || "Unable to run code right now.", "error");
+      showToast(error.response?.data?.message || "Execution failed.", "error");
     } finally {
       setRunningCode(false);
     }
@@ -172,294 +137,286 @@ const PracticePage = ({ questions = [], bookmarks = [], refreshBookmarks, refres
     try {
       await api.post(`/users/bookmarks/${question._id}`, {}, { timeout: 25000 });
       await refreshBookmarks?.();
-      showToast(isBookmarked ? "Removed from bookmarks." : "Added to bookmarks.", "success");
-    } catch (error) {
-      showToast(error.response?.data?.message || "Unable to update bookmarks right now.", "error");
+      showToast(isBookmarked ? "Removed from saved." : "Saved problem.", "success");
+    } catch {
+      showToast("Unable to update bookmark.", "error");
     }
   };
 
   const moveQuestion = (direction) => {
-    if (!navigationPool.length || currentIndex < 0) return;
-    const nextIndex = direction === "next"
-      ? (currentIndex + 1) % navigationPool.length
-      : currentIndex > 0 ? currentIndex - 1 : navigationPool.length - 1;
-    const nextQuestion = navigationPool[nextIndex];
-    if (nextQuestion) {
-      navigate(`/practice/${nextQuestion._id}${location.search}`);
+    if (!questions.length || currentIndex < 0) return;
+    const nextIndex =
+      direction === "next"
+        ? (currentIndex + 1) % questions.length
+        : currentIndex > 0
+        ? currentIndex - 1
+        : questions.length - 1;
+    const nextQ = questions[nextIndex];
+    if (nextQ) {
+      navigate(`/practice/${nextQ._id}`);
     }
   };
 
+  const timeElapsed = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
   const detailedSolution = question
-    ? buildDetailedSolution(question, feedback?.correctAnswer || question.correctAnswer, feedback?.explanation || question.explanation)
+    ? buildDetailedSolution(
+        question,
+        feedback?.correctAnswer || question.correctAnswer,
+        feedback?.explanation || question.explanation
+      )
     : "";
 
+  // If no questionId was passed in route, redirect or prompt user to explore problems
   if (!questionId) {
     return (
       <div className="space-y-6">
-        <PageHeader
-          kicker="Practice workspace"
-          title="Choose a question and move through practice with a focused workflow."
-          description="Filter by category, search by topic, then open a dedicated practice screen with bookmark, previous, and next controls."
-          aside={(
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              {[
-                { label: "Filtered", value: filteredQuestions.length },
-                { label: "Mode", value: selectedType === "all" ? "Mixed" : selectedType },
-                { label: "Field", value: targetField }
-              ].map((item) => (
-                <div key={item.label} className="rounded-[24px] border border-white/70 bg-white/80 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-                  <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</div>
-                </div>
-              ))}
-            </div>
-          )}
+        <EmptyState
+          title="No problem selected"
+          description="Choose a problem from the Problem Explorer to start your coding session."
+          action={
+            <Link to="/questions">
+              <Button variant="primary" size="md">
+                Browse Problem Explorer
+              </Button>
+            </Link>
+          }
         />
+      </div>
+    );
+  }
 
-        <div className="snx-panel-muted">
-          <div className="grid gap-4 lg:grid-cols-3">
-            <label className="block space-y-2">
-              <span className="snx-label">Search</span>
-              <input className="snx-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="By topic or title" />
-            </label>
-            <label className="block space-y-2">
-              <span className="snx-label">Category</span>
-              <select className="snx-select" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
-                <option value="">All Categories</option>
-                {softwareCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
-              </select>
-            </label>
-            <label className="block space-y-2">
-              <span className="snx-label">Type</span>
-              <select className="snx-select" value={selectedType} onChange={(event) => setSelectedType(event.target.value)}>
-                {typeOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-              </select>
-            </label>
-          </div>
-        </div>
+  if (!question && loading) {
+    return (
+      <div className="h-[70vh] flex items-center justify-center text-xs text-slate-500 animate-pulse">
+        Loading problem workspace...
+      </div>
+    );
+  }
 
-        {loading && !filteredQuestions.length ? (
-          <SurfaceCard><p className="text-sm text-slate-custom-600">Loading questions...</p></SurfaceCard>
-        ) : filteredQuestions.length ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {filteredQuestions.map((item, index) => (
-              <button
-                key={item._id}
-                className="rounded-[28px] border border-slate-200/70 bg-white/80 p-5 text-left shadow-[0_18px_44px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_50px_rgba(20,184,166,0.12)]"
-                onClick={() => openQuestion(item._id)}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="text-lg font-semibold text-slate-950">{item.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</div>
-                    <p className="mt-2 text-sm text-slate-500">{item.topic} • {item.type} • {item.difficulty}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            title="No questions match this filter set"
-            description="Try widening the topic or switching back to a mixed mode so you can continue practicing without friction."
-          />
-        )}
+  if (!question) {
+    return (
+      <div className="py-12">
+        <EmptyState
+          title="Problem not found"
+          description="The selected problem is not available in the question bank."
+          action={
+            <Link to="/questions">
+              <Button variant="primary" size="sm">
+                Back to Explorer
+              </Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="snx-panel-muted space-y-6">
-        {question ? (
-          <>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-3">
-                <button className="snx-btn-secondary snx-btn-sm" onClick={goBackToList}>
-                  <FiArrowLeft className="h-4 w-4" />
-                  Back to List
-                </button>
-                <div>
-                  <span className="snx-kicker">Practice question</span>
-                  <h1 className="snx-heading-3 mt-2 text-slate-custom-900">{question.title.replace(/\s+Practice Variant\s+\d+$/i, "")}</h1>
-                  <p className="mt-2 snx-body text-slate-custom-600">{String(question.description).replace(/\s*Practice focus\s*\d*:\s*.+$/i, "").trim()}</p>
-                </div>
-              </div>
-              <button className={isBookmarked ? "snx-btn-primary" : "snx-btn-secondary"} onClick={toggleBookmark}>
-                <FiBookmark className="h-4 w-4" />
-                {isBookmarked ? "Bookmarked" : "Bookmark"}
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <span className="snx-badge-primary text-xs">{question.category}</span>
-              <span className="snx-badge text-xs">{question.topic}</span>
-              <span className="snx-badge text-xs">{question.company}</span>
-              <span className="snx-badge text-xs">{question.type}</span>
-              <span className="snx-badge text-xs">{question.difficulty}</span>
-            </div>
-
-            {question.type === "MCQ" ? (
-              <div className="grid gap-3">
-                {(question.options || []).map((option) => (
-                  <button
-                    key={option}
-                    className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all duration-300 ${
-                      answer === option
-                        ? "border-indigo-500 bg-indigo-50 text-indigo-900 shadow-md-soft"
-                        : "border-slate-custom-200 bg-white text-slate-custom-700 hover:border-indigo-200 hover:bg-indigo-50"
-                    }`}
-                    onClick={() => setAnswer((current) => (current === option ? "" : option))}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {question.type === "Subjective" ? (
-              <textarea
-                className="snx-textarea min-h-[240px]"
-                value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
-                placeholder="Write your answer here..."
-              />
-            ) : null}
-
-            {question.type === "Coding" ? (
-              <div className="space-y-4">
-                <label className="block max-w-xs space-y-2">
-                  <span className="snx-label">Language</span>
-                  <select className="snx-select" value={language} onChange={(event) => setLanguage(event.target.value)}>
-                    <option value="python">Python</option>
-                    <option value="cpp">C++</option>
-                    <option value="java">Java</option>
-                  </select>
-                </label>
-                <div className="overflow-hidden rounded-lg border border-slate-custom-200 shadow-md-soft">
-                  <Editor
-                    height="420px"
-                    theme="vs-dark"
-                    language={language === "cpp" ? "cpp" : language}
-                    value={answer}
-                    onChange={(value) => setAnswer(value || "")}
-                  />
-                </div>
-                <label className="block space-y-2">
-                  <span className="snx-label">Explain your solution (logic, time & space complexity)</span>
-                  <textarea
-                    className="snx-textarea min-h-[140px]"
-                    value={codingExplanation}
-                    onChange={(event) => setCodingExplanation(event.target.value)}
-                    placeholder="Walk through your approach, optimization, and complexity..."
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            <div className="flex flex-col gap-3 md:flex-row md:gap-4">
-              <button className="snx-btn-secondary" onClick={() => moveQuestion("prev")}>
-                <FiArrowLeft className="h-4 w-4" />
-                Previous
-              </button>
-              <button className="snx-btn-primary" onClick={submit} disabled={submitting}>
-                <FiSend className="h-4 w-4" />
-                {submitting ? "Submitting..." : "Submit"}
-              </button>
-              {question.type === "Coding" ? (
-                <button className="snx-btn-secondary" onClick={runCode} disabled={runningCode}>
-                  <FiPlay className="h-4 w-4" />
-                  {runningCode ? "Running..." : "Run Code"}
-                </button>
-              ) : null}
-              <button className="snx-btn-secondary" onClick={() => moveQuestion("next")}>
-                Next
-                <FiArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </>
-        ) : (
-          <EmptyState
-            title="Question not available"
-            description="Go back and select another question from the filtered set."
-            action={<button className="snx-btn-primary" onClick={goBackToList}>Back to List</button>}
-          />
-        )}
-      </div>
-
-      <AnswerEvaluationCard
-        evaluation={evaluation}
-        loading={evalLoading || submitting}
-        error={evalError}
-        onRetry={() => lastPayload && retry(lastPayload)}
+    <div className={`flex flex-col h-[calc(100vh-5rem)] rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] overflow-hidden shadow-subtle dark:border-slate-800 ${isFullscreen ? "!fixed !inset-0 !z-50 !h-screen !rounded-none" : ""}`}>
+      {/* 1. Top Navigation Bar */}
+      <CodingHeader
+        question={question}
+        onBack={() => navigate("/questions")}
+        isBookmarked={isBookmarked}
+        onToggleBookmark={toggleBookmark}
+        onPrev={() => moveQuestion("prev")}
+        onNext={() => moveQuestion("next")}
+        hasPrev={questions.length > 1}
+        hasNext={questions.length > 1}
+        timeElapsed={timeElapsed}
+        currentIndex={currentIndex}
+        totalCount={questions.length}
       />
 
-      {feedback && question ? (
-        <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-          <div className="snx-panel-muted space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg border border-slate-custom-200 bg-white p-4">
-                <div className="snx-label">Your answer</div>
-                <p className="mt-2 snx-body-sm text-slate-custom-600">{String(answer || "No answer submitted")}</p>
-              </div>
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                <div className="snx-label text-emerald-700">Correct answer</div>
-                <p className="mt-2 snx-body-sm text-emerald-900">{String(feedback.correctAnswer)}</p>
-              </div>
-            </div>
-            <div className="rounded-lg border border-slate-custom-200 bg-white p-4">
-              <div className="snx-label">Detailed solution</div>
-              <p className="mt-2 snx-body-sm text-slate-custom-600">{detailedSolution}</p>
-            </div>
-            <div className="rounded-lg border border-slate-custom-200 bg-white p-4">
-              <div className="snx-label">Explanation</div>
-              <p className="mt-2 snx-body-sm text-slate-custom-600">{feedback.explanation}</p>
-            </div>
-            {feedback.codeOutput ? (
-              <div className="overflow-hidden rounded-lg border border-slate-custom-200 bg-slate-custom-900">
-                <div className="border-b border-slate-custom-700 px-4 py-3">
-                  <span className="snx-label inline-flex items-center gap-2 text-white"><FiCode className="h-4 w-4" /> {feedback.codeStatus}</span>
-                </div>
-                <pre className="snx-scrollbar overflow-x-auto px-4 py-4 text-sm text-slate-100"><code>{feedback.codeOutput}</code></pre>
-              </div>
-            ) : null}
-          </div>
-          <aside className="snx-card space-y-4 lg:h-fit lg:sticky lg:top-6">
-            <div>
-              <div className="snx-label">Question progress</div>
-              <div className="mt-3 h-3 w-full rounded-full bg-slate-custom-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-300"
-                  style={{ width: `${navigationPool.length ? ((currentIndex + 1) / navigationPool.length) * 100 : 0}%` }}
+      {/* Mobile Tab Switcher */}
+      <div className="flex md:hidden border-b border-[var(--snx-border)] bg-[var(--snx-surface-subtle)] dark:border-slate-800 text-xs">
+        <button
+          type="button"
+          onClick={() => setMobileTab("problem")}
+          className={`flex-1 py-2 font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+            mobileTab === "problem"
+              ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+              : "border-transparent text-slate-500"
+          }`}
+        >
+          <FiFileText className="h-3.5 w-3.5" />
+          <span>Problem</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileTab("editor")}
+          className={`flex-1 py-2 font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+            mobileTab === "editor"
+              ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+              : "border-transparent text-slate-500"
+          }`}
+        >
+          <FiCode className="h-3.5 w-3.5" />
+          <span>Editor</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileTab("console")}
+          className={`flex-1 py-2 font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+            mobileTab === "console"
+              ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+              : "border-transparent text-slate-500"
+          }`}
+        >
+          <FiTerminal className="h-3.5 w-3.5" />
+          <span>Console</span>
+        </button>
+      </div>
+
+      {/* 2. Main Coding Workspace */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 overflow-hidden">
+        {/* Left Column: Problem Details Panel */}
+        <div
+          className={`h-full overflow-hidden border-r border-[var(--snx-border)] dark:border-slate-800 ${
+            mobileTab !== "problem" ? "hidden md:block" : "block"
+          }`}
+        >
+          <ProblemDescriptionPanel
+            question={question}
+            solutionText={detailedSolution}
+          />
+        </div>
+
+        {/* Right Column: Code Editor & Console Workspace */}
+        <div
+          className={`h-full flex flex-col overflow-hidden ${
+            mobileTab === "problem" ? "hidden md:flex" : "flex"
+          }`}
+        >
+          {question.type === "Coding" ? (
+            <>
+              {/* Top Half: Code Editor */}
+              <div
+                className={`flex-1 min-h-[50%] overflow-hidden ${
+                  mobileTab === "console" ? "hidden md:block" : "block"
+                }`}
+              >
+                <CodeEditorPanel
+                  code={answer}
+                  onChange={setAnswer}
+                  language={language}
+                  onLanguageChange={setLanguage}
+                  onResetCode={resetToStarterCode}
+                  onRun={runCode}
+                  onSubmit={submit}
+                  running={runningCode}
+                  submitting={submitting || evalLoading}
+                  explanation={codingExplanation}
+                  onExplanationChange={setCodingExplanation}
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
                 />
               </div>
-              <p className="mt-3 snx-body-sm text-slate-custom-600">
-                Question {currentIndex + 1} of {navigationPool.length}
-              </p>
+
+              {/* Bottom Half: Test Console */}
+              <div
+                className={`h-48 md:h-56 shrink-0 overflow-hidden ${
+                  mobileTab === "editor" ? "hidden md:block" : "block"
+                }`}
+              >
+                <TestConsolePanel
+                  codeOutput={feedback?.codeOutput || ""}
+                  codeStatus={feedback?.codeStatus || ""}
+                  stdin={stdin}
+                  onStdinChange={setStdin}
+                  feedback={feedback}
+                  evaluation={evaluation}
+                  onNextProblem={() => moveQuestion("next")}
+                />
+              </div>
+            </>
+          ) : question.type === "MCQ" ? (
+            /* MCQ Question Format */
+            <div className="flex-1 p-6 overflow-y-auto space-y-6">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
+                Select the correct option
+              </h3>
+              <div className="space-y-3 max-w-xl">
+                {(question.options || []).map((option) => {
+                  const selected = answer === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setAnswer(option)}
+                      className={`w-full p-4 rounded-xl border text-left text-sm font-medium transition duration-150 flex items-center justify-between ${
+                        selected
+                          ? "border-indigo-600 bg-indigo-50/70 text-indigo-950 dark:bg-indigo-950/40 dark:text-indigo-200 shadow-subtle"
+                          : "border-[var(--snx-border)] bg-[var(--snx-surface)] text-slate-800 hover:border-slate-300 dark:border-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      <span>{option}</span>
+                      {selected && <FiCheck className="h-4 w-4 text-indigo-600 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={submit}
+                  loading={submitting || evalLoading}
+                  disabled={!answer}
+                  icon={FiSend}
+                >
+                  Submit Answer
+                </Button>
+              </div>
+
+              {feedback && (
+                <div className="mt-4 p-4 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface-subtle)] text-xs dark:border-slate-800">
+                  <span className={`font-bold ${feedback.isCorrect ? "text-emerald-600" : "text-rose-600"}`}>
+                    {feedback.isCorrect ? "✓ Correct Answer!" : "✕ Incorrect"}
+                  </span>
+                  <p className="mt-2 text-slate-600 dark:text-slate-400">{feedback.explanation}</p>
+                </div>
+              )}
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2 dark:bg-slate-custom-800">
-                <span className="snx-label">AI score</span>
-                <span className="text-sm font-semibold text-brand-600">{evaluation?.score ?? "—"}</span>
+          ) : (
+            /* Subjective / Descriptive Question Format */
+            <div className="flex-1 p-6 overflow-y-auto space-y-4">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide block">
+                Your Answer & Technical Explanation
+              </label>
+              <textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="Type your comprehensive explanation, trade-offs, and examples here..."
+                className="w-full h-64 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface)] p-4 text-sm text-slate-800 outline-none focus:border-indigo-500 transition dark:border-slate-800 dark:text-slate-200"
+              />
+
+              <div className="flex gap-3">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={submit}
+                  loading={submitting || evalLoading}
+                  disabled={!answer.trim()}
+                  icon={FiSend}
+                >
+                  Submit for AI Evaluation
+                </Button>
               </div>
-              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2">
-                <span className="snx-label">Your result</span>
-                <span className="text-sm font-semibold text-emerald-600">{feedback ? (feedback.isCorrect ? "✓ Correct" : "✗ Incorrect") : "Pending"}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-slate-custom-100 px-3 py-2">
-                <span className="snx-label">Time</span>
-                <span className="text-sm font-semibold text-slate-custom-700">{formatTime(timeElapsed)}</span>
-              </div>
+
+              {feedback && (
+                <div className="mt-4 p-4 rounded-xl border border-[var(--snx-border)] bg-[var(--snx-surface-subtle)] text-xs dark:border-slate-800">
+                  <p className="font-bold text-slate-900 dark:text-white mb-1">Evaluation & Feedback:</p>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feedback.explanation}</p>
+                </div>
+              )}
             </div>
-            <button type="button" className="w-full snx-btn-secondary" onClick={goBackToList}>
-              <FiArrowLeft className="h-4 w-4" />
-              Exit Practice
-            </button>
-          </aside>
+          )}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 };

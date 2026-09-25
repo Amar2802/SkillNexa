@@ -1,64 +1,81 @@
 import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { FiArrowRight, FiCompass, FiCpu, FiLayers, FiSearch } from "react-icons/fi";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { FiArrowRight, FiCompass, FiCpu, FiLayers, FiSearch, FiSun, FiMoon, FiPlay } from "react-icons/fi";
 import PublicLanding from "../components/landing/PublicLanding";
 import SkillNexaLogo from "../components/SkillNexaLogo";
-
-const navItems = [
-  { id: "home", label: "Home", icon: FiCompass },
-  { id: "explore", label: "Explore", icon: FiSearch },
-  { id: "mock", label: "Mock Interviews", icon: FiCpu },
-  { id: "about", label: "About", icon: FiLayers }
-];
+import Button from "../components/ui/Button";
+import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 
 const publicPaths = new Set(["/", "/login", "/signup", "/forgot-password"]);
 
-const AuthLayout = () => {
+export const AuthLayout = () => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("home");
+  const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const { user, loginAsDemo } = useAuth();
   const showLanding = publicPaths.has(location.pathname);
 
+  const handleLaunchDemo = () => {
+    loginAsDemo();
+    navigate("/dashboard");
+  };
+
   return (
-    <div className="snx-app-shell min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-slate-custom-200/80 bg-white/85 backdrop-blur-md dark:border-slate-custom-700 dark:bg-slate-custom-900/85">
-        <div className="snx-container flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <SkillNexaLogo showTagline linkTo="/" />
+    <div className="snx-app-shell min-h-screen bg-[var(--snx-bg)] text-[var(--snx-text-primary)]">
+      {/* Public Top Navbar */}
+      <header className="sticky top-0 z-30 border-b border-[var(--snx-border)] bg-[var(--snx-surface)]/90 backdrop-blur-md dark:border-slate-800">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between gap-4">
+          <SkillNexaLogo showTagline linkTo={user ? "/dashboard" : "/"} imageClassName="h-7 w-7 rounded-lg object-contain" />
 
-          {showLanding ? (
-            <nav className="flex flex-wrap gap-1 sm:justify-center">
-              {navItems.map(({ id, label, icon: Icon }) => {
-                const active = activeTab === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setActiveTab(id)}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition duration-200 sm:text-sm ${
-                      active
-                        ? "bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-elevation-1"
-                        : "text-slate-custom-600 hover:bg-slate-custom-100 hover:text-slate-custom-900 dark:text-slate-custom-300 dark:hover:bg-slate-custom-800 dark:hover:text-white"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </button>
-                );
-              })}
-            </nav>
-          ) : null}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--snx-border)] text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              {theme === "dark" ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
+            </button>
 
-          <div className="flex items-center gap-2 sm:shrink-0">
-            <Link to="/login" className="snx-btn-secondary snx-btn-sm">Login</Link>
-            <Link to="/signup" className="snx-btn-primary snx-btn-sm">
-              Get Started
-              <FiArrowRight className="h-4 w-4" />
-            </Link>
+            {user ? (
+              <Link to="/dashboard">
+                <Button variant="primary" size="sm" iconRight={FiArrowRight}>
+                  Go to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLaunchDemo}
+                  icon={FiPlay}
+                  className="hidden sm:inline-flex text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-900/60 dark:hover:bg-indigo-950/40"
+                >
+                  Instant Demo
+                </Button>
+
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+
+                <Link to="/signup">
+                  <Button variant="primary" size="sm" iconRight={FiArrowRight}>
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="snx-container pb-10">
-        {showLanding ? <PublicLanding activeTab={activeTab} onTabChange={setActiveTab} /> : null}
+      <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-12">
+        {showLanding ? <PublicLanding /> : null}
         <Outlet />
       </main>
     </div>

@@ -14,6 +14,7 @@ import evaluationRoutes from "./routes/evaluationRoutes.js";
 import roadmapRoutes from "./routes/roadmapRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
 const app = express();
@@ -68,6 +69,7 @@ app.use("/api/analysis", analysisRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/roadmaps", roadmapRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

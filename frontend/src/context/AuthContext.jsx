@@ -10,6 +10,43 @@ import {
 } from "../utils/authStorage";
 import { hasFeatureAccess } from "../utils/subscription";
 
+export const DEMO_USER = {
+  _id: "demo-user-dev",
+  name: "Alex Chen",
+  email: "alex.chen@skillnexa.dev",
+  role: "user",
+  targetField: "Software",
+  interests: ["Arrays", "System Design", "Dynamic Programming", "DBMS", "React"],
+  streakCount: 5,
+  isDemo: true,
+  createdAt: new Date().toISOString(),
+  progress: {
+    testsTaken: 3,
+    accuracy: 82,
+    weakTopics: ["Dynamic Programming", "System Architecture"],
+    recommendedTopics: ["Arrays", "Trees", "System Design", "SQL"],
+    solvedQuestions: [],
+    evaluationsCount: 2,
+    aiReadinessScore: 84
+  },
+  preferences: {
+    theme: "system",
+    preferredLanguage: "python",
+    learningGoalHoursPerWeek: 5,
+    notifications: {
+      emailReminders: true,
+      practiceStreakAlerts: true,
+      mockInterviewFeedback: true,
+      weeklyProgressReport: true
+    },
+    privacy: {
+      publicProfile: true,
+      showOnLeaderboard: true,
+      showActivityHeatmap: true
+    }
+  }
+};
+
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -51,6 +88,15 @@ export const AuthProvider = ({ children }) => {
     setAuthReady(true);
   }, []);
 
+  const loginAsDemo = useCallback(() => {
+    applyAuth({
+      accessToken: "demo-access-token",
+      user: DEMO_USER,
+      rememberMe: true
+    });
+    return DEMO_USER;
+  }, [applyAuth]);
+
   const logout = useCallback(async ({ silent = false } = {}) => {
     try {
       await authService.logout();
@@ -65,12 +111,22 @@ export const AuthProvider = ({ children }) => {
   }, [clearSessionState]);
 
   const restoreSession = useCallback(async () => {
+    const stored = getStoredUser();
+    if (stored?.isDemo) {
+      applyAuth({ accessToken: "demo-access-token", user: stored, rememberMe: true });
+      return { accessToken: "demo-access-token", user: stored };
+    }
+
     try {
       setAuthLoading(true);
       const session = await authService.restoreSession();
       applyAuth({ ...session, rememberMe: getRememberMePreference() });
       return session;
     } catch (error) {
+      if (stored?.isDemo) {
+        applyAuth({ accessToken: "demo-access-token", user: stored, rememberMe: true });
+        return { accessToken: "demo-access-token", user: stored };
+      }
       if (error?.response?.status === 401) {
         clearSessionState();
       } else {
@@ -122,6 +178,8 @@ export const AuthProvider = ({ children }) => {
         }
       },
       onAuthFailure: (error) => {
+        const stored = getStoredUser();
+        if (stored?.isDemo) return;
         if (error?.response?.status === 401) {
           clearSessionState();
         }
@@ -137,12 +195,24 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let active = true;
     const bootstrapAuth = async () => {
+      const stored = getStoredUser();
+      if (stored?.isDemo) {
+        setAuthStatus("authenticated");
+        setAuthReady(true);
+        return;
+      }
+
       try {
         const session = await authService.restoreSession();
         if (!active) return;
         applyAuth({ ...session, rememberMe: getRememberMePreference() });
       } catch (error) {
         if (!active) return;
+        if (stored?.isDemo) {
+          setAuthStatus("authenticated");
+          setAuthReady(true);
+          return;
+        }
         if (error?.response?.status === 401) {
           clearSessionState();
         } else {
@@ -171,10 +241,11 @@ export const AuthProvider = ({ children }) => {
     hydrateAuth,
     login,
     signup,
+    loginAsDemo,
     logout,
     restoreSession,
     hasAccess
-  }), [applyAuth, authLoading, authReady, authStatus, hydrateAuth, login, logout, profile, restoreSession, signup, user, hasAccess]);
+  }), [applyAuth, authLoading, authReady, authStatus, hydrateAuth, login, loginAsDemo, logout, profile, restoreSession, signup, user, hasAccess]);
 
   return (
     <AuthContext.Provider value={value}>

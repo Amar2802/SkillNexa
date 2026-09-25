@@ -17,12 +17,18 @@ const PracticePage = lazy(() => import("../pages/PracticePage"));
 const MockTestsPage = lazy(() => import("../pages/MockTestsPage"));
 const ReviewMistakesPage = lazy(() => import("../pages/ReviewMistakesPage"));
 const AIInterviewerPage = lazy(() => import("../pages/AIInterviewerPage"));
+const AIMentorPage = lazy(() => import("../pages/AIMentorPage"));
 const BookmarksPage = lazy(() => import("../pages/BookmarksPage"));
 const HistoryPage = lazy(() => import("../pages/HistoryPage"));
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
+const LearnPage = lazy(() => import("../pages/LearnPage"));
 const RoadmapsPage = lazy(() => import("../pages/RoadmapsPage"));
 const RevisionPage = lazy(() => import("../pages/RevisionPage"));
 const AdminDashboardPage = lazy(() => import("../pages/AdminDashboardPage"));
+const AnalyticsPage = lazy(() => import("../pages/AnalyticsPage"));
+const LeaderboardPage = lazy(() => import("../pages/LeaderboardPage"));
+const PublicProfilePage = lazy(() => import("../pages/PublicProfilePage"));
+const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
 
@@ -164,6 +170,7 @@ const AppRoutes = () => {
           <Route path="signup" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="signup" />} />
           <Route path="forgot-password" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage mode="forgot" />} />
           <Route path="oauth-success" element={<OAuthSuccessPage />} />
+          <Route path="p/:userId" element={<PublicProfilePage />} />
         </Route>
 
         <Route
@@ -174,15 +181,40 @@ const AppRoutes = () => {
           )}
         >
           <Route path="/dashboard" element={<DashboardPage profile={profile || user} questions={questions} recommendations={dashboardRecommendations} history={history} loading={loadingApp} />} />
-          <Route path="/questions" element={<QuestionBankPage questions={questions} loadQuestions={loadQuestions} defaultField={SOFTWARE_FIELD} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} refreshProfile={refreshProfile} />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/questions" element={<QuestionBankPage questions={questions} loadQuestions={loadQuestions} defaultField={SOFTWARE_FIELD} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} refreshProfile={refreshProfile} history={history} />} />
           <Route path="/practice" element={<PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} refreshProfile={refreshProfile} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} />} />
           <Route path="/practice/:questionId" element={<PracticePage questions={questions} bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} refreshProfile={refreshProfile} targetField={SOFTWARE_FIELD} loadQuestions={loadQuestions} />} />
           <Route path="/mock-tests" element={<MockTestsPage tests={tests} refreshTests={refreshTests} refreshProfile={refreshProfile} refreshHistory={refreshHistory} questions={questions} />} />
           <Route path="/review-mistakes" element={<ReviewMistakesPage history={history} />} />
           <Route path="/ai-interviewer" element={<AIInterviewerPage questions={questions} refreshProfile={refreshProfile} />} />
+          <Route path="/mock-interviews" element={<AIInterviewerPage questions={questions} refreshProfile={refreshProfile} />} />
+          <Route path="/ai-mentor" element={<AIMentorPage />} />
           <Route path="/bookmarks" element={<BookmarksPage bookmarks={bookmarks} refreshBookmarks={refreshBookmarks} />} />
           <Route path="/history" element={<HistoryPage history={history} refreshHistory={refreshHistory} />} />
+          <Route path="/analytics" element={<AnalyticsPage profile={profile || user} history={history} refreshHistory={refreshHistory} refreshProfile={refreshProfile} />} />
           <Route path="/profile" element={<ProfilePage profile={profile || user} refreshProfile={refreshProfile} />} />
+          <Route path="/settings" element={<SettingsPage refreshProfile={refreshProfile} />} />
+          <Route path="/learn" element={
+            <LearnPage 
+              cachedRoadmaps={roadmaps} 
+              cachedCompletedTopics={roadmapsCompleted} 
+              cachedOverallCompletion={roadmapsCompletion} 
+              refreshRoadmaps={refreshRoadmaps} 
+              refreshProfile={refreshProfile} 
+              questions={questions}
+            />
+          } />
+          <Route path="/learn/:courseId" element={
+            <LearnPage 
+              cachedRoadmaps={roadmaps} 
+              cachedCompletedTopics={roadmapsCompleted} 
+              cachedOverallCompletion={roadmapsCompletion} 
+              refreshRoadmaps={refreshRoadmaps} 
+              refreshProfile={refreshProfile} 
+              questions={questions}
+            />
+          } />
           <Route path="/roadmaps" element={
             <RoadmapsPage 
               cachedRoadmaps={roadmaps} 
